@@ -27,6 +27,20 @@ Claude Codeがこのディレクトリで起動したとき、このファイル
 
 ---
 
+## メンションで指示を受けたときのルール
+
+Discordで `@scrum-agent` へのメンションとして指示を受け取ったら以下のルールに従う：
+
+1. メッセージの内容を指示として実行する
+2. 「XXモードで動いて」という指示があれば該当Skillsを読み込む
+3. 作業中の報告・質問は**指示を受けたチャンネル・スレッド**に投稿する
+4. 作業完了後の次のエージェントへの指示は、**次のイベントに適したチャンネル・スレッド**に投稿する
+   - 例：#10-planningスレッドで作業しても、次のDEVへの指示は#20-sprintの新スレッドに投稿する
+   - 例：#20-sprintスレッドで作業しても、次のSMへのReview依頼は#30-sprint-reviewの新スレッドに投稿する
+5. 次のエージェントへの指示は `@scrum-agent XXモードで動いて。〇〇してください` の形式で投稿する
+
+---
+
 ## Discordの使い方
 
 - mcp-discordを使ってDiscordのチャンネルに投稿できます
@@ -35,22 +49,26 @@ Claude Codeがこのディレクトリで起動したとき、このファイル
 
 ### チャンネルID一覧
 
-| チャンネル | ID | タイプ | 投稿ツール |
-|-----------|-----|--------|-----------|
-| #backlog-refinement | 1489422321424007178 | Forum | discord_create_forum_post / discord_reply_to_forum |
-| #standup | 1489422372225155122 | Text | discord_send |
-| #skills-changelog | 1489422432635850863 | Text | discord_send |
-| #10-planning | 1489422519416131644 | Forum | discord_create_forum_post / discord_reply_to_forum |
-| #20-sprint | 1489422592539623614 | Forum | discord_create_forum_post / discord_reply_to_forum |
-| #30-sprint-review | 1489422648449695824 | Forum | discord_create_forum_post / discord_reply_to_forum |
-| #40-retrospective | 1489422706435821701 | Forum | discord_create_forum_post / discord_reply_to_forum |
+| チャンネル          | ID                  | タイプ | 投稿ツール                                         |
+| ------------------- | ------------------- | ------ | -------------------------------------------------- |
+| #backlog-refinement | 1489422321424007178 | Text   | discord_send                                       |
+| #standup            | 1489422372225155122 | Text   | discord_send                                       |
+| #skills-changelog   | 1489422432635850863 | Text   | discord_send                                       |
+| #10-planning        | 1489422519416131644 | Forum  | discord_create_forum_post / discord_reply_to_forum |
+| #20-sprint          | 1489422592539623614 | Forum  | discord_create_forum_post / discord_reply_to_forum |
+| #30-sprint-review   | 1489422648449695824 | Forum  | discord_create_forum_post / discord_reply_to_forum |
+| #40-retrospective   | 1489422706435821701 | Forum  | discord_create_forum_post / discord_reply_to_forum |
+
+### サーバー情報
+
+- Guild ID: 1489421564439797780（scrum-agents）
 
 ---
 
 ## バックログの場所
 
 - プロダクトバックログ: backlog/product_backlog.md
-- Sprint 01バックログ: backlog/sprint_01/sprint_backlog.md
+- 各スプリントバックログ: backlog/sprint_XX/sprint_backlog.md
 
 ---
 
