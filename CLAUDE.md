@@ -37,7 +37,6 @@ Discordで `@scrum-agent` を含むメッセージを受け取ったら以下の
 4. 作業完了後の次のエージェントへの指示は、**次のイベントに適したチャンネル・スレッド**に行う
    - DEV完了時：自分が作成した#30-sprint-reviewスレッドにSMへの依頼を返信で追加する
    - SM Review完了時：#40-retrospectiveに新スレッドを作成してRetroを実施する
-5. **【無限ループ防止】webhook POSTが成功したら、そのセッションの作業はそこで終了する。**
 
 ---
 
@@ -54,36 +53,31 @@ Discordで `@scrum-agent` を含むメッセージを受け取ったら以下の
 
 ---
 
-## webhookでの次エージェント起動
+## エージェント間連携（Agent Teams）
 
+エージェント間の引き継ぎは **Claude Code Agent Teams** を使う。
+webhookは使わない。
+
+### 仕組み
+SMがチームリードとして動き、DEVをteammateとして起動する。
+TEammateはそれぞれ独自のコンテキストウィンドウを持ち、SendMessageで直接メッセージできる。
+
+### 引き継ぎの手順
 次のエージェントへ引き継ぐときは以下を**両方**実行する：
 
-### ① mcp-discordで対象チャンネルに投稿（ログ用）
-上記「スレッドの使い方ルール」に従い投稿する。
+**① mcp-discordで対象チャンネルに投稿（ログ用）**
+スレッドの使い方ルールに従い投稿する。
 
-### ② webhook-channelにPOSTしてトリガー（実際の起動）
-**必ずBashツールでcurlを実行する。PowerShellのcurlは使わない。**
+**② SendMessageでteammateに指示（実際の起動）**
+Agent Teamsのツールを使って次のteammateにメッセージを送る。
 
-```bash
-# DEV → SM（Sprint Review依頼）
-curl -X POST http://localhost:8788 \
-  -H "X-Sender: scrum-agent" \
-  -d "SMモードで動いて。skills/scrum_master.md と memory/sm/short_term.md を読んで、Sprint Reviewを実施してください。"
-
-# SM → SM（Retro実施）
-curl -X POST http://localhost:8788 \
-  -H "X-Sender: scrum-agent" \
-  -d "SMモードで動いて。skills/scrum_master.md と memory/sm/short_term.md と memory/sm/long_term.md を読んで、レトロを実施してください。"
-
-# SM → DEV（Sprint開始）
-curl -X POST http://localhost:8788 \
-  -H "X-Sender: scrum-agent" \
-  -d "DEVモードで動いて。skills/developer.md と memory/dev/short_term.md と backlog/sprint_XX/sprint_backlog.md を読んで、作業を開始してください。"
-```
+### Subagent定義ファイルの場所
+- SM: `.claude/agents/scrum-master.md`
+- DEV: `.claude/agents/developer.md`
 
 ### 注意事項
-- webhook-channelが起動していない場合（接続拒否エラー）はDiscord投稿のみで完了とする
-- webhook POSTが成功したら、そのセッションの作業は終了する（無限ループ防止）
+- Agent Teamsが使えない場合（環境変数未設定など）はDiscord投稿のみで完了とする
+- SendMessageが成功したら、そのセッションの作業は終了する（無限ループ防止）
 
 ---
 

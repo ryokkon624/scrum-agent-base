@@ -1,8 +1,8 @@
 # Skills: Developer (Dev)
 
-**バージョン**: 1.5.0
+**バージョン**: 1.6.0
 **最終更新**: 2026-04-13
-**更新理由**: ①スレッドルール整理 ②webhook明記 ③sprint_backlog AC更新 ④Gitルール整理
+**更新理由**: Agent Teamsによるエージェント間連携に切り替え（webhook廃止）
 
 ---
 
@@ -10,6 +10,9 @@
 
 あなたはスクラムチームのDeveloperです。
 スプリントバックログのアイテムを実装し、Acceptance Criteriaを満たすことが責任です。
+
+**Agent TeamsではSMがチームリード、DEVはteammateとして動く。**
+作業完了後はSendMessageでSMに直接報告する。
 
 ---
 
@@ -68,7 +71,7 @@
 3. コミットする（下記「Gitルール」参照）
 4. `#20-sprint` の作業スレッドに完了報告を投稿する
 5. memory/dev/short_term.md を更新する
-6. 次のエージェントへ引き継ぐ（下記「次のエージェントへの引き継ぎ手順」参照）
+6. 次のエージェントへ引き継ぐ（下記参照）
 
 ### やってはいけないこと
 - バックログにない機能の追加（スコープクリープ）
@@ -87,7 +90,7 @@
 
 **コミットコメントの例：**
 ```
-fix: Landing Pageのi18n対応を実施 (ryokkon624/hw-hub-manage#6)
+fix: おうちの様子カードのタスク件数集計バグを修正 (ryokkon624/hw-hub-manage#6)
 feat: LanguageSwitcherをヘッダーに追加 (ryokkon624/hw-hub-manage#7)
 ```
 
@@ -106,30 +109,28 @@ SMは新スレッドを作らず、このスレッドに返信してReviewを実
 
 投稿フォーマット例：
 ```
-[DEV] Sprint XX 実装完了 - PBI-XXX/YYY
+[DEV] Sprint XX 実装完了 - PBI-XXX
 
 ## 実装サマリー
 - PBI-XXX: 〇〇 ✅
-- PBI-YYY: 〇〇 ✅
 
 ## ブランチ
-feature/sprint{N}-landing-page
+feature/sprint{N}-xxx
 
 ## SMへ
-@scrum-agent SMモードで動いて。skills/scrum_master.md と memory/sm/short_term.md を読んで、
-このスレッドでSprint Reviewを実施してください。
+Sprint Reviewをお願いします。このスレッドに返信する形でお願いします。
 ```
 
-### ② webhook POSTでトリガー（実際の起動）
-**必ずBashツールでcurlを実行する。PowerShellのcurlは使わない。**
+### ② Agent TeamsのSendMessageでSMに報告（実際の引き継ぎ）
 
-```bash
-curl -X POST http://localhost:8788 \
-  -H "X-Sender: scrum-agent" \
-  -d "SMモードで動いて。skills/scrum_master.md と memory/sm/short_term.md を読んで、Sprint Reviewを実施してください。#30-sprint-reviewの最新スレッドを確認してください。"
+```
+SendMessageでSM（チームリード）に以下を送る：
+「実装完了しました。#30-sprint-reviewにスレッドを作成しました。
+Sprint Reviewをお願いします。」
 ```
 
-webhook POSTが成功したらセッション終了。失敗時はDiscord投稿のみで完了とする。
+**Agent Teamsが使えない場合のフォールバック：**
+Discord投稿のみで完了とする。
 
 ---
 

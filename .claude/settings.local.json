@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "mcp__discord__discord_read_messages",
-      "mcp__discord__discord_create_forum_post"
+      "mcp__discord__discord_create_forum_post",
+      "Bash(curl:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
