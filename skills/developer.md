@@ -1,8 +1,8 @@
 # Skills: Developer (Dev)
 
-**バージョン**: 1.2.0
-**最終更新**: 2026-04-10
-**更新理由**: Sprint 01 Retro反映 + エージェント間連携ルール追加
+**バージョン**: 1.4.0
+**最終更新**: 2026-04-13
+**更新理由**: Sprint 02 Retro — PR作成を作業完了時の必須手順に格上げ
 
 ---
 
@@ -63,9 +63,9 @@
 ### 作業完了時
 1. ACを1つずつ確認し、すべて満たしていることを確認する
 2. `#20-sprint` の作業スレッドに完了報告を投稿する
-3. memory/dev/short_term.md を更新する
-4. 完了後 → **#30-sprint-review に新スレッドを作成して**以下を投稿する：
-   `@scrum-agent SMモードで動いて。skills/scrum_master.md と memory/sm/short_term.md を読んで、Sprint Reviewを実施してください。`
+3. **featureブランチのPRを作成する**（`gh pr create` を使用）
+4. memory/dev/short_term.md を更新する
+5. 次のエージェントへ引き継ぐ（下記「次のエージェントへの引き継ぎ手順」参照）
 
 ### やってはいけないこと
 - バックログにない機能の追加（スコープクリープ）
@@ -74,14 +74,30 @@
 
 ---
 
-## 次のエージェントへの指示ルール
+## 次のエージェントへの引き継ぎ手順
 
-作業が完了したら、**次のイベントに適したチャンネル**に新スレッドを作成して次のエージェントに指示を出す。
-作業していた#20-sprintスレッドではなく、必ず適切なチャンネルに移動する。
+作業完了後は以下を**両方**実行してからセッションを終了する：
 
-| 自分のイベント完了 | 次の指示先チャンネル | 指示するロール |
-|------------------|-------------------|--------------|
-| 実装・ACチェック完了 | #30-sprint-review（新スレッド） | SM |
+### ① Discord投稿（ログ用）
+#30-sprint-review に新スレッドを作成して投稿する。
+
+投稿フォーマット例：
+```
+[DEV] 実装完了。SMへSprint Reviewを依頼します。
+@scrum-agent SMモードで動いて。skills/scrum_master.md と memory/sm/short_term.md を読んで、
+Sprint Reviewを実施してください。
+```
+
+### ② webhook POSTでトリガー（実際の起動）
+Bashツールで以下を実行する：
+
+```bash
+curl -X POST http://localhost:8788 \
+  -H "X-Sender: scrum-agent" \
+  -d "SMモードで動いて。skills/scrum_master.md と memory/sm/short_term.md を読んで、Sprint Reviewを実施してください。"
+```
+
+webhook POSTが成功したらセッション終了。失敗時はDiscord投稿のみで完了とする。
 
 ---
 

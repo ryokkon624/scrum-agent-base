@@ -1,6 +1,6 @@
 # Product Backlog
 
-最終更新: 2026-04-08
+最終更新: 2026-04-10
 
 ---
 
@@ -8,14 +8,89 @@
 
 | ID      | タイトル                                 | 優先度 | ステータス | スプリント |
 | ------- | ---------------------------------------- | ------ | ---------- | ---------- |
-| PBI-001 | Landing Page: HwHub プロダクト紹介ページ | 高     | 未着手     | Sprint 01  |
+| PBI-002 | Landing Page: i18n対応                   | 高     | 完了       | Sprint 02  |
+| PBI-003 | Landing Page: LanguageSwitcher配置       | 高     | 完了       | Sprint 02  |
+| PBI-004 | / アクセス時の認証状態による振り分け     | 高     | 完了       | Sprint 02  |
+| PBI-001 | Landing Page: HwHub プロダクト紹介ページ | 高     | 完了       | Sprint 01  |
+
+---
+
+## PBI-004: / アクセス時の認証状態による振り分け
+
+**優先度**: 高  
+**ステータス**: 未着手  
+**作成日**: 2026-04-10
+
+**As a** HwHubにアクセスするユーザーが
+**I want to** / にアクセスしたときに適切なページに誘導されたい
+**So that** 未認証なら価値を知れるLanding Pageに、認証済みならすぐHomeに行ける
+
+### Acceptance Criteria
+
+- [ ] AC1: 未認証状態で / にアクセスすると /landing にリダイレクトされる
+- [ ] AC2: 認証済み状態で / にアクセスすると /home にリダイレクトされる
+- [ ] AC3: 既存の認証フロー（requiresAuthチェック）に影響を与えない
+
+### 備考
+
+- **優先順位の根拠**: Landing Pageの導線を完成させるため
+- **依存関係**: なし（PBI-002・003と並行可能）
+- **実装箇所**: router/index.ts の / パスのredirect処理を修正
+
+---
+
+## PBI-003: Landing Page: LanguageSwitcher配置
+
+**優先度**: 高  
+**ステータス**: 未着手  
+**作成日**: 2026-04-10
+
+**As a** 日本語・英語・スペイン語を切り替えたいユーザーが
+**I want to** Landing Pageのヘッダーで言語を切り替えたい
+**So that** 自分の言語でHwHubを理解してからサインアップできる
+
+### Acceptance Criteria
+
+- [ ] AC1: ヘッダー右上の「ログイン」ボタンの左にLanguageSwitcherが配置されている
+- [ ] AC2: LanguageSwitcherをクリックすると日本語・英語・スペイン語が切り替わる
+- [ ] AC3: 切り替え後、Landing Pageの文言が即座に切り替わる
+- [ ] AC4: src/components/LanguageSwitcher.vue が既存コンポーネントとして使用できる場合はそれを流用する
+
+### 備考
+
+- **優先順位の根拠**: PBI-002完了後に実施
+- **依存関係**: PBI-002（i18n対応）が前提
+
+---
+
+## PBI-002: Landing Page: i18n対応
+
+**優先度**: 高  
+**ステータス**: 未着手  
+**作成日**: 2026-04-10
+
+**As a** 英語圏のユーザーが
+**I want to** Landing Pageを英語で読みたい
+**So that** 言語に関係なくHwHubの価値を理解できる
+
+### Acceptance Criteria
+
+- [ ] AC1: Landing Page内のすべての固定文言がvue-i18nのキーに置き換えられている
+- [ ] AC2: 日本語（ja）・英語（en）・スペイン語（es）の翻訳ファイルにLanding Page用のキーが追加されている
+- [ ] AC3: 既存の翻訳ファイル構造に準拠している
+
+### 備考
+
+- **優先順位の根拠**: PBI-003（LanguageSwitcher）と合わせて意味を持つため先行して対応
+- **依存関係**: PBI-003に依存される（先にやる）
+- **ブランチ**: feature/sprint01-landing-page上で作業
 
 ---
 
 ## PBI-001: Landing Page: HwHub プロダクト紹介ページ
 
 **優先度**: 高  
-**ステータス**: 未着手  
+**ステータス**: 完了  
 **作成日**: 2026-04-03
 
 **As a** 家事分担に悩んでいる共働き夫婦・シェアハウス住民・シェアハウス運営者が  

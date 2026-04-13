@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "webhook": {
+      "command": "bun",
+      "args": ["./webhook-channel/webhook.ts"]
+    }
+  }
+}

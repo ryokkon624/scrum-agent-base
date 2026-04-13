@@ -18,10 +18,10 @@ Claude Codeがこのディレクトリで起動したとき、このファイル
 起動時またはりょこさんから「POモードで動いて」「SMモードで動いて」「DEVモードで動いて」と
 指示されたら、該当のSkillsファイルとmemoryを読み込んで行動してください。
 
-| 指示                       | 読み込むファイル                                                           |
-| -------------------------- | -------------------------------------------------------------------------- |
+| 指示                       | 読み込むファイル                                                            |
+| -------------------------- | --------------------------------------------------------------------------- |
 | POモード（対りょこさん）   | skills/product_owner.md + memory/po/short_term.md + memory/po/long_term.md |
-| POモード（対エージェント） | skills/product_owner.md + memory/po/short_term.md                          |
+| POモード（対エージェント） | skills/product_owner.md + memory/po/short_term.md                           |
 | SMモード                   | skills/scrum_master.md + memory/sm/short_term.md + memory/sm/long_term.md  |
 | DEVモード                  | skills/developer.md + memory/dev/short_term.md + memory/dev/long_term.md   |
 
@@ -29,7 +29,7 @@ Claude Codeがこのディレクトリで起動したとき、このファイル
 
 ## メンションで指示を受けたときのルール
 
-Discordで `@scrum-agent` へのメンションとして指示を受け取ったら以下のルールに従う：
+Discordで `@scrum-agent` を含むメッセージを受け取ったら以下のルールに従う：
 
 1. メッセージの内容を指示として実行する
 2. 「XXモードで動いて」という指示があれば該当Skillsを読み込む
@@ -38,6 +38,38 @@ Discordで `@scrum-agent` へのメンションとして指示を受け取った
    - 例：#10-planningスレッドで作業しても、次のDEVへの指示は#20-sprintの新スレッドに投稿する
    - 例：#20-sprintスレッドで作業しても、次のSMへのReview依頼は#30-sprint-reviewの新スレッドに投稿する
 5. 次のエージェントへの指示は `@scrum-agent XXモードで動いて。〇〇してください` の形式で投稿する
+6. **【無限ループ防止】次のエージェントへの指示を投稿したら、そのセッションの作業はそこで終了する。自分が投稿した `@scrum-agent` を含むメッセージを自分で拾って再実行しない。**
+
+---
+
+## webhookでの次エージェント起動
+
+次のエージェントへ引き継ぐときは以下を**両方**実行する：
+
+### ① mcp-discordで対象チャンネルに投稿（ログ用）
+次のイベントに適したフォーラムチャンネルに新スレッドを作成して投稿する。
+
+### ② webhook-channelにPOSTしてトリガー（実際の起動）
+Bashツールを使ってlocalhost:8788にPOSTする。
+
+**Bashツールでの実行例（Git Bash / WSL）:**
+```bash
+curl -X POST http://localhost:8788 \
+  -H "X-Sender: scrum-agent" \
+  -d "DEVモードで動いて。skills/developer.md と memory/dev/short_term.md と backlog/sprint_XX/sprint_backlog.md を読んで、作業を開始してください。"
+```
+
+**PowerShellの場合:**
+```powershell
+Invoke-RestMethod -Method POST -Uri "http://localhost:8788" `
+  -Headers @{"X-Sender" = "scrum-agent"} `
+  -Body "DEVモードで動いて。..." `
+  -ContentType "text/plain"
+```
+
+### 注意事項
+- webhook-channelが起動していない場合（接続拒否エラー）はDiscord投稿のみで完了とする
+- webhook POSTが成功したら、そのセッションの作業は終了する（無限ループ防止）
 
 ---
 
