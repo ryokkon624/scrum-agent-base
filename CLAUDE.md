@@ -34,9 +34,7 @@ Discordで `@scrum-agent` を含むメッセージを受け取ったら以下の
 1. メッセージの内容を指示として実行する
 2. 「XXモードで動いて」という指示があれば該当Skillsを読み込む
 3. 作業中の報告・質問は**指示を受けたチャンネル・スレッド**に投稿する
-4. 作業完了後の次のエージェントへの指示は、**次のイベントに適したチャンネル・スレッド**に行う
-   - DEV完了時：自分が作成した#30-sprint-reviewスレッドにSMへの依頼を返信で追加する
-   - SM Review完了時：#40-retrospectiveに新スレッドを作成してRetroを実施する
+4. 次のエージェントへの引き継ぎはAgent Teamsを使う（下記参照）
 
 ---
 
@@ -46,37 +44,32 @@ Discordで `@scrum-agent` を含むメッセージを受け取ったら以下の
 
 | イベント | スレッドの扱い |
 |---------|---------------|
-| DEVが#20-sprintで作業 | 作業スレッドに完了報告を投稿 |
-| DEVがSMにReview依頼 | **#30-sprint-reviewに新スレッドを1つ作成**（完了報告+Review依頼を同一スレッドに書く） |
-| SMがReviewを実施 | DEVが作成した#30-sprint-reviewスレッドに**返信**する（新スレッド作成しない） |
-| SMがRetroを実施 | **#40-retrospectiveに新スレッドを作成**する |
+| SMがPlanningを実施 | `#10-planning` のPlanningスレッドに報告 |
+| SMがDEVに作業指示 | **`#20-sprint` に新スレッドを作成** |
+| DEVが作業・修正完了 | `#20-sprint` の作業スレッドに投稿 |
+| SMがReviewerの指摘をまとめる | `#20-sprint` の作業スレッドに投稿 |
+| SMがSprint Reviewを実施 | **`#30-sprint-review` に新スレッドを作成** |
+| SMがRetroを実施 | **`#40-retrospective` に新スレッドを作成** |
 
 ---
 
 ## エージェント間連携（Agent Teams）
 
 エージェント間の引き継ぎは **Claude Code Agent Teams** を使う。
-webhookは使わない。
 
 ### 仕組み
-SMがチームリードとして動き、DEVをteammateとして起動する。
-TEammateはそれぞれ独自のコンテキストウィンドウを持ち、SendMessageで直接メッセージできる。
-
-### 引き継ぎの手順
-次のエージェントへ引き継ぐときは以下を**両方**実行する：
-
-**① mcp-discordで対象チャンネルに投稿（ログ用）**
-スレッドの使い方ルールに従い投稿する。
-
-**② SendMessageでteammateに指示（実際の起動）**
-Agent Teamsのツールを使って次のteammateにメッセージを送る。
+SMがチームリードとして動き、DEV・reviewerをteammateとして起動する。
+各teammateは独自のコンテキストウィンドウを持ち、SendMessageで直接メッセージできる。
 
 ### Subagent定義ファイルの場所
 - SM: `.claude/agents/scrum-master.md`
 - DEV: `.claude/agents/developer.md`
+- 規約レビュアー: `.claude/agents/convention-reviewer.md`
+- セキュリティレビュアー: `.claude/agents/security-reviewer.md`
+- パフォーマンスレビュアー: `.claude/agents/performance-reviewer.md`
 
 ### 注意事項
-- Agent Teamsが使えない場合（環境変数未設定など）はDiscord投稿のみで完了とする
+- Agent Teamsが使えない場合はDiscord投稿のみで完了とする
 - SendMessageが成功したら、そのセッションの作業は終了する（無限ループ防止）
 
 ---
@@ -92,7 +85,6 @@ Agent Teamsのツールを使って次のteammateにメッセージを送る。
 | チャンネル          | ID                  | タイプ | 投稿ツール                                         |
 | ------------------- | ------------------- | ------ | -------------------------------------------------- |
 | #backlog-refinement | 1489422321424007178 | Text   | discord_send                                       |
-| #standup            | 1489422372225155122 | Text   | discord_send                                       |
 | #skills-changelog   | 1489422432635850863 | Text   | discord_send                                       |
 | #10-planning        | 1489422519416131644 | Forum  | discord_create_forum_post / discord_reply_to_forum |
 | #20-sprint          | 1489422592539623614 | Forum  | discord_create_forum_post / discord_reply_to_forum |
