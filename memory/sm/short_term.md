@@ -1,6 +1,6 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 04（未開始）
+**スプリント**: Sprint 05（未開始）
 **最終更新**: 2026-04-13
 
 ---
@@ -29,16 +29,18 @@
 
 ## チャレンジ項目
 
-- Agent Teams連携の本格運用（次スプリントから）
 - Claudeモデル最新バージョン確認（現在: claude-sonnet-4-6）
+- スタンドアップの確実な実施（スプリント中盤タスクとして明示的に組み込む）
 
 ---
 
-## Sprint 03 完了メモ
+## Sprint 04 完了メモ
 
-- PBI-005 全AC達成 ✅
-- ブランチ: fix/sprint03-task-count-bug（コミット済み、PR作成はりょこさんが行う）
-- Retro完了: #40-retrospective Sprint 03 Retrospective（ID: 1493120841972584559）
+- PBI-006/007/008 全AC達成 ✅
+- フロントブランチ: fix/7-8-fix-home-card-count（コミット済み）
+- バックエンドブランチ: feature/9-add-lower-limit-when-retrieve-tasks（コミット済み）
+- Agent Teams連携（sprint04チーム）初運用 → 成功 ✅
+- Retro完了: #40-retrospective Sprint 04 Retrospective（ID: 1493154515493589033）
 
 ---
 

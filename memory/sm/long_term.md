@@ -11,6 +11,7 @@
 | Sprint 01 | Landing Page公開・初訪問ユーザーの導線完成 | ✅ 全AC達成（AC1〜AC8） | ForumチャンネルにはCreate_forum_postが必要。Planningの未決事項はスプリント前にクリアする |
 | Sprint 02 | Landing Page多言語対応・/振り分け完成 | ✅ 全AC達成（PBI-002/003/004） | Planningで事前確認をDEVに依頼すると実装がスムーズ。PRレビュー・スタンドアップは必須プロセス化が必要 |
 | Sprint 03 | 「おうちの様子」タスク件数の集計バグ修正 | ✅ 全AC達成（PBI-005） | 1行修正でクリーンに完了。GitルールはPR不要・コミットまでに確定。キャッシュ制御（force: true/false）の不統一に注意 |
+| Sprint 04 | ホーム画面件数誤表示バグ修正 + APIデータ絞り込み | ✅ 全AC達成（PBI-006/007/008 全10AC） | Agent Teams連携（sprint04チーム）を初運用して成功。Promise.all並列fetchによるstore上書き問題はcacheByKeyから直接参照することで解消 |
 
 ---
 
@@ -23,6 +24,7 @@
 | Sprint 02 | スタンドアップ実施 | ❌ 未実施（2スプリント連続） | v1.4.0でPlanning手順に追加 |
 | Sprint 03 | PRレビューフロー | ⚠️ りょこさん指示によりスキップ確定（PR不要・コミットまで） | Gitルールとして確定 |
 | Sprint 03 | Agent Teams連携（webhook廃止） | 🔄 Skills v1.6.0で方針更新済み、次スプリントで本格運用 | scrum_master.md v1.6.0に反映済み |
+| Sprint 04 | Agent Teams連携の本格運用 | ✅ TeamCreate + SendMessage による DEV 起動・完了報告受信が正常動作 | 今後のスタンダードとして継続 |
 
 ---
 

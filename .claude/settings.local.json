@@ -3,7 +3,14 @@
     "allow": [
       "mcp__discord__discord_read_messages",
       "mcp__discord__discord_create_forum_post",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Read(//c/work/hw-hub/hw-hub-frontend/**)",
+      "Bash(npx vue-tsc:*)",
+      "Read(//c/work/hw-hub/hw-hub-backend/**)",
+      "Bash(./gradlew test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "mcp__discord__discord_reply_to_forum"
     ]
   },
   "enableAllProjectMcpServers": true,
