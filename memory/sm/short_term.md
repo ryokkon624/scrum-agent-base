@@ -35,7 +35,7 @@
 
 ## Sprint 05 完了メモ
 
-- PBI-009/010 全AC達成 ✅
+- #10/#12 全AC達成 ✅
 - フロントブランチ: fix/10-housework-template-i18n（コミット済み）
 - フロントブランチ: feature/12-delete-shopping-item（コミット済み）
 - バックエンドブランチ: feature/12-delete-shopping-item（コミット済み）

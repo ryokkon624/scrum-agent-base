@@ -10,6 +10,17 @@
       "Bash(./gradlew test:*)",
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
+      "Bash(git status:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git push:*)",
+      "Bash(cd *)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
       "mcp__discord__discord_reply_to_forum"
     ]
   },
