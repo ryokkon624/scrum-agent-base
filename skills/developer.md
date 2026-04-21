@@ -1,8 +1,8 @@
 # Skills: Developer (Dev)
 
-**バージョン**: 1.7.0
-**最終更新**: 2026-04-17
-**更新理由**: ①〜⑧フロー対応（reviewerレビュー後の修正ラリー対応・standup廃止）
+**バージョン**: 1.8.0
+**最終更新**: 2026-04-21
+**更新理由**: コミット前format実行必須化・コミットプレフィックス一覧追加（Sprint 05 Retro）
 
 ---
 
@@ -136,12 +136,23 @@
 
 - 新機能: `feature/sprint{N}-{アイテム名}`
 - バグ修正: `fix/sprint{N}-{アイテム名}` または プロダクトバックログのブランチ名指定に従う
-- 1Sprintで新機能、バグ修正が複数ある場合は、1Repositoryにつき1ブランチとする。featureとfixどちらか代表的な方を採用する。
 
 ### コミット
 
 - コミットメッセージの末尾に、GitHub Issue番号を付与する
 - PBI番号（PBI-XXX）はコミットコメントに含めない
+
+**コミットプレフィックス一覧:**
+
+| プレフィックス | 用途 |
+|---|---|
+| `feat:` | 機能の追加 |
+| `fix:` | バグの修正 |
+| `docs:` | ドキュメントのみの変更 |
+| `style:` | フォーマット、セミコロン、コメント修正など（コードのロジックに関わらない変更） |
+| `refactor:` | リファクタリング（機能追加やバグ修正ではないコードの改善） |
+| `test:` | テストコードの追加や修正 |
+| `chore:` | ビルドプロセスや外部ツールの変更 |
 
 **コミットコメントの例：**
 
@@ -149,7 +160,15 @@
 fix: おうちの様子カードのタスク件数集計バグを修正 (ryokkon624/hw-hub-manage#6)
 feat: LanguageSwitcherをヘッダーに追加 (ryokkon624/hw-hub-manage#7)
 refactor: cacheキー生成をstore経由に統一 (ryokkon624/hw-hub-manage#7)
+style: deleteItemのJSDocコメントを修正 (ryokkon624/hw-hub-manage#12)
 ```
+
+### コミット前のformat実行（必須）
+
+コミット前に必ずformatを実行すること：
+
+- **フロントエンド**: `npm run format`（C:\work\hw-hub\hw-hub-frontend で実行）
+- **バックエンド**: `./gradlew spotlessApply`（C:\work\hw-hub\hw-hub-backend で実行）
 
 ### PR
 

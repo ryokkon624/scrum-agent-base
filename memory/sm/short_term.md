@@ -1,7 +1,7 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 05（未開始）
-**最終更新**: 2026-04-13
+**スプリント**: Sprint 06（未開始）
+**最終更新**: 2026-04-21
 
 ---
 
@@ -33,13 +33,14 @@
 
 ---
 
-## Sprint 04 完了メモ
+## Sprint 05 完了メモ
 
-- PBI-006/007/008 全AC達成 ✅
-- フロントブランチ: fix/7-8-fix-home-card-count（コミット済み）
-- バックエンドブランチ: feature/9-add-lower-limit-when-retrieve-tasks（コミット済み）
-- Agent Teams連携（sprint04チーム）初運用 → 成功 ✅
-- Retro完了: #40-retrospective Sprint 04 Retrospective（ID: 1493154515493589033）
+- PBI-009/010 全AC達成 ✅
+- フロントブランチ: fix/10-housework-template-i18n（コミット済み）
+- フロントブランチ: feature/12-delete-shopping-item（コミット済み）
+- バックエンドブランチ: feature/12-delete-shopping-item（コミット済み）
+- Retro完了: #40-retrospective Sprint 05 Retrospective（ID: 1496127179971367075）
+- GitHub Issue作成: #15（UTコード整備 + convention-reviewer観点追加）、#16（lightbulbアイコン復元）
 
 ---
 

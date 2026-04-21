@@ -12,6 +12,7 @@
 | Sprint 02  | Landing Page多言語対応・/振り分け完成            | ✅ 全AC達成（PBI-002/003/004）        | Planningで事前確認をDEVに依頼すると実装がスムーズ。PRレビュー・スタンドアップは必須プロセス化が必要                                |
 | Sprint 03  | 「おうちの様子」タスク件数の集計バグ修正         | ✅ 全AC達成（PBI-005）                | 1行修正でクリーンに完了。GitルールはPR不要・コミットまでに確定。キャッシュ制御（force: true/false）の不統一に注意                  |
 | Sprint 04  | ホーム画面件数誤表示バグ修正 + APIデータ絞り込み | ✅ 全AC達成（PBI-006/007/008 全10AC） | Agent Teams連携（sprint04チーム）を初運用して成功。Promise.all並列fetchによるstore上書き問題はcacheByKeyから直接参照することで解消 |
+| Sprint 05  | 家事テンプレートi18n対応 + 買い物アイテム削除機能 | ✅ 全AC達成（PBI-009/010 全9AC）     | コミットプレフィックスのstyle:使い分けを認識。format未実施コミットが発生→ルール化。DEV起動前のTaskCreateが漏れていた→必須化。UTコード整備が未対応（Issue#15で次スプリント以降に対応） |
 
 ---
 
@@ -25,6 +26,8 @@
 | Sprint 03  | PRレビューフロー                                    | ⚠️ りょこさん指示によりスキップ確定（PR不要・コミットまで）         | Gitルールとして確定              |
 | Sprint 03  | Agent Teams連携（webhook廃止）                      | 🔄 Skills v1.6.0で方針更新済み、次スプリントで本格運用              | scrum_master.md v1.6.0に反映済み |
 | Sprint 04  | Agent Teams連携の本格運用                           | ✅ TeamCreate + SendMessage による DEV 起動・完了報告受信が正常動作 | 今後のスタンダードとして継続     |
+| Sprint 05  | コミット前format自動実行ルール化                     | ✅ developer.md v1.8.0 に format コマンド必須ルールとして追加       | frontend: npm run format / backend: ./gradlew spotlessApply |
+| Sprint 05  | DEV起動前のTaskCreate必須化                         | ✅ scrum_master.md v1.10.0 に反映。reviewer起動と統一              | 今後のスタンダードとして継続     |
 
 ---
 
@@ -38,12 +41,15 @@
 - Planningで事前確認事項をDEVに依頼する（Sprint 02〜）
 - 既存コンポーネントの流用方針（Sprint 02〜）
 - バグPBIには原因調査結果を記載してDEVに渡す（Sprint 03〜）
+- 3観点レビュー（規約・セキュリティ・パフォーマンス）の並列実施（Sprint 05〜 定着確認）
+- Agent Teams連携（TeamCreate + SendMessage）（Sprint 04〜）
 
 ### Stop（やめること）
 
 - Discordチャンネルタイプを確認せずにsendを試みること（Sprint 01）
 - Planningの未決事項をそのままスプリントに持ち込むこと（Sprint 01）
 - PRレビューをチャレンジ項目に留めること（Sprint 02 → Sprint 03でりょこさん指示により確定）
+- コメントのみの変更に `fix:` プレフィックスを使うこと（Sprint 05 → `style:` を使う）
 
 ### Avoid（回避すること）
 
@@ -51,8 +57,10 @@
 - バックログの未更新を後回しにしてスプリントを進めること（Sprint 01）
 - チャレンジ項目を毎スプリント持ち越し続けること（Sprint 02）
 - キャッシュ制御（force: true/false）の不統一（Sprint 03 → 今後のDEVレビューで注意）
+- format未実施のままコミットすること（Sprint 05 → developer.md v1.8.0でルール化）
+- UTコードを放置したまま機能実装を完了とすること（Sprint 05 → Issue#15で対応予定）
 
 ### Challenge（次に試すこと）
 
-- Agent Teams連携の本格運用（次スプリントから）
+- UTコードの整備（frontend/backend）とconvention-reviewerへのUT観点追加（Issue#15）
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6）
