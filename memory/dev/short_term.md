@@ -1,25 +1,31 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 04  
-**最終更新**: 2026-04-13
+**スプリント**: Sprint 05  
+**最終更新**: 2026-04-21
 
 ---
 
 ## 担当タスクメモ
 
-### PBI-006 / PBI-007: ホーム画面カード件数0件バグ修正
-- ブランチ: fix/7-8-fix-home-card-count (hw-hub-frontend)
-- 原因: HomePage.vueでPromise.allによりfetchTasks(NOT_DONE)とfetchTasks(DONE)が並列実行され、
-  後に完了した方がtaskStore.itemsを上書きしていた。MyTasksCardとUnassignedTasksCardが
-  taskStore.itemsを参照していたため、DONE fetchが後に完了するとNOT_DONEデータが消え件数0件になった
-- 修正: 両カードでtaskStore.itemsではなくtaskStore.cacheByKeyからNOT_DONEキャッシュを直接参照するように変更
-  (HouseholdSituationCard.vueが既にこのパターンを使用していた)
+### PBI-009: 家事テンプレート画面のi18n対応
+- ブランチ: fix/10-housework-template-i18n (hw-hub-frontend)
+- 対応内容:
+  - i18nキー `columns.nameJa` を `columns.name` にリネームし列タイトルを「家事名」に変更
+  - `useHouseworkTemplate` の `getLocalizedName` を使い、locale に応じた家事名表示に対応
+  - おすすめバッジのハードコード「あり」を `columns.recommendationYes` i18nキーに置換（ja: あり / en: Yes / es: Si）
+  - PC版テーブル・SP版カード両方を修正
 
-### PBI-008: GET /api/housework-tasks 下限日付追加
-- ブランチ: feature/9-add-lower-limit-when-retrieve-tasks (hw-hub-backend)
-- 実装: Service層でLocalDate.now().minusDays(7)を算出し、Repository→Mapper経由でSQLのWHERE句に
-  `t.target_date >= #{lowerDate}` を追加
-- 影響範囲: selectTasksForAssignクエリのみ。他のエンドポイントは影響なし
+### PBI-010: 買い物アイテム削除機能
+- ブランチ: feature/12-delete-shopping-item (hw-hub-frontend + hw-hub-backend)
+- バックエンド:
+  - `ShoppingItemRepository` に `deleteById` メソッド追加
+  - `ShoppingItemService.delete()` で認可チェック + 添付画像削除 + 本体削除
+  - `ShoppingItemController` に `DELETE /api/shopping-items/{shoppingItemId}` エンドポイント追加
+- フロントエンド:
+  - `shoppingItemApi.deleteItem()` 追加
+  - `shoppingStore.deleteItem()` でAPI呼び出し + キャッシュからアイテム除去
+  - `ShoppingItemDetailPage.vue` に削除ボタン追加（未購入ステータスのみ表示）
+  - confirm ダイアログ → 削除 → router.back() で一覧に戻る
 
 ---
 
@@ -27,7 +33,7 @@
 
 | 日付 | 問題 | 原因 | 解決策 |
 |------|------|------|--------|
-| 2026-04-13 | MyTasks/UnassignedTasksカード件数0件 | Promise.allでfetchTasksが並列実行されtaskStore.itemsが上書きされる | cacheByKeyから直接キャッシュを参照 |
+| (Sprint 05ではなし) | - | - | - |
 
 ---
 
