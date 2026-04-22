@@ -8,12 +8,12 @@
 ## 担当タスクメモ
 
 ### Issue #16: lightbulbアイコン復元
-- ブランチ: fix/16-restore-lightbulb-icon (hw-hub-frontend)
+- ブランチ: fix/10-housework-template-i18n (hw-hub-frontend) ※SMの指示でブランチ変更
 - 対応内容:
   - `AdminHouseworkTemplatesPage.vue` にLucide `Lightbulb` コンポーネントをimport
-  - PC版テーブル・SP版カード両方の「おすすめ」バッジで絵文字 `💡` をLightbulbアイコンに置換
-  - ハードコード「あり」を `t('admin.houseworkTemplate.columns.recommendationYes')` i18nキーに置換
-  - i18nキー `recommendationYes` を3言語（ja: あり / en: Yes / es: Si）で追加
+  - PC版テーブル・SP版カード両方の「おすすめ」バッジにLightbulbアイコンを追加
+  - i18nキー `recommendationYes` は fix/10 ブランチに既に存在していたため追加不要だった
+- 注意: 最初に fix/16-restore-lightbulb-icon ブランチ（mainベース）で作業したが、SMから fix/10 ブランチへの変更指示があり再対応。fix/16 ブランチは不要（未削除）
 
 ### Issue #15: テストコードの整備とconvention-reviewerへのUT観点追加
 - ブランチ: feature/12-delete-shopping-item (hw-hub-frontend + hw-hub-backend + scrum-agent-base)
@@ -34,7 +34,7 @@
 
 | 日付 | 問題 | 原因 | 解決策 |
 |------|------|------|--------|
-| 2026-04-22 | #16のブランチ指定がバックログ更新で変更されていた | Planningで fix/10 を指定されたが実際は新規ブランチ fix/16 で作業 | 新規ブランチで作業完了。mainからの差分として独立したバグ修正になる |
+| 2026-04-22 | #16のブランチを間違えた | バックログのブランチ指定を確認せずmainから新規ブランチを切った | SMからの指示で fix/10 ブランチに再コミット。未マージブランチ上のバグ修正は、そのブランチに追加コミットする |
 
 ---
 
