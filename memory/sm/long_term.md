@@ -13,6 +13,7 @@
 | Sprint 03  | 「おうちの様子」タスク件数の集計バグ修正          | ✅ 全AC達成（PBI-005）                | 1行修正でクリーンに完了。GitルールはPR不要・コミットまでに確定。キャッシュ制御（force: true/false）の不統一に注意                                                                     |
 | Sprint 04  | ホーム画面件数誤表示バグ修正 + APIデータ絞り込み  | ✅ 全AC達成（PBI-006/007/008 全10AC） | Agent Teams連携（sprint04チーム）を初運用して成功。Promise.all並列fetchによるstore上書き問題はcacheByKeyから直接参照することで解消                                                    |
 | Sprint 05  | 家事テンプレートi18n対応 + 買い物アイテム削除機能 | ✅ 全AC達成（#10/#12 全9AC）          | コミットプレフィックスのstyle:使い分けを認識。format未実施コミットが発生→ルール化。DEV起動前のTaskCreateが漏れていた→必須化。UTコード整備が未対応（Issue#15で次スプリント以降に対応） |
+| Sprint 06  | lightbulbアイコン復元・UTコード整備・レビュー観点追加 | ✅ 全AC達成（#16/#15 全6AC）       | DEVがDiscord投稿（作業開始・完了・レビュー指摘対応）を省いた。reviewerもDiscord投稿せずSMがフォロー。reviewer Skillsに投稿ルールがなかった→3ファイルv1.1.0に追加。API追加時のdoc更新漏れ検知（Issue#17）。 |
 
 ---
 
@@ -28,6 +29,7 @@
 | Sprint 04  | Agent Teams連携の本格運用                           | ✅ TeamCreate + SendMessage による DEV 起動・完了報告受信が正常動作 | 今後のスタンダードとして継続                                |
 | Sprint 05  | コミット前format自動実行ルール化                    | ✅ developer.md v1.8.0 に format コマンド必須ルールとして追加       | frontend: npm run format / backend: ./gradlew spotlessApply |
 | Sprint 05  | DEV起動前のTaskCreate必須化                         | ✅ scrum_master.md v1.10.0 に反映。reviewer起動と統一               | 今後のスタンダードとして継続                                |
+| Sprint 06  | reviewerのDiscord投稿ルール明記                     | ✅ convention/security/performance-reviewer.md v1.1.0 に報告手順を追加 | 今後のスタンダードとして継続                             |
 
 ---
 
@@ -50,6 +52,8 @@
 - Planningの未決事項をそのままスプリントに持ち込むこと（Sprint 01）
 - PRレビューをチャレンジ項目に留めること（Sprint 02 → Sprint 03でりょこさん指示により確定）
 - コメントのみの変更に `fix:` プレフィックスを使うこと（Sprint 05 → `style:` を使う）
+- DEVがDiscord投稿（作業開始・完了・レビュー指摘対応）を省くこと（Sprint 06 → ルールはdeveloper.mdに記載済みだが未遵守）
+- reviewerがレビュー結果を`#20-sprint`に投稿しないこと（Sprint 06 → reviewer Skills v1.1.0に投稿ルールを明記）
 
 ### Avoid（回避すること）
 
@@ -59,8 +63,10 @@
 - キャッシュ制御（force: true/false）の不統一（Sprint 03 → 今後のDEVレビューで注意）
 - format未実施のままコミットすること（Sprint 05 → developer.md v1.8.0でルール化）
 - UTコードを放置したまま機能実装を完了とすること（Sprint 05 → Issue#15で対応予定）
+- API追加・変更時にapi_integration.md等のドキュメント更新を省くこと（Sprint 06 → Issue#17で対応予定）
 
 ### Challenge（次に試すこと）
 
-- UTコードの整備（frontend/backend）とconvention-reviewerへのUT観点追加（Issue#15）
+- api_integration.md更新漏れ防止チェックリストの整備
+- ShoppingListPage.vue onClickCompletePurchaseの並列化（Issue#18）
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6）

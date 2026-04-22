@@ -1,7 +1,7 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 06（未開始）
-**最終更新**: 2026-04-21
+**スプリント**: Sprint 07（未開始）
+**最終更新**: 2026-04-22
 
 ---
 
@@ -30,17 +30,17 @@
 ## チャレンジ項目
 
 - Claudeモデル最新バージョン確認（現在: claude-sonnet-4-6）
+- api_integration.md更新漏れ防止チェックリストの整備
 
 ---
 
-## Sprint 05 完了メモ
+## Sprint 06 完了メモ
 
-- #10/#12 全AC達成 ✅
-- フロントブランチ: fix/10-housework-template-i18n（コミット済み）
-- フロントブランチ: feature/12-delete-shopping-item（コミット済み）
-- バックエンドブランチ: feature/12-delete-shopping-item（コミット済み）
-- Retro完了: #40-retrospective Sprint 05 Retrospective（ID: 1496127179971367075）
-- GitHub Issue作成: #15（UTコード整備 + convention-reviewer観点追加）、#16（lightbulbアイコン復元）
+- #16: lightbulbアイコン復元 ✅（fix/10-housework-template-i18n）
+- #15: UTコード整備・convention-reviewerへのUT観点追加 ✅
+- Retro完了: #40-retrospective Sprint 06 Retrospective（ID: 1496379535229190154）
+- GitHub Issue作成: #17（api_integration.md更新漏れ）、#18（ShoppingListPage.vue onClickCompletePurchase並列化）
+- Skills更新: convention/security/performance-reviewer.md v1.1.0（Discord投稿ルール追加）
 
 ---
 
