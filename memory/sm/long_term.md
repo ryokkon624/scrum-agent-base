@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-04-13
+**最終更新**: 2026-04-23
 
 ---
 
@@ -15,6 +15,7 @@
 | Sprint 05  | 家事テンプレートi18n対応 + 買い物アイテム削除機能 | ✅ 全AC達成（#10/#12 全9AC）          | コミットプレフィックスのstyle:使い分けを認識。format未実施コミットが発生→ルール化。DEV起動前のTaskCreateが漏れていた→必須化。UTコード整備が未対応（Issue#15で次スプリント以降に対応） |
 | Sprint 06  | lightbulbアイコン復元・UTコード整備・レビュー観点追加 | ✅ 全AC達成（#16/#15 全6AC）       | DEVがDiscord投稿（作業開始・完了・レビュー指摘対応）を省いた。reviewerもDiscord投稿せずSMがフォロー。reviewer Skillsに投稿ルールがなかった→3ファイルv1.1.0に追加。API追加時のdoc更新漏れ検知（Issue#17）。 |
 | Sprint 07  | APIドキュメント整備・パフォーマンス改善・SP版UI修正 | ✅ 全AC達成（#17/#18/#19 全7AC）  | DEVのDiscord投稿漏れが2スプリント連続→developer.md冒頭に⚠️必須事項追加・SMの起動メッセージに明示指示追加。新規API追加時のdoc更新漏れ再発（bulk-status→Issue#22）。MyBatisキャッシュで認可SQL重複は実害なし確認。 |
+| Sprint 08  | セキュリティ脆弱性の修正とAPIドキュメントの整備   | ✅ 全AC達成（#20/#22 全5AC）          | reviewerが「指摘なし」時も観点別確認結果の投稿が必要→reviewer 3ファイルv1.2.0。DEVがbugPBIで実装方針の選択理由を記載していなかった→developer.md v1.11.0で「改修方針」に選択理由必須化。reviewer Discord投稿不可が3スプリント連続。 |
 
 ---
 
@@ -31,7 +32,9 @@
 | Sprint 05  | コミット前format自動実行ルール化                    | ✅ developer.md v1.8.0 に format コマンド必須ルールとして追加       | frontend: npm run format / backend: ./gradlew spotlessApply |
 | Sprint 05  | DEV起動前のTaskCreate必須化                         | ✅ scrum_master.md v1.10.0 に反映。reviewer起動と統一               | 今後のスタンダードとして継続                                |
 | Sprint 06  | reviewerのDiscord投稿ルール明記                     | ✅ convention/security/performance-reviewer.md v1.1.0 に報告手順を追加 | 今後のスタンダードとして継続                             |
-| Sprint 07  | DEVのDiscord投稿を仕組みで担保                      | ✅ developer.md v1.10.0冒頭⚠️追加・scrum_master.md v1.12.0起動メッセージに明示指示追加 | 次スプリントで効果を検証                 |
+| Sprint 07  | DEVのDiscord投稿を仕組みで担保                      | ✅ developer.md v1.10.0冒頭⚠️追加・scrum_master.md v1.12.0起動メッセージに明示指示追加 | Sprint 08で効果確認→作業開始・完了投稿が定着        |
+| Sprint 08  | reviewer「指摘なし」時の観点詳細投稿                | 🔄 reviewer 3ファイルv1.2.0でフォーマット更新済み。次スプリントで効果検証 | convention/security/performance-reviewer.md v1.2.0 |
+| Sprint 08  | DEVのbugPBI改修方針に選択理由・トレードオフ必須化   | 🔄 developer.md v1.11.0で「改修方針」フォーマット強化。次スプリントで効果検証 | developer.md v1.11.0                               |
 
 ---
 
@@ -47,6 +50,7 @@
 - バグPBIには原因調査結果を記載してDEVに渡す（Sprint 03〜）
 - 3観点レビュー（規約・セキュリティ・パフォーマンス）の並列実施（Sprint 05〜 定着確認）
 - Agent Teams連携（TeamCreate + SendMessage）（Sprint 04〜）
+- reviewerがDiscord投稿できない場合のSMによる代理投稿（Sprint 08〜）
 
 ### Stop（やめること）
 
@@ -54,8 +58,10 @@
 - Planningの未決事項をそのままスプリントに持ち込むこと（Sprint 01）
 - PRレビューをチャレンジ項目に留めること（Sprint 02 → Sprint 03でりょこさん指示により確定）
 - コメントのみの変更に `fix:` プレフィックスを使うこと（Sprint 05 → `style:` を使う）
-- DEVがDiscord投稿（作業開始・完了・レビュー指摘対応）を省くこと（Sprint 06〜07 2スプリント連続 → developer.md v1.10.0で冒頭⚠️として強調・SM起動メッセージに明示追加）
+- DEVがDiscord投稿（作業開始・完了・レビュー指摘対応）を省くこと（Sprint 06〜07 2スプリント連続 → developer.md v1.10.0で冒頭⚠️として強調・SM起動メッセージに明示追加 → Sprint 08で定着確認）
 - reviewerがレビュー結果を`#20-sprint`に投稿しないこと（Sprint 06 → reviewer Skills v1.1.0に投稿ルールを明記）
+- reviewerが「指摘なし」の場合にシンプルな1行報告で済ませること（Sprint 08 → reviewer v1.2.0で観点別確認結果フォーマットを追加）
+- DEVがbugPBIで実装方針の選択理由を省いて報告すること（Sprint 08 → developer.md v1.11.0で「改修方針」に選択理由必須化）
 
 ### Avoid（回避すること）
 
@@ -65,9 +71,11 @@
 - キャッシュ制御（force: true/false）の不統一（Sprint 03 → 今後のDEVレビューで注意）
 - format未実施のままコミットすること（Sprint 05 → developer.md v1.8.0でルール化）
 - UTコードを放置したまま機能実装を完了とすること（Sprint 05 → Issue#15で対応予定）
-- API追加・変更時にapi_integration.md等のドキュメント更新を省くこと（Sprint 06・07と2スプリント連続 → Issue#22で対応予定・AC化を検討）
+- API追加・変更時にapi_integration.md等のドキュメント更新を省くこと（Sprint 06・07と2スプリント連続 → Issue#22で対応済み）
+- reviewerがDiscord投稿できない問題が連続スプリントになること（Sprint 06〜08で3スプリント連続・根本解決が必要）
 
 ### Challenge（次に試すこと）
 
-- api_integration.md更新をDEVの完了チェックリストに組み込む（バックログのAC化を検討）
+- reviewer「指摘なし」時の観点詳細投稿（Sprint 09で効果検証）
+- DEVのbugPBI改修方針に選択理由記載（Sprint 09で効果検証）
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6）
