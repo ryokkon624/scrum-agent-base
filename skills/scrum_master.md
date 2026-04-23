@@ -1,8 +1,8 @@
 # Skills: Scrum Master (SM)
 
-**バージョン**: 1.11.0
-**最終更新**: 2026-04-21
-**更新理由**: PlanningのPBI表記をGitHub Issue番号形式に変更
+**バージョン**: 1.12.0
+**最終更新**: 2026-04-23
+**更新理由**: DEV起動SendMessageにDiscord投稿の明示的指示を追加（Sprint 07 Retro）
 
 ---
 
@@ -87,7 +87,11 @@ DEVへ: backlog/sprint_XX/sprint_backlog.md を読んで作業を開始してく
 2. developerタイプのteammateを起動する。
 3. SendMessageでDEVに以下を伝える：
    「DEVモードで動いて。skills/developer.md と memory/dev/short_term.md と
-   backlog/sprint_XX/sprint_backlog.md を読んで、作業を開始してください。」
+   backlog/sprint_XX/sprint_backlog.md を読んで、作業を開始してください。
+   以下の3点は必ず実施してください：
+   ① 作業開始時に `#20-sprint` の作業スレッドに投稿する
+   ② 作業完了時に `#20-sprint` の作業スレッドに投稿する
+   ③ レビュー指摘対応完了時に `#20-sprint` の作業スレッドに投稿する」
 ```
 
 ---

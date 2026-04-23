@@ -1,7 +1,7 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 07（未開始）
-**最終更新**: 2026-04-22
+**スプリント**: Sprint 08（未開始）
+**最終更新**: 2026-04-23
 
 ---
 
@@ -30,17 +30,18 @@
 ## チャレンジ項目
 
 - Claudeモデル最新バージョン確認（現在: claude-sonnet-4-6）
-- api_integration.md更新漏れ防止チェックリストの整備
+- api_integration.md更新をDEVの完了チェックリストに組み込む（バックログのAC化を検討）
 
 ---
 
-## Sprint 06 完了メモ
+## Sprint 07 完了メモ
 
-- #16: lightbulbアイコン復元 ✅（fix/10-housework-template-i18n）
-- #15: UTコード整備・convention-reviewerへのUT観点追加 ✅
-- Retro完了: #40-retrospective Sprint 06 Retrospective（ID: 1496379535229190154）
-- GitHub Issue作成: #17（api_integration.md更新漏れ）、#18（ShoppingListPage.vue onClickCompletePurchase並列化）
-- Skills更新: convention/security/performance-reviewer.md v1.1.0（Discord投稿ルール追加）
+- #17: api_integration.md に DELETE エンドポイント追記 ✅（docs/17-update-api-integration-doc）
+- #18: バッチ更新API追加・N+1解消・UT追加 ✅（refactor/18-parallelize-complete-purchase）
+- #19: SP版ヘッダ修正（ロゴ+LanguageSwitcherのみ） ✅（fix/19-sp-header-layout）
+- Retro完了: #40-retrospective Sprint 07 Retrospective（ID: 1496742775268315307）
+- GitHub Issue作成: #22（bulk-status API api_integration.md追加漏れ）
+- Skills更新: developer.md v1.10.0（Discord投稿ルール冒頭強調）、scrum_master.md v1.12.0（起動メッセージに指示追加）
 
 ---
 
