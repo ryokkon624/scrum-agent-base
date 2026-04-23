@@ -53,8 +53,7 @@ claude
 
 ```
 SMモードで動いて。
-skills/scrum_master.md と memory/sm/short_term.md と memory/sm/long_term.md と
-backlog/product_backlog.md を読んで、
+skills/scrum_master.md と memory/sm/short_term.md と memory/sm/long_term.md を読んで、
 Sprint XXのPlanningを開始してください。
 ```
 
@@ -157,14 +156,14 @@ scrum-agent-base/
 
 ## Discordサーバー（scrum-agents）のチャンネル構成
 
-| チャンネル          | タイプ | 用途 |
-| ------------------- | ------ | ---- |
-| #backlog-refinement | Text   | POとのバックログ詳細化 |
-| #skills-changelog   | Text   | Skillsファイル更新履歴 |
-| #10-planning        | Forum  | Sprint Planning |
-| #20-sprint          | Forum  | Sprint作業・コードレビュー |
+| チャンネル          | タイプ | 用途                                  |
+| ------------------- | ------ | ------------------------------------- |
+| #backlog-refinement | Text   | POとのバックログ詳細化                |
+| #skills-changelog   | Text   | Skillsファイル更新履歴                |
+| #10-planning        | Forum  | Sprint Planning                       |
+| #20-sprint          | Forum  | Sprint作業・コードレビュー            |
 | #30-sprint-review   | Forum  | Sprint Review・りょこさんへの確認依頼 |
-| #40-retrospective   | Forum  | Retrospective |
+| #40-retrospective   | Forum  | Retrospective                         |
 
 ---
 
