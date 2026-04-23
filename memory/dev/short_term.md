@@ -1,38 +1,26 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 07  
+**スプリント**: Sprint 08  
 **最終更新**: 2026-04-23
 
 ---
 
 ## 担当タスクメモ
 
-### Issue #17: api_integration.md の更新
-- ブランチ: docs/17-update-api-integration-doc (hw-hub-frontend)
+### Issue #20: bulkUpdateStatus 認可チェック漏れ修正
+- ブランチ: fix/20-bulk-update-status-auth (hw-hub-backend)
 - 対応内容:
-  - `doc/api_integration.md` のセクション3「買い物アイテム詳細」に `DELETE /api/shopping-items/{id}` を追記
-  - 関連コンポーネント: `shoppingStore` (`shoppingItemApi`)
+  - `HouseworkTaskRepository` に `countByIdsAndHouseholdId` メソッドを追加
+  - `HouseworkTaskCustomMapper.xml` に COUNT クエリを追加
+  - `HouseworkTaskService.bulkUpdateStatus` で全taskIdが同一世帯に属することを検証
+  - 不正なIDが含まれる場合は `AccessDeniedException`（403）を返す
+  - `HouseworkTaskServiceSpec` に他世帯ID混在テストを追加、既存テストにcountモック追加
 
-### Issue #18: onClickCompletePurchase の並列化
-- ブランチ: refactor/18-parallelize-complete-purchase (hw-hub-frontend + hw-hub-backend)
-- バックエンド:
-  - `PATCH /api/shopping-items/bulk-status` エンドポイントを追加
-  - `BulkUpdateStatusRequest` DTO (`ids: List<Long>`, `status: String`)
-  - `ShoppingItemService.bulkUpdateStatus()` を追加（@Transactional）
-  - `ShoppingItemServiceSpec.groovy` にbulkUpdateStatusのUT3件追加
-- フロントエンド:
-  - `shoppingItemApi.bulkUpdateStatus(ids, status)` を追加
-  - `shoppingStore.bulkUpdateStatus(householdId, ids, status)` を追加
-  - `ShoppingListPage.vue` の `onClickCompletePurchase` をループ→バッチAPI1回に変更
-  - `shoppingItemApi.spec.ts` に bulkUpdateStatus のUT追加
-  - `shoppingStore.spec.ts` に bulkUpdateStatus のUT追加（mock追加含む）
-
-### Issue #19: SP版LandingPageのサインアップボタン折り返し
-- ブランチ: fix/19-sp-header-layout (hw-hub-frontend)
+### Issue #22: api_integration.md に bulk-status エンドポイント追加
+- ブランチ: docs/22-api-integration-bulk-status (hw-hub-frontend)
 - 対応内容:
-  - `LandingPage.vue` のログインボタン: `hidden sm:block` → `hidden md:block`
-  - `LandingPage.vue` のサインアップボタン: `hidden md:block` クラスを追加
-  - SP版（md未満）でログイン・サインアップボタンを非表示に変更
+  - `doc/api_integration.md` のセクション3「買い物リスト」に `PATCH /api/shopping-items/bulk-status` を追記
+  - 既存フォーマット（空セル継続行パターン）に準拠
 
 ---
 
@@ -40,7 +28,7 @@
 
 | 日付 | 問題 | 原因 | 解決策 |
 |------|------|------|--------|
-| 2026-04-22 | #16のブランチを間違えた | バックログのブランチ指定を確認せずmainから新規ブランチを切った | SMからの指示で fix/10 ブランチに再コミット。未マージブランチ上のバグ修正は、そのブランチに追加コミットする |
+| (Sprint 08ではなし) | | | |
 
 ---
 
