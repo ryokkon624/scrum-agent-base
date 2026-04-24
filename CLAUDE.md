@@ -1,112 +1,52 @@
 # CLAUDE.md - scrum-agent-base
 
-このリポジトリはスクラムエージェント基盤です。
-Claude Codeがこのディレクトリで起動したとき、このファイルを読んで行動してください。
+HwHubプロジェクトのスクラムエージェント基盤。
+SM・DEV・PO・各レビュアーが協調してスプリントを回す。
 
 ---
 
 ## プロジェクトのパス構成
 
-- エージェント基盤: C:\work\claude\scrum-agent-base
-- フロントエンド: C:\work\hw-hub\hw-hub-frontend
-- バックエンド: C:\work\hw-hub\hw-hub-backend
+| リポジトリ       | パス                              |
+| ---------------- | --------------------------------- |
+| エージェント基盤 | `C:\work\claude\scrum-agent-base` |
+| フロントエンド   | `C:\work\hw-hub\hw-hub-frontend`  |
+| バックエンド     | `C:\work\hw-hub\hw-hub-backend`   |
+| バッチ           | `C:\work\hw-hub\hw-hub-batch`     |
+| データベース     | `C:\work\hw-hub\hw-hub-database`  |
 
 ---
 
-## ロールの指定方法
+## 技術スタック
 
-起動時またはりょこさんから「POモードで動いて」「SMモードで動いて」「DEVモードで動いて」と
-指示されたら、該当のSkillsファイルとmemoryを読み込んで行動してください。
-
-| 指示                       | 読み込むファイル                                                            |
-| -------------------------- | --------------------------------------------------------------------------- |
-| POモード（対りょこさん）   | skills/product_owner.md + memory/po/short_term.md + memory/po/long_term.md |
-| POモード（対エージェント） | skills/product_owner.md + memory/po/short_term.md                           |
-| SMモード                   | skills/scrum_master.md + memory/sm/short_term.md + memory/sm/long_term.md  |
-| DEVモード                  | skills/developer.md + memory/dev/short_term.md + memory/dev/long_term.md   |
+| リポジトリ     | 主要技術                                                                   |
+| -------------- | -------------------------------------------------------------------------- |
+| フロントエンド | Vue 3 / TypeScript / Pinia / Tailwind CSS / Vite / Vitest                  |
+| バックエンド   | Java 21 / Spring Boot 4.x / MyBatis / Flyway / MySQL 8.4 / Groovy + Spock  |
+| バッチ         | Java 21 / Spring Boot 4.x / Spring Batch / MyBatis / Groovy + Spock        |
+| インフラ       | AWS ECS Fargate / RDS / S3 / CloudFront / ALB / Terraform / GitHub Actions |
 
 ---
 
-## メンションで指示を受けたときのルール
+## ロールの起動方法
 
-Discordで `@scrum-agent` を含むメッセージを受け取ったら以下のルールに従う：
+りょこさんから「〇〇モードで動いて」と指示されたら、対応するagent定義を参照して行動する。
 
-1. メッセージの内容を指示として実行する
-2. 「XXモードで動いて」という指示があれば該当Skillsを読み込む
-3. 作業中の報告・質問は**指示を受けたチャンネル・スレッド**に投稿する
-4. 次のエージェントへの引き継ぎはAgent Teamsを使う（下記参照）
-
----
-
-## スレッドの使い方ルール
-
-**無駄なスレッドを作らない。**
-
-| イベント | スレッドの扱い |
-|---------|---------------|
-| SMがPlanningを実施 | `#10-planning` のPlanningスレッドに報告 |
-| SMがDEVに作業指示 | **`#20-sprint` に新スレッドを作成** |
-| DEVが作業・修正完了 | `#20-sprint` の作業スレッドに投稿 |
-| SMがReviewerの指摘をまとめる | `#20-sprint` の作業スレッドに投稿 |
-| SMがSprint Reviewを実施 | **`#30-sprint-review` に新スレッドを作成** |
-| SMがRetroを実施 | **`#40-retrospective` に新スレッドを作成** |
+| 指示                  | 参照するagent定義                 |
+| --------------------- | --------------------------------- |
+| 「SMモードで動いて」  | `.claude/agents/scrum-master.md`  |
+| 「DEVモードで動いて」 | `.claude/agents/developer.md`     |
+| 「POモードで動いて」  | `.claude/agents/product-owner.md` |
 
 ---
 
-## エージェント間連携（Agent Teams）
+## 行動原則
 
-エージェント間の引き継ぎは **Claude Code Agent Teams** を使う。
-
-### 仕組み
-SMがチームリードとして動き、DEV・reviewerをteammateとして起動する。
-各teammateは独自のコンテキストウィンドウを持ち、SendMessageで直接メッセージできる。
-
-### Subagent定義ファイルの場所
-- SM: `.claude/agents/scrum-master.md`
-- DEV: `.claude/agents/developer.md`
-- 規約レビュアー: `.claude/agents/convention-reviewer.md`
-- セキュリティレビュアー: `.claude/agents/security-reviewer.md`
-- パフォーマンスレビュアー: `.claude/agents/performance-reviewer.md`
-
-### 注意事項
+- バックログに書いていない追加実装は自己判断でやらない
 - Agent Teamsが使えない場合はDiscord投稿のみで完了とする
-- SendMessageが成功したら、そのセッションの作業は終了する（無限ループ防止）
-
----
-
-## Discordの使い方
-
-- mcp-discordを使ってDiscordのチャンネルに投稿できます
-- 投稿時は必ずロールのプレフィックス（[PO][SM][DEV]）をつけてください
-- 投稿前に対象チャンネルの最新メッセージを読んでください
-
-### チャンネルID一覧
-
-| チャンネル          | ID                  | タイプ | 投稿ツール                                         |
-| ------------------- | ------------------- | ------ | -------------------------------------------------- |
-| #backlog-refinement | 1489422321424007178 | Text   | discord_send                                       |
-| #skills-changelog   | 1489422432635850863 | Text   | discord_send                                       |
-| #10-planning        | 1489422519416131644 | Forum  | discord_create_forum_post / discord_reply_to_forum |
-| #20-sprint          | 1489422592539623614 | Forum  | discord_create_forum_post / discord_reply_to_forum |
-| #30-sprint-review   | 1489422648449695824 | Forum  | discord_create_forum_post / discord_reply_to_forum |
-| #40-retrospective   | 1489422706435821701 | Forum  | discord_create_forum_post / discord_reply_to_forum |
-
-### サーバー情報
-
-- Guild ID: 1489421564439797780（scrum-agents）
 
 ---
 
 ## バックログの場所
 
-- プロダクトバックログ: backlog/product_backlog.md
-- 各スプリントバックログ: backlog/sprint_XX/sprint_backlog.md
-
----
-
-## 重要なルール
-
-- mainブランチへの直接pushは禁止
-- PRは作成しない（コミットまで実施。PR作成はりょこさんが行う）
-- バックログに書いていない追加実装は自己判断でやらない
-- Skillsファイルを読まずにロールとして行動しない
+- 各スプリントバックログ: `backlog/sprint_XX/sprint_backlog.md`
