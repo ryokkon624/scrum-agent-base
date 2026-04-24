@@ -17,6 +17,11 @@
 - 2026-04-23 Refinement実施：#17・#18・#19のBody整備完了（りょこさんがReady・Sprint列更新予定）
   - #17: ブランチprefixは `docs/`（docsラベル相当の作業漏れ修正）
   - #18: AC1をバッチ更新API追加に限定（Promise.allによる並列化は不可）
+- 2026-04-23 Refinement実施：#20・#22・#23・#24のBody整備完了（りょこさんがReady・Sprint列更新予定）
+  - #20: bugラベル・深刻度高のセキュリティ脆弱性。ブランチ `fix/20-bulk-update-status-auth`
+  - #22: bugラベル・docsの作業漏れ。ブランチ `docs/22-api-integration-bulk-status`
+  - #23: SP版ヘッダーコンパクト化。ブランチ `feature/23-sp-header-compact`
+  - #24: ボタン配置統一。概要の誤記（家事テンプレートカードのボタン：左→右）も修正。ブランチ `feature/24-button-layout-unify`
 
 ---
 
