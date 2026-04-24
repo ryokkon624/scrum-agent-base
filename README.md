@@ -32,6 +32,8 @@ SM
 
 ### 基本（Agent Teams + Discordメンション受信）
 
+Discordで@scrum-agent メンションするとClaudeに指示を出せる。
+
 ```powershell
 # scrum-agent-baseに移動して起動
 cd C:\work\claude\scrum-agent-base
@@ -53,17 +55,16 @@ claude
 
 ```
 SMモードで動いて。
-skills/scrum_master.md と memory/sm/short_term.md と memory/sm/long_term.md を読んで、
 Sprint XXのPlanningを開始してください。
 ```
 
 ### Discordから指示する場合（--channelsで起動中のターミナルが必要）
 
-scrum-agentsサーバーの `#10-planning` の該当スレッドや `#standup` などで：
+scrum-agentsサーバーの `#10-planning` の該当スレッドや `#30-sprint-review` などで：
 
 ```
-@scrum-agent SMモードで動いて。skills/scrum_master.md と memory/sm/short_term.md と
-memory/sm/long_term.md を読んで、Sprint XXのPlanningを開始してください。
+@scrum-agent SMモードで動いて。
+Sprint XXのレトロスペクティブを開始してください。
 ```
 
 ---
@@ -95,8 +96,7 @@ SMが `#30-sprint-review` にReviewスレッドを投稿した時点でClaude Co
 
 ```
 SMモードで動いて。
-skills/scrum_master.md と memory/sm/short_term.md と memory/sm/long_term.md を読んで、
-#30-sprint-reviewの最新スレッドを確認してレトロを実施してください。
+Sprint XXのレトロスペクティブを開始してください。
 ```
 
 ---
@@ -109,16 +109,23 @@ scrum-agent-base/
 ├── README.md                    # このファイル
 ├── .claude/
 │   ├── settings.json            # Agent Teams有効化設定
+│   ├── rules/
+│   │   └── git.md               # Gitコミットメッセージのルール
 │   └── agents/
-│       ├── scrum-master.md      # SMのsubagent定義
-│       ├── developer.md         # DEVのsubagent定義
-│       ├── convention-reviewer.md    # 規約レビュアーのsubagent定義
-│       ├── security-reviewer.md      # セキュリティレビュアーのsubagent定義
-│       └── performance-reviewer.md   # パフォーマンスレビュアーのsubagent定義
+│       ├── product-owner.md         # POのsubagent定義
+│       ├── scrum-master.md          # SMのsubagent定義
+│       ├── developer.md             # DEVのsubagent定義
+│       ├── convention-reviewer.md   # 規約レビュアーのsubagent定義
+│       ├── security-reviewer.md     # セキュリティレビュアーのsubagent定義
+│       └── performance-reviewer.md  # パフォーマンスレビュアーのsubagent定義
 ├── skills/
-│   ├── scrum_master.md          # SMの行動規範
-│   ├── developer.md             # DEVの行動規範
-│   └── product_owner.md         # POの行動規範
+│   ├── scrum-master-workflow/   # SMの作業フロー
+│   ├── developer-workflow/      # DEVの作業フロー
+│   ├── product-owner-workflow/  # POの作業フロー
+│   ├── backend-conventions/     # Backendコーディング規約
+│   ├── frontend-conventions/    # Frontendコーディング規約
+│   ├── discord-operations/      # Discordの操作方法
+│   └── github-issues/           # Github ProjectsのIssuesの操作方法
 ├── memory/
 │   ├── sm/
 │   │   ├── short_term.md        # SMの今スプリントの記憶
@@ -130,7 +137,7 @@ scrum-agent-base/
 │       ├── short_term.md        # POの今スプリントの記憶
 │       └── long_term.md         # POの過去スプリントの教訓
 └── backlog/
-    ├── product_backlog.md       # プロダクトバックログ
+    ├── product_backlog.md       # 未使用（Github ProjectsのIssueに移管済み）
     └── sprint_XX/
         └── sprint_backlog.md    # スプリントバックログ（SMがPlanning時に作成）
 ```
@@ -156,14 +163,13 @@ scrum-agent-base/
 
 ## Discordサーバー（scrum-agents）のチャンネル構成
 
-| チャンネル          | タイプ | 用途                                  |
-| ------------------- | ------ | ------------------------------------- |
-| #backlog-refinement | Text   | POとのバックログ詳細化                |
-| #skills-changelog   | Text   | Skillsファイル更新履歴                |
-| #10-planning        | Forum  | Sprint Planning                       |
-| #20-sprint          | Forum  | Sprint作業・コードレビュー            |
-| #30-sprint-review   | Forum  | Sprint Review・りょこさんへの確認依頼 |
-| #40-retrospective   | Forum  | Retrospective                         |
+| チャンネル        | タイプ | 用途                                  |
+| ----------------- | ------ | ------------------------------------- |
+| #skills-changelog | Text   | Skillsファイル更新履歴                |
+| #10-planning      | Forum  | Sprint Planning                       |
+| #20-sprint        | Forum  | Sprint作業・コードレビュー            |
+| #30-sprint-review | Forum  | Sprint Review・りょこさんへの確認依頼 |
+| #40-retrospective | Forum  | Retrospective                         |
 
 ---
 
@@ -173,4 +179,4 @@ scrum-agent-base/
 - **エージェント間メッセージング**: SendMessage（Agent Teams組み込み）
 - **Discordとの連携（投稿）**: mcp-discord
 - **Discordとの連携（受信）**: Claude Code Channels（`--channels`フラグ）
-- **タスク可視化**: claude-task-viewer（`npx claude-task-viewer`）
+- **Sprint backlog可視化**: claude-task-viewer（`npx claude-task-viewer`）
