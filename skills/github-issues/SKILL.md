@@ -12,6 +12,11 @@ HwHubスクラムチームのGitHub Issue参照・作成・更新の手順。
 - **リポジトリ**: `ryokkon624/hw-hub-manage`（Private）
 - **認証**: 環境変数 `GITHUB_PERSONAL_ACCESS_TOKEN` に設定済み
 - **GitHub Projects**: `@ryokkon624's Housework Hub project`
+  - Project ID: `PVT_kwHODoPAds4BIV4c`
+  - Ready フィールドID: `PVTSSF_lAHODoPAds4BIV4czhQksUs`
+  - Sprint フィールドID: `PVTF_lAHODoPAds4BIV4czhQkvCg`
+  - Status フィールドID: `PVTSSF_lAHODoPAds4BIV4czg41IJE`
+  - Ready選択肢ID: `8af4afdd`=Ready / `12a25b5b`=NotReady / `832f7c5e`=Draft / `8fa84e1b`=Drop
 
 ---
 
@@ -66,16 +71,40 @@ curl -s \
 
 ### 3. Issueを新規作成する
 
+**Step 1: Issue作成（REST API）**
+
 ```bash
 curl -s -X POST \
   -H "Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
   -H "Accept: application/vnd.github+json" \
   -H "Content-Type: application/json" \
   "https://api.github.com/repos/ryokkon624/hw-hub-manage/issues" \
-  -d '{"title": "[タイトル]", "body": "[本文]"}'
+  -d '{"title": "[タイトル]", "body": "[本文]", "labels": ["[ラベル]"]}'
 ```
 
-**注意:** 作成後のReadyフィールド（Draft設定）とSprintフィールドの入力はりょこさんが行う。
+レスポンスから `node_id`（`I_kwDOR5...` 形式）を取得する。
+
+**Step 2: GitHub Projects #1 に追加（GraphQL）**
+
+```bash
+curl -s -X POST \
+  -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\": \"mutation { addProjectV2ItemById(input: { projectId: \\\"PVT_kwHODoPAds4BIV4c\\\", contentId: \\\"[node_id]\\\") { item { id } } }\"}" \
+  "https://api.github.com/graphql"
+```
+
+レスポンスから `item.id`（`PVTI_lAH...` 形式）を取得する。
+
+**Step 3: ReadyフィールドをDraftに設定（GraphQL）**
+
+```bash
+curl -s -X POST \
+  -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\": \"mutation { updateProjectV2ItemFieldValue(input: { projectId: \\\"PVT_kwHODoPAds4BIV4c\\\", itemId: \\\"[item_id]\\\", fieldId: \\\"PVTSSF_lAHODoPAds4BIV4czhQksUs\\\", value: { singleSelectOptionId: \\\"832f7c5e\\\" } }) { projectV2Item { id } } }\"}" \
+  "https://api.github.com/graphql"
+```
 
 ### 4. IssueのBodyを更新する
 
@@ -98,15 +127,43 @@ curl -s -X PATCH \
   --data-binary "@C:/work/claude/issue{N}_body.json"
 ```
 
+### 5. GitHub ProjectsのフィールドをGraphQLで操作する
+
+#### 5-1. Project一覧をReadyフィールド付きで取得する
+
+```bash
+curl -s -X POST \
+  -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ user(login: \"ryokkon624\") { projectV2(number: 1) { items(first: 50) { nodes { id fieldValues(first: 20) { nodes { ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name } } } ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2Field { name } } } } } content { ... on Issue { number title state } } } } } } }"}' \
+  "https://api.github.com/graphql"
+```
+
+#### 5-2. ReadyフィールドをReadyに更新する（Refinement完了後）
+
+```bash
+curl -s -X POST \
+  -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\": \"mutation { updateProjectV2ItemFieldValue(input: { projectId: \\\"PVT_kwHODoPAds4BIV4c\\\", itemId: \\\"[PVTI_...]\\\", fieldId: \\\"PVTSSF_lAHODoPAds4BIV4czhQksUs\\\", value: { singleSelectOptionId: \\\"8af4afdd\\\" } }) { projectV2Item { id } } }\"}" \
+  "https://api.github.com/graphql"
+```
+
+#### 5-3. SprintフィールドをNに設定する
+
+```bash
+curl -s -X POST \
+  -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\": \"mutation { updateProjectV2ItemFieldValue(input: { projectId: \\\"PVT_kwHODoPAds4BIV4c\\\", itemId: \\\"[PVTI_...]\\\", fieldId: \\\"PVTF_lAHODoPAds4BIV4czhQkvCg\\\", value: { number: N } }) { projectV2Item { id } } }\"}" \
+  "https://api.github.com/graphql"
+```
+
 ---
 
 ## 注意事項
 
-- **ReadyフィールドはREST APIから参照・更新不可**（GitHub Projectsのカスタムフィールドのため）
-  - ReadyフィールドはりょこさんがGitHub Projects画面で操作する
-  - `Ready: Draft` のIssueを確認したい場合はりょこさんに確認する
-
-- **Sprintフィールドも同様にREST APIから更新不可**
-  - 対象SprintへのIssue割り当てはりょこさんが行う
-
-- IssueのBodyを更新した後、Readyフィールド（Draft→Ready）の変更はりょこさんが行う
+- **GitHub ProjectsのカスタムフィールドはREST APIから参照・更新不可**（GraphQL APIを使うこと）
+- Issue作成後は必ず手順3のStep 2〜3を実行し、Projectへの追加とReadyフィールド（Draft）の設定まで行う
+- Refinement完了後のReady更新（Draft→Ready）はPOが手順5-2で実施する
+- **りょこさんが引き続き手動で行う作業**: Planning前の優先順位並び替え
