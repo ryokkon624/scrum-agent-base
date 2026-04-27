@@ -16,6 +16,7 @@
 | Sprint 06  | lightbulbアイコン復元・UTコード整備・レビュー観点追加 | ✅ 全AC達成（#16/#15 全6AC）       | DEVがDiscord投稿（作業開始・完了・レビュー指摘対応）を省いた。reviewerもDiscord投稿せずSMがフォロー。reviewer Skillsに投稿ルールがなかった→3ファイルv1.1.0に追加。API追加時のdoc更新漏れ検知（Issue#17）。 |
 | Sprint 07  | APIドキュメント整備・パフォーマンス改善・SP版UI修正 | ✅ 全AC達成（#17/#18/#19 全7AC）  | DEVのDiscord投稿漏れが2スプリント連続→developer.md冒頭に⚠️必須事項追加・SMの起動メッセージに明示指示追加。新規API追加時のdoc更新漏れ再発（bulk-status→Issue#22）。MyBatisキャッシュで認可SQL重複は実害なし確認。 |
 | Sprint 08  | セキュリティ脆弱性の修正とAPIドキュメントの整備   | ✅ 全AC達成（#20/#22 全5AC）          | reviewerが「指摘なし」時も観点別確認結果の投稿が必要→reviewer 3ファイルv1.2.0。DEVがbugPBIで実装方針の選択理由を記載していなかった→developer.md v1.11.0で「改修方針」に選択理由必須化。reviewer Discord投稿不可が3スプリント連続。 |
+| Sprint 09  | SP版ヘッダーの視認性改善とUIボタン配置の統一      | ✅ 全AC達成（#23/#24 全10AC）         | SMが作業スレッドをIssueごとに作成→DEV #24着手遅延→scrum-master-workflow v1.1.0で1スプリント1スレッド制約を明記。SM・DEVの投稿にプレフィックス欠如（reviewerは順守）→developer-workflow v1.1.0で[DEV]プレフィックス必須化。指摘対応後の再レビューを省略→scrum-master-workflow v1.1.0で再レビュー必須化を明記。 |
 
 ---
 
@@ -33,8 +34,11 @@
 | Sprint 05  | DEV起動前のTaskCreate必須化                         | ✅ scrum_master.md v1.10.0 に反映。reviewer起動と統一               | 今後のスタンダードとして継続                                |
 | Sprint 06  | reviewerのDiscord投稿ルール明記                     | ✅ convention/security/performance-reviewer.md v1.1.0 に報告手順を追加 | 今後のスタンダードとして継続                             |
 | Sprint 07  | DEVのDiscord投稿を仕組みで担保                      | ✅ developer.md v1.10.0冒頭⚠️追加・scrum_master.md v1.12.0起動メッセージに明示指示追加 | Sprint 08で効果確認→作業開始・完了投稿が定着        |
-| Sprint 08  | reviewer「指摘なし」時の観点詳細投稿                | 🔄 reviewer 3ファイルv1.2.0でフォーマット更新済み。次スプリントで効果検証 | convention/security/performance-reviewer.md v1.2.0 |
-| Sprint 08  | DEVのbugPBI改修方針に選択理由・トレードオフ必須化   | 🔄 developer.md v1.11.0で「改修方針」フォーマット強化。次スプリントで効果検証 | developer.md v1.11.0                               |
+| Sprint 08  | reviewer「指摘なし」時の観点詳細投稿                | ✅ Sprint 09で全3観点が詳細フォーマットで投稿された | convention/security/performance-reviewer.md v1.2.0 |
+| Sprint 08  | DEVのbugPBI改修方針に選択理由・トレードオフ必須化   | 🔄 Sprint 09はbugPBIなし・未検証。Sprint 10へ持ち越し | developer.md v1.11.0                               |
+| Sprint 09  | 1スプリント1作業スレッド制約の明記                  | ✅ scrum-master-workflow v1.1.0で② DEV起動に⚠️として追記 | scrum-master-workflow v1.1.0 |
+| Sprint 09  | SM・DEV投稿への役割プレフィックス必須化             | ✅ developer-workflow v1.1.0で⚠️必須事項に`[DEV]`プレフィックス追記 | developer-workflow v1.1.0 |
+| Sprint 09  | 指摘対応後の再レビュー必須化                        | ✅ scrum-master-workflow v1.1.0で⑤ DEV再起動後に再レビュー必須を明記 | scrum-master-workflow v1.1.0 |
 
 ---
 
@@ -73,9 +77,11 @@
 - UTコードを放置したまま機能実装を完了とすること（Sprint 05 → Issue#15で対応予定）
 - API追加・変更時にapi_integration.md等のドキュメント更新を省くこと（Sprint 06・07と2スプリント連続 → Issue#22で対応済み）
 - reviewerがDiscord投稿できない問題が連続スプリントになること（Sprint 06〜08で3スプリント連続・根本解決が必要）
+- SMがIssueごとにスレッドを分割してDEV着手遅延を招くこと（Sprint 09 → scrum-master-workflow v1.1.0で制約明記）
+- SM・DEVが投稿プレフィックスを省くこと（Sprint 09 → developer-workflow v1.1.0で必須化）
+- 指摘対応後の再レビューを省いてSprintReviewに進むこと（Sprint 09 → scrum-master-workflow v1.1.0で必須化）
 
 ### Challenge（次に試すこと）
 
-- reviewer「指摘なし」時の観点詳細投稿（Sprint 09で効果検証）
-- DEVのbugPBI改修方針に選択理由記載（Sprint 09で効果検証）
+- DEVのbugPBI改修方針に選択理由記載（Sprint 09はbugPBIなし・未検証 → Sprint 10で検証）
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6）
