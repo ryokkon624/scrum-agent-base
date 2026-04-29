@@ -1,11 +1,49 @@
 # Dev 短期記憶
 
 **スプリント**: Sprint 10  
-**最終更新**: 2026-04-28
+**最終更新**: 2026-04-29
 
 ---
 
 ## 担当タスクメモ
+
+### Issue #32: houseworkTaskStoreカプセル化（SP:2）
+- **ブランチ**: `refactor/32-housework-task-store-encapsulation`
+- 実装方針（りょこさん承認済み 2026-04-29）:
+  - `houseworkTaskStore.ts` に `tasksFor(householdId, status)` getter を追加（`itemsFor` と同パターン）
+  - 3コンポーネントの `cacheByKey` 直接参照をgetter経由に変更:
+    - `src/components/home/MyTasksCard.vue` (29行目)
+    - `src/components/home/UnassignedTasksCard.vue` (27行目)
+    - `src/components/home/HouseholdSituationCard.vue` (64-65行目)
+  - `getCacheKey` action の使用箇所確認後、不要なら削除
+  - `tasksFor` の単体テスト追加（TDD: RED → GREEN → REFACTOR）
+- **TaskCreateリスト**:
+  - [ ] #32 tasksFor getter追加（テスト先行）
+  - [ ] #32 3コンポーネントのgetter経由修正
+  - [ ] #32 getCacheKey action 不要なら削除
+
+### Issue #3: おうち未所属ガード＆導線整理（SP:5）
+- **ブランチ**: `feature/3-household-guard-guide`
+- 実装方針（りょこさん承認済み 2026-04-29）:
+  - **AC7先行（必須）**: `OnboardingCard` 内の「おうちに参加・作成する」カードを `OnboardingStepCard.vue` として切り出し。もう一つのカード切り出しはDEV判断
+  - **AC1**: `ShoppingListPage.vue` — おうち未所属時に `OnboardingStepCard` を表示（追加メッセージあり）
+  - **AC2**: `ShoppingListPage.vue` の「追加する」ボタンを非活性。`ShoppingItemCreatePage.vue` は登録ボタン非活性のみ（OnboardingCard表示は不要）
+  - **AC3**: `HouseworkSettingsPage.vue` — おうち未所属時に `OnboardingStepCard` を表示（追加メッセージあり）
+  - **AC4**: `HouseworkSettingsPage.vue` の登録ボタンを非活性。`HouseworkCreatePage.vue` は登録ボタン非活性のみ
+  - **AC5**: PC版 `AppLayout.vue` — 「おうちが選択されていません」を「＋ おうちに参加・作成」リンクボタンに変更（カッコよいスタイル・他ナビボタン踏襲不要）
+  - **AC6**: `HouseholdSwitcherField.vue` — `noneSelected` キーの使用箇所確認、他で使われていなければキーの値を「+ おうちに参加・作成」に変更。おうち設定画面へ遷移
+  - **i18n**: 新規追加・変更キーは ja/en/es 3言語全対応必須
+- **TaskCreateリスト**:
+  - [ ] #3 OnboardingStepCard.vue 切り出し（AC7先行）
+  - [ ] #3 AC1・AC2 ShoppingListPage修正
+  - [ ] #3 AC3・AC4 HouseworkSettingsPage修正
+  - [ ] #3 AC5 PC版AppLayout修正
+  - [ ] #3 AC6 HouseholdSwitcherField修正
+  - [ ] #3 i18n（ja/en/es）追加・変更
+
+---
+
+## 過去スプリントの担当タスクメモ
 
 ### Issue #31: 買い物アイテム更新APIのURL変更
 - ブランチ: refactor/31-shopping-item-put-url (hw-hub-backend / hw-hub-frontend)

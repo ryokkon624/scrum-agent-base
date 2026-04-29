@@ -1,23 +1,21 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 11
+**スプリント**: Sprint 12
 **最終更新**: 2026-04-29
 
 ---
 
 ## スプリントゴール
 
-フロントエンドのstore設計とUI導線の品質向上：storeカプセル化の完結とおうち未所属ユーザーへのガイド導線整備
+（Planning時に設定）
 
 ---
 
-## Planning完了（2026-04-29）
+## Planning完了
 
-- [x] #32・#3 Issue Body確認
-- [x] `backlog/sprint_11/sprint_backlog.md` 作成
-- [x] `#10-planning` Planning完了投稿（スレッドID: `1499002500941090874`）
-- [x] DEV実装完了・3観点レビュー完了（指摘対応1ラウンド）
-- [x] `#30-sprint-review` Sprint 11 Review投稿（スレッドID: `1499016076862689284`）→ りょこさんの動作確認待ち
+- [ ] Issue一覧確認
+- [ ] `backlog/sprint_12/sprint_backlog.md` 作成
+- [ ] `#10-planning` Planning完了投稿
 
 ---
 
@@ -25,14 +23,6 @@
 
 | Issue | タイトル | SP | ブランチ | 状態 |
 |-------|---------|-----|---------|------|
-| #32 | houseworkTaskStoreカプセル化 | 2 | `refactor/32-housework-task-store-encapsulation` | 完了 |
-| #3 | おうち未所属ガード＆導線整理 | 5 | `feature/3-household-guard-guide` | 完了 |
-
----
-
-## Retro完了（2026-04-29）
-
-- [x] #40-retrospective に「Sprint 10 Retrospective」スレッド投稿済み（スレッドID: `1498883466929115256`）
 
 ---
 
@@ -43,7 +33,8 @@
 
 ---
 
-## チャレンジ項目（Sprint 11）
+## チャレンジ項目（Sprint 12）
 
-- DEVのbugPBI改修方針に選択理由記載（Sprint 09・10は未検証 → Sprint 11で初のbugPBIが来たら検証）
+- DEVのbugPBI改修方針に選択理由記載（Sprint 09・10・11連続で未検証 → bugPBIが来たら検証）
+- reviewerのDiscord投稿root cause調査（enabledMcpjsonServers設定の確認）
 - Claudeモデルのアップデート確認（Planning時に確認）
