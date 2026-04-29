@@ -1,7 +1,7 @@
 ---
 name: security-reviewer
 description: セキュリティ観点のレビュアー。DEVの実装完了後にSMから起動される。
-tools: Read, Glob, Grep
+tools: Read, Glob, Grep, mcp__discord__discord_login, mcp__discord__discord_reply_to_forum
 skills:
   - discord-operations
 ---

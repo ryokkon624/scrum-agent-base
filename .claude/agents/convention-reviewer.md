@@ -1,7 +1,7 @@
 ---
 name: convention-reviewer
 description: コーディング規約観点のレビュアー。DEVの実装完了後にSMから起動される。フロントエンド・バックエンドの規約を参照してレビューする。
-tools: Read, Glob, Grep
+tools: Read, Glob, Grep, mcp__discord__discord_login, mcp__discord__discord_reply_to_forum
 skills:
   - discord-operations
   - backend-conventions

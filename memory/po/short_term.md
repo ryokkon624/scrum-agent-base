@@ -1,7 +1,7 @@
 # PO 短期記憶
 
-**スプリント**: Sprint 07  
-**最終更新**: 2026-04-23
+**スプリント**: Sprint 10  
+**最終更新**: 2026-04-28
 
 ---
 
@@ -22,6 +22,9 @@
   - #22: bugラベル・docsの作業漏れ。ブランチ `docs/22-api-integration-bulk-status`
   - #23: SP版ヘッダーコンパクト化。ブランチ `feature/23-sp-header-compact`
   - #24: ボタン配置統一。概要の誤記（家事テンプレートカードのボタン：左→右）も修正。ブランチ `feature/24-button-layout-unify`
+- 2026-04-28 Refinement実施：#3・#31のBody整備完了、Ready=Ready・Project設定完了
+  - #3: featureラベル。おうち未所属ガード＆導線整理。SP=5（3→5に変更）、Sprint=10。ブランチ `feature/3-household-guard-guide`
+  - #31: refactorラベル。買い物アイテム更新APIのURL変更。SP=2、Sprint=10。ブランチ `refactor/31-shopping-item-put-url`
 
 ---
 

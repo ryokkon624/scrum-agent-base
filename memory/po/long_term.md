@@ -1,6 +1,6 @@
 # PO 長期記憶
 
-**最終更新**: 2026-04-22
+**最終更新**: 2026-04-27
 
 ---
 
@@ -43,9 +43,25 @@
   - **ターミナル（CLI）起動時**：`mcp__github__list_issues` でPrivate repoへのアクセス可能（2026-04-22確認済み）
   - **デスクトップアプリ起動時**：GitHub MCPでPrivate repoにアクセス不可。curlを使う（PATは `~/.claude/settings.json` の `env.GITHUB_PERSONAL_ACCESS_TOKEN`）
 - **Issue Body更新**：MCP経由の更新は未検証。現状はJSONファイルを `C:/work/claude/issue{N}_body.json` に書き出し、curl PATCHで送る
+- **Issue新規作成 → Project追加**（2026-04-27確認済み）
+  1. curl POST で Issue作成 → `node_id` を取得
+  2. GraphQL mutation `addProjectV2ItemById` で Project（`PVT_kwHODoPAds4BIV4c`）に追加 → `item.id`（PVTI_...）を取得
+  3. 必要に応じて Ready・Sprint フィールドを `updateProjectV2ItemFieldValue` で設定
 
 ### GitHub Projects（カスタムフィールド）
 - **Ready列**・**Sprint列** はREST APIから変更不可（GitHub Projects v2はGraphQL API）
-- りょこさんがGitHub Projects画面上で手動更新する
-  - Refinement後：Ready: Draft → Ready: Ready
-  - Planning前：対象SprintのSprint列に番号入力・優先順位並び替え
+- **GraphQL経由での読み取りは可能**（2026-04-27確認済み）
+  - エンドポイント: `https://api.github.com/graphql`
+  - PATを `Authorization: bearer $TOKEN` で渡す
+  - Project ID: `PVT_kwHODoPAds4BIV4c`（Project番号1 = りょこさんのHousework Hub project）
+  - Ready フィールドID: `PVTSSF_lAHODoPAds4BIV4czhQksUs`（options: Ready/NotReady/Draft/Drop）
+  - Sprint フィールドID: `PVTF_lAHODoPAds4BIV4czhQkvCg`
+  - Status フィールドID: `PVTSSF_lAHODoPAds4BIV4czg41IJE`
+- **GraphQL mutationでの更新も可能**（2026-04-27確認済み）
+  - mutation: `updateProjectV2ItemFieldValue`
+  - singleSelectOptionId — Ready: `8af4afdd` / NotReady: `12a25b5b` / Draft: `832f7c5e` / Drop: `8fa84e1b`
+  - Refinement後の `Draft → Ready` 変更はPOが実施可能（りょこさんの手動更新不要）
+- Sprint列（Number型）の更新も可能（2026-04-27確認済み）
+  - value: `{ number: N }` を指定する
+- りょこさんが引き続き手動で行う作業
+  - Planning前：優先順位並び替え

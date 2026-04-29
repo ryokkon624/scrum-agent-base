@@ -30,18 +30,6 @@ SM
 
 ## ターミナルの起動方法
 
-### 基本（Agent Teams + Discordメンション受信）
-
-Discordで@scrum-agent メンションするとClaudeに指示を出せる。
-
-```powershell
-# scrum-agent-baseに移動して起動
-cd C:\work\claude\scrum-agent-base
-claude --channels plugin:discord@claude-plugins-official
-```
-
-### Discordのメンション受信が不要な場合（ターミナルから指示するとき）
-
 ```powershell
 cd C:\work\claude\scrum-agent-base
 claude
@@ -111,21 +99,21 @@ scrum-agent-base/
 │   ├── settings.json            # Agent Teams有効化設定
 │   ├── rules/
 │   │   └── git.md               # Gitコミットメッセージのルール
-│   └── agents/
-│       ├── product-owner.md         # POのsubagent定義
-│       ├── scrum-master.md          # SMのsubagent定義
-│       ├── developer.md             # DEVのsubagent定義
-│       ├── convention-reviewer.md   # 規約レビュアーのsubagent定義
-│       ├── security-reviewer.md     # セキュリティレビュアーのsubagent定義
-│       └── performance-reviewer.md  # パフォーマンスレビュアーのsubagent定義
-├── skills/
-│   ├── scrum-master-workflow/   # SMの作業フロー
-│   ├── developer-workflow/      # DEVの作業フロー
-│   ├── product-owner-workflow/  # POの作業フロー
-│   ├── backend-conventions/     # Backendコーディング規約
-│   ├── frontend-conventions/    # Frontendコーディング規約
-│   ├── discord-operations/      # Discordの操作方法
-│   └── github-issues/           # Github ProjectsのIssuesの操作方法
+│   ├── agents/
+│   │   ├── product-owner.md         # POのsubagent定義
+│   │   ├── scrum-master.md          # SMのsubagent定義
+│   │   ├── developer.md             # DEVのsubagent定義
+│   │   ├── convention-reviewer.md   # 規約レビュアーのsubagent定義
+│   │   ├── security-reviewer.md     # セキュリティレビュアーのsubagent定義
+│   │   └── performance-reviewer.md  # パフォーマンスレビュアーのsubagent定義
+│   └── skills/                      # エージェントが参照するスキル定義
+│       ├── scrum-master-workflow/   # SMの作業フロー
+│       ├── developer-workflow/      # DEVの作業フロー
+│       ├── product-owner-workflow/  # POの作業フロー
+│       ├── backend-conventions/     # Backendコーディング規約
+│       ├── frontend-conventions/    # Frontendコーディング規約
+│       ├── discord-operations/      # Discordの操作方法
+│       └── github-issues/           # Github ProjectsのIssuesの操作方法
 ├── memory/
 │   ├── sm/
 │   │   ├── short_term.md        # SMの今スプリントの記憶
