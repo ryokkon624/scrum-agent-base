@@ -7,7 +7,15 @@
 
 ## スプリントゴール
 
-（Planning後に記入）
+フロントエンドのstore設計とUI導線の品質向上：storeカプセル化の完結とおうち未所属ユーザーへのガイド導線整備
+
+---
+
+## Planning完了（2026-04-29）
+
+- [x] #32・#3 Issue Body確認
+- [x] `backlog/sprint_11/sprint_backlog.md` 作成
+- [x] `#10-planning` Planning完了投稿（スレッドID: `1499002500941090874`）
 
 ---
 
@@ -15,6 +23,8 @@
 
 | Issue | タイトル | SP | ブランチ | 状態 |
 |-------|---------|-----|---------|------|
+| #32 | houseworkTaskStoreカプセル化 | 2 | DEVが決定 | 未着手 |
+| #3 | おうち未所属ガード＆導線整理 | 5 | `feature/3-household-guard-guide` | 未着手 |
 
 ---
 
