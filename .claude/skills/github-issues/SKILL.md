@@ -15,6 +15,7 @@ HwHubスクラムチームのGitHub Issue参照・作成・更新の手順。
   - Project ID: `PVT_kwHODoPAds4BIV4c`
   - Ready フィールドID: `PVTSSF_lAHODoPAds4BIV4czhQksUs`
   - Sprint フィールドID: `PVTF_lAHODoPAds4BIV4czhQkvCg`
+  - Story Points フィールドID: `PVTF_lAHODoPAds4BIV4czhQksZ0`
   - Status フィールドID: `PVTSSF_lAHODoPAds4BIV4czg41IJE`
   - Ready選択肢ID: `8af4afdd`=Ready / `12a25b5b`=NotReady / `832f7c5e`=Draft / `8fa84e1b`=Drop
 
@@ -159,11 +160,21 @@ curl -s -X POST \
   "https://api.github.com/graphql"
 ```
 
+#### 5-4. Story PointsをNに設定する
+
+```bash
+curl -s -X POST \
+  -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\": \"mutation { updateProjectV2ItemFieldValue(input: { projectId: \\\"PVT_kwHODoPAds4BIV4c\\\", itemId: \\\"[PVTI_...]\\\", fieldId: \\\"PVTF_lAHODoPAds4BIV4czhQksZ0\\\", value: { number: N } }) { projectV2Item { id } } }\"}" \
+  "https://api.github.com/graphql"
+```
+
 ---
 
 ## 注意事項
 
 - **GitHub ProjectsのカスタムフィールドはREST APIから参照・更新不可**（GraphQL APIを使うこと）
 - Issue作成後は必ず手順3のStep 2〜3を実行し、Projectへの追加とReadyフィールド（Draft）の設定まで行う
-- Refinement完了後のReady更新（Draft→Ready）はPOが手順5-2で実施する
+- Refinement完了後のReady更新（Draft→Ready）およびStory Points設定はPOが手順5-2・5-4で実施する
 - **りょこさんが引き続き手動で行う作業**: Planning前の優先順位並び替え
