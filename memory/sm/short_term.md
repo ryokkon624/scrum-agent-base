@@ -16,6 +16,8 @@
 - [x] #32・#3 Issue Body確認
 - [x] `backlog/sprint_11/sprint_backlog.md` 作成
 - [x] `#10-planning` Planning完了投稿（スレッドID: `1499002500941090874`）
+- [x] DEV実装完了・3観点レビュー完了（指摘対応1ラウンド）
+- [x] `#30-sprint-review` Sprint 11 Review投稿（スレッドID: `1499016076862689284`）→ りょこさんの動作確認待ち
 
 ---
 
@@ -23,8 +25,8 @@
 
 | Issue | タイトル | SP | ブランチ | 状態 |
 |-------|---------|-----|---------|------|
-| #32 | houseworkTaskStoreカプセル化 | 2 | DEVが決定 | 未着手 |
-| #3 | おうち未所属ガード＆導線整理 | 5 | `feature/3-household-guard-guide` | 未着手 |
+| #32 | houseworkTaskStoreカプセル化 | 2 | `refactor/32-housework-task-store-encapsulation` | 完了 |
+| #3 | おうち未所属ガード＆導線整理 | 5 | `feature/3-household-guard-guide` | 完了 |
 
 ---
 
