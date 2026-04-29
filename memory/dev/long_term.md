@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: -
+**最終更新**: 2026-04-28
 
 ---
 
@@ -15,10 +15,12 @@
 ### Spring Boot / バックエンド
 - MyBatisはJava recordをサポートしている
 - ドメインRepositoryインターフェースを使ったレイヤードアーキテクチャを守る
+- ShoppingItem系の認可チェックパターンは `item.getHouseholdId()` を取得して `householdAuthorizationService.canAccessHousehold` で判定する形で統一（updateStatus / updateFavorite / update / delete すべて同じ）。例外は `ResourceNotFoundException` / `AccessDeniedException` を投げる
 
 ### Vue 3 / フロントエンド
 - ローカライズユーティリティはcomposablesに移動済み
 - Pinia + Composition APIで状態管理
+- store の内部状態フィールド（`lastFetchedAtByHouseholdId` 等）はコンポーネントから直接参照せず、getter（`isFetchedFor` 等）経由でアクセスする（カプセル化）
 
 ---
 

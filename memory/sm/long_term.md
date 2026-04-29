@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-04-23
+**最終更新**: 2026-04-29
 
 ---
 
@@ -17,6 +17,7 @@
 | Sprint 07  | APIドキュメント整備・パフォーマンス改善・SP版UI修正 | ✅ 全AC達成（#17/#18/#19 全7AC）  | DEVのDiscord投稿漏れが2スプリント連続→developer.md冒頭に⚠️必須事項追加・SMの起動メッセージに明示指示追加。新規API追加時のdoc更新漏れ再発（bulk-status→Issue#22）。MyBatisキャッシュで認可SQL重複は実害なし確認。 |
 | Sprint 08  | セキュリティ脆弱性の修正とAPIドキュメントの整備   | ✅ 全AC達成（#20/#22 全5AC）          | reviewerが「指摘なし」時も観点別確認結果の投稿が必要→reviewer 3ファイルv1.2.0。DEVがbugPBIで実装方針の選択理由を記載していなかった→developer.md v1.11.0で「改修方針」に選択理由必須化。reviewer Discord投稿不可が3スプリント連続。 |
 | Sprint 09  | SP版ヘッダーの視認性改善とUIボタン配置の統一      | ✅ 全AC達成（#23/#24 全10AC）         | SMが作業スレッドをIssueごとに作成→DEV #24着手遅延→scrum-master-workflow v1.1.0で1スプリント1スレッド制約を明記。SM・DEVの投稿にプレフィックス欠如（reviewerは順守）→developer-workflow v1.1.0で[DEV]プレフィックス必須化。指摘対応後の再レビューを省略→scrum-master-workflow v1.1.0で再レビュー必須化を明記。 |
+| Sprint 10  | storeカプセル化とAPI URL統一によるフロントエンド・バックエンドのコード品質向上 | ✅ 全AC達成（#28・#31 全8AC） | 横展開確認でスコープ外問題（cacheByKey #32）を即Issue化。Opus 4.7（計画）+Sonnet 4.6（実装）の2フェーズモデル導入。reviewerのDiscord投稿問題をskillsパス移動+tools追加で根本解決。DEVのTaskCreate詳細化（承認後に自分でCreate）。 |
 
 ---
 
@@ -39,6 +40,8 @@
 | Sprint 09  | 1スプリント1作業スレッド制約の明記                  | ✅ scrum-master-workflow v1.1.0で② DEV起動に⚠️として追記 | scrum-master-workflow v1.1.0 |
 | Sprint 09  | SM・DEV投稿への役割プレフィックス必須化             | ✅ developer-workflow v1.1.0で⚠️必須事項に`[DEV]`プレフィックス追記 | developer-workflow v1.1.0 |
 | Sprint 09  | 指摘対応後の再レビュー必須化                        | ✅ scrum-master-workflow v1.1.0で⑤ DEV再起動後に再レビュー必須を明記 | scrum-master-workflow v1.1.0 |
+| Sprint 10  | Opus 4.7でDEV起動（計画フェーズ）                   | ✅ 有効性確認。計画品質向上とコスト最適化を両立 | scrum-master-workflow v1.2.0 / developer-workflow v1.2.0 |
+| Sprint 10  | DEVのbugPBI改修方針に選択理由記載                   | 🔄 Sprint 09・10共にrefactor/bugなし・未検証 | Sprint 11へ持ち越し |
 
 ---
 
@@ -55,6 +58,9 @@
 - 3観点レビュー（規約・セキュリティ・パフォーマンス）の並列実施（Sprint 05〜 定着確認）
 - Agent Teams連携（TeamCreate + SendMessage）（Sprint 04〜）
 - reviewerがDiscord投稿できない場合のSMによる代理投稿（Sprint 08〜）
+- 横展開確認でスコープ外問題を即Issue化する判断（Sprint 10〜）
+- Opus 4.7（計画フェーズ）+ Sonnet 4.6（実装フェーズ）の2フェーズモデル（Sprint 10〜）
+- DEVが実装方針承認後に自分でTaskCreateする（Sprint 10〜）
 
 ### Stop（やめること）
 
@@ -83,5 +89,5 @@
 
 ### Challenge（次に試すこと）
 
-- DEVのbugPBI改修方針に選択理由記載（Sprint 09はbugPBIなし・未検証 → Sprint 10で検証）
+- DEVのbugPBI改修方針に選択理由記載（Sprint 09・10共にbugPBIなし未検証 → Sprint 11で検証）
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6）

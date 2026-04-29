@@ -30,18 +30,6 @@ SM
 
 ## ターミナルの起動方法
 
-### 基本（Agent Teams + Discordメンション受信）
-
-Discordで@scrum-agent メンションするとClaudeに指示を出せる。
-
-```powershell
-# scrum-agent-baseに移動して起動
-cd C:\work\claude\scrum-agent-base
-claude --channels plugin:discord@claude-plugins-official
-```
-
-### Discordのメンション受信が不要な場合（ターミナルから指示するとき）
-
 ```powershell
 cd C:\work\claude\scrum-agent-base
 claude
