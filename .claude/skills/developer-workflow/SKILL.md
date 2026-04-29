@@ -40,7 +40,11 @@ Discord操作は `discord-operations` スキルを参照すること。
    - どのファイルを新規作成・編集するか
    - バックエンド / フロントエンドそれぞれの変更箇所
    - 懸念点・不明点があればりょこさんに確認する
-4. 作業開始を `#20-sprint` の作業スレッドに投稿する
+4. **承認を得たら TaskCreate で実装タスクを作成する**
+   - Issue単位・AC単位など、作業の可視化に適した粒度で細分化する
+   - 例：「#28 isFetchedFor getter追加」「#28 OnboardingCard.vue のgetter経由参照に変更」「#31 バックエンドURL変更」など
+   - 各タスクは作業開始時に `in_progress`、完了時に `completed` に更新する
+5. 作業開始を `#20-sprint` の作業スレッドに投稿する
 
 ### 作業中（TDD必須: RED → GREEN → REFACTOR）
 

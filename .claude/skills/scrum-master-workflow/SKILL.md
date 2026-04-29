@@ -75,18 +75,18 @@ DEVへ: backlog/sprint_XX/sprint_backlog.md を読んで作業を開始してく
 **Agent TeamsでDEVを起動:**
 
 ```
-1. TaskCreate でタスクを作成する：
-   「Sprint XX DEV実装作業」などのタスクを作成してからDEVをteammateとして起動する。
-   （reviewerと同様に、起動前のTaskCreateが必須）
-2. developerタイプのteammateを起動する。
-3. SendMessageでDEVに以下を伝える：
+1. developerタイプのteammateを起動する。
+2. SendMessageでDEVに以下を伝える：
    「DEVモードで動いて。memory/dev/short_term.md と memory/dev/long_term.md と
-   backlog/sprint_XX/sprint_backlog.md を読んで、作業を開始してください。
+   backlog/sprint_XX/sprint_backlog.md を読んで、実装方針を整理してりょこさんに提示し、
+   承認を得てから TaskCreate で実装タスクを作成して作業を開始してください。
    以下の3点は必ず実施してください：
    ① 作業開始時に `#20-sprint` の作業スレッドに投稿する
    ② 作業完了時に `#20-sprint` の作業スレッドに投稿する
    ③ レビュー指摘対応完了時に `#20-sprint` の作業スレッドに投稿する」
 ```
+
+> ⚠️ **SMはTaskCreateしない。DEVが実装方針の承認後に自分でTaskCreateする。**
 
 ---
 
