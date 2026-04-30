@@ -32,8 +32,11 @@ Discord操作は `discord-operations` スキルを参照すること。
 
 ### 計画フェーズ（Opus 4.7で起動される）
 
-1. `#20-sprint` の作業スレッドを確認する
-2. 担当するバックログアイテムのACと**コミットコメントに付与する番号**を確認する
+1. **memory/dev/short_term.md のスプリント番号と、SMから指定されたスプリント番号を比較する**
+   - **異なる場合（前スプリントの内容が残っている）**: short_term.md の内容を memory/dev/long_term.md に要約して追記し、short_term.md を今スプリント用にリセットする
+   - **同じ場合（計画フェーズの再起動など）**: 整理せずそのまま読んで続きから始める
+2. `#20-sprint` の作業スレッドを確認する
+3. 担当するバックログアイテムのACと**コミットコメントに付与する番号**を確認する
    - 番号はIssue番号を利用する
    - 例：`(ryokkon624/hw-hub-manage#6)`
 3. **実装方針を整理してりょこさんに提示し、承認を得る**
@@ -55,6 +58,7 @@ Discord操作は `discord-operations` スキルを参照すること。
 
 1. `memory/dev/short_term.md` を読んで実装方針を確認する
 2. 作業開始を `#20-sprint` の作業スレッドに投稿する
+3. 各タスクを着手時に `TaskUpdate(status: in_progress)`、完了時に `TaskUpdate(status: completed)` で更新する
 
 ### 作業中（TDD必須: RED → GREEN → REFACTOR）
 
@@ -79,7 +83,8 @@ Discord操作は `discord-operations` スキルを参照すること。
    - [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format`）
 2. **`backlog/sprint_XX/sprint_backlog.md` のACをすべて `[x]` に更新する**
 3. コミットする（`git` ルール参照）
-4. `#20-sprint` の作業スレッドに完了報告を投稿する：
+4. **`git push -u origin {ブランチ名}` でリモートにプッシュする**（SMのPR作成に必要）
+5. `#20-sprint` の作業スレッドに完了報告を投稿する：
 
    **機能追加・リファクタリングの場合：**
 

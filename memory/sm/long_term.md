@@ -20,6 +20,7 @@
 | Sprint 10  | storeカプセル化とAPI URL統一によるフロントエンド・バックエンドのコード品質向上 | ✅ 全AC達成（#28・#31 全8AC） | 横展開確認でスコープ外問題（cacheByKey #32）を即Issue化。Opus 4.7（計画）+Sonnet 4.6（実装）の2フェーズモデル導入。reviewerのDiscord投稿問題をskillsパス移動+tools追加で根本解決。DEVのTaskCreate詳細化（承認後に自分でCreate）。 |
 | Sprint 11  | フロントエンドstore設計とUI導線の品質向上：storeカプセル化の完結とおうち未所属ユーザーへのガイド導線整備 | ✅ 全AC達成（#32・#3 全10AC） | developer.md tools に TaskCreate/TaskUpdate/SendMessage/Edit/Write/Bash を追加（Opus DEV がTaskCreate不可の問題解消）。reviewer 3ファイルにgit diffスコープ外ファイルを読まない制約を追加（フォルスポジティブ防止）。reviewer の Discord投稿問題は未解決（enabledMcpjsonServersの設定が原因と推定 → Sprint 12チャレンジ）。 |
 | Sprint 12  | SP版買い物リスト画面のタブ化とユーザアイコンフォールバック対応でSPユーザー体験を向上する | ✅ 全AC達成（#34: 7AC / #33: 3AC）Sprint Reviewりょこさん指摘なし | DEVのbugPBI改修方針選択理由記載チャレンジ達成（#33 fix PBIで確認）。convention-reviewerがgit checkoutできないブロッカー発生→git diffで代替解決→convention-reviewer.md v1.3.0にgit checkout禁止・フォールバック手順を追記。reviewerのDiscord投稿問題が4スプリント連続持ち越し（Sprint 13で必ず根本解決する）。 |
+| Sprint 13  | 買い物リスト画面にスワイプジェスチャーを導入して、スマートフォンの片手操作体験を向上させる | ✅ 全AC達成（#42: 7AC）Sprint Reviewでりょこさん指摘1件（購入済み左スワイプの背景アイコン不要→Issue #45起票） | reviewerのDiscord投稿問題が全3観点で解消（5スプリントぶり。根本原因は特定できず）。DEVがコミット後にpushを忘れSMがカバー→developer-workflowにpush手順追記。gh不在でcurl+REST APIでPR作成→scrum-master-workflowのPR作成手順⑥にcurl代替を追記。 |
 
 ---
 
@@ -50,6 +51,9 @@
 | Sprint 12  | DEVのbugPBI改修方針に選択理由記載（#33で検証）       | ✅ fix PBIで選択理由記載を確認。Sprint 09〜12の4スプリント継続チャレンジが達成 | developer.md v1.11.0（記録済み）として定着確認 |
 | Sprint 12  | convention-reviewer.mdにgit checkout禁止・フォールバック手順追加 | ✅ ブロッカー再発防止として手順明文化 | convention-reviewer.md v1.3.0 |
 | Sprint 12  | reviewerのDiscord投稿root cause調査                  | ❌ 未調査のまま4スプリント連続持ち越し。Sprint 13で必ず根本解決する | - |
+| Sprint 13  | reviewerのDiscord投稿問題の解消（最優先）             | ✅ 全3観点のreviewerがDiscord投稿に成功（初回・再レビュー両方）。根本原因は不明だが実害解消。継続監視する | - |
+| Sprint 13  | gh不在時のcurl代替PR作成手順整備                      | ✅ scrum-master-workflow⑥にWrite+curl手順を追記 | scrum-master-workflow ⑥更新 |
+| Sprint 13  | DEVコミット後のpush手順をworkflowに明記               | ✅ developer-workflowの作業完了時手順4にpush追加 | developer-workflow 更新 |
 
 ---
 
@@ -94,12 +98,13 @@
 - format未実施のままコミットすること（Sprint 05 → developer.md v1.8.0でルール化）
 - UTコードを放置したまま機能実装を完了とすること（Sprint 05 → Issue#15で対応予定）
 - API追加・変更時にapi_integration.md等のドキュメント更新を省くこと（Sprint 06・07と2スプリント連続 → Issue#22で対応済み）
-- reviewerがDiscord投稿できない問題が連続スプリントになること（Sprint 06〜08で3スプリント連続・根本解決が必要）
+- reviewerがDiscord投稿できない問題が連続スプリントになること（Sprint 06〜12で問題継続 → Sprint 13で解消確認。継続監視）
 - SMがIssueごとにスレッドを分割してDEV着手遅延を招くこと（Sprint 09 → scrum-master-workflow v1.1.0で制約明記）
 - SM・DEVが投稿プレフィックスを省くこと（Sprint 09 → developer-workflow v1.1.0で必須化）
 - 指摘対応後の再レビューを省いてSprintReviewに進むこと（Sprint 09 → scrum-master-workflow v1.1.0で必須化）
+- DEVがコミット後にgit pushを忘れること（Sprint 13 → developer-workflow に push 手順を追記）
 
 ### Challenge（次に試すこと）
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6 / Opus 4.7）
-- reviewerのDiscord投稿root cause調査（enabledMcpjsonServers設定の確認 → **Sprint 13で必ず根本解決する。4スプリント連続持ち越しは許容しない**）
+- reviewerのDiscord投稿問題: Sprint 13で全員投稿成功。継続監視する（根本原因は未特定）

@@ -45,8 +45,10 @@
     - 左スワイプ30%以上で左コールバック発火
     - 30%未満で指を離すと translateX が0に戻る
     - マウスイベントは無視される
-- **ステータス**: 実装完了・コミット済み（2026-04-30）
+- **ステータス**: レビュー指摘対応完了・コミット済み（2026-04-30）
 - **コミット**: `bef3c31 feat: 買い物リスト画面にスワイプジェスチャーを導入 (ryokkon624/hw-hub-manage#42)`
+- **レビュー対応コミット**: `474bfdf style: スワイプ背景色を生クラスからカラートークンに変更 (ryokkon624/hw-hub-manage#42)`
+- **レビュー指摘対応内容**: main.cssにbg-hwhub-swipe-action/delete/back/disabledの4トークンを追加し、SwipeableShoppingItem.vueのbackgroundClassで使用
 - **TaskCreateリスト**:
   - [x] useSwipeGesture composable のテスト作成（RED）
   - [x] useSwipeGesture composable の実装（GREEN）

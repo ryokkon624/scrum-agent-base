@@ -77,7 +77,8 @@ DEVへ: backlog/sprint_XX/sprint_backlog.md を読んで実装方針を整理し
 ```
 1. developerタイプのteammateを Opus 4.7 モデルで起動する。
 2. SendMessageでDEVに以下を伝える：
-   「DEVモードで動いて。memory/dev/short_term.md と memory/dev/long_term.md と
+   「Sprint XX のDEVとして動いてください。
+   memory/dev/short_term.md と memory/dev/long_term.md と
    backlog/sprint_XX/sprint_backlog.md を読んで、実装方針を整理してりょこさんに提示し、
    承認を得てから TaskCreate で実装タスクを作成してください。
    TaskCreate完了後は memory/dev/short_term.md に実装方針を記録して、
@@ -182,7 +183,7 @@ SendMessageでDEVに以下を伝える：
 
 ### ⑥ Pull Request作成
 
-全レビュアー「指摘なし」確認後、**SMが直接 `gh pr create` を実行する**（DEV再起動不要）。
+全レビュアー「指摘なし」確認後、**SMが直接 PR を作成する**（DEV再起動不要）。
 
 **ブランチが属するリポジトリのディレクトリで実行する：**
 
@@ -192,6 +193,8 @@ SendMessageでDEVに以下を伝える：
 | バックエンド変更 | `C:\work\hw-hub\hw-hub-backend` |
 
 複数リポジトリにまたがる場合は、それぞれのディレクトリでPRを作成する。
+
+**gh が使える場合（推奨）:**
 
 ```bash
 cd C:/work/hw-hub/hw-hub-[対象リポジトリ]
@@ -208,6 +211,38 @@ closes ryokkon624/hw-hub-manage#N
 EOF
 )"
 ```
+
+**gh が使えない場合（curl で GitHub REST API を使う）:**
+
+文字化け対策のため、PR本文は Write ツールで JSON ファイルに書き出してから curl で送る。
+
+```bash
+# Step 1: ブランチをリモートにプッシュ（まだしていない場合）
+cd C:/work/hw-hub/hw-hub-[対象リポジトリ]
+git push -u origin [ブランチ名]
+```
+
+Write ツールで `C:/work/claude/pr_XX.json` を作成する：
+```json
+{
+  "title": "feat: [タイトル]",
+  "head": "[ブランチ名]",
+  "base": "main",
+  "body": "## Summary\n...\n\ncloses ryokkon624/hw-hub-manage#N"
+}
+```
+
+```bash
+# Step 2: PR作成
+curl -s -X POST \
+  -H "Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  -H "Content-Type: application/json" \
+  "https://api.github.com/repos/ryokkon624/hw-hub-[リポジトリ名]/pulls" \
+  --data-binary "@C:/work/claude/pr_XX.json"
+```
+
+レスポンスの `html_url` を PR URL として使用する。
 
 > **【必須】** PR本文に `closes ryokkon624/hw-hub-manage#N` を含める（Issueごとに1行）。
 > マージ時にGitHub Projects側のIssueが自動クローズされる。
