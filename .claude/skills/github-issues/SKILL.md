@@ -136,7 +136,7 @@ curl -s -X PATCH \
 curl -s -X POST \
   -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"query": "{ user(login: \"ryokkon624\") { projectV2(number: 1) { items(first: 50) { nodes { id fieldValues(first: 20) { nodes { ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name } } } ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2Field { name } } } } } content { ... on Issue { number title state } } } } } } }"}' \
+  -d '{"query": "{ user(login: \"ryokkon624\") { projectV2(number: 1) { items(first: 200) { nodes { id fieldValues(first: 20) { nodes { ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name } } } ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2Field { name } } } } } content { ... on Issue { number title state } } } } } } }"}' \
   "https://api.github.com/graphql"
 ```
 
