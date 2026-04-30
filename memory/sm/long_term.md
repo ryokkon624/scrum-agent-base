@@ -19,6 +19,7 @@
 | Sprint 09  | SP版ヘッダーの視認性改善とUIボタン配置の統一      | ✅ 全AC達成（#23/#24 全10AC）         | SMが作業スレッドをIssueごとに作成→DEV #24着手遅延→scrum-master-workflow v1.1.0で1スプリント1スレッド制約を明記。SM・DEVの投稿にプレフィックス欠如（reviewerは順守）→developer-workflow v1.1.0で[DEV]プレフィックス必須化。指摘対応後の再レビューを省略→scrum-master-workflow v1.1.0で再レビュー必須化を明記。 |
 | Sprint 10  | storeカプセル化とAPI URL統一によるフロントエンド・バックエンドのコード品質向上 | ✅ 全AC達成（#28・#31 全8AC） | 横展開確認でスコープ外問題（cacheByKey #32）を即Issue化。Opus 4.7（計画）+Sonnet 4.6（実装）の2フェーズモデル導入。reviewerのDiscord投稿問題をskillsパス移動+tools追加で根本解決。DEVのTaskCreate詳細化（承認後に自分でCreate）。 |
 | Sprint 11  | フロントエンドstore設計とUI導線の品質向上：storeカプセル化の完結とおうち未所属ユーザーへのガイド導線整備 | ✅ 全AC達成（#32・#3 全10AC） | developer.md tools に TaskCreate/TaskUpdate/SendMessage/Edit/Write/Bash を追加（Opus DEV がTaskCreate不可の問題解消）。reviewer 3ファイルにgit diffスコープ外ファイルを読まない制約を追加（フォルスポジティブ防止）。reviewer の Discord投稿問題は未解決（enabledMcpjsonServersの設定が原因と推定 → Sprint 12チャレンジ）。 |
+| Sprint 12  | SP版買い物リスト画面のタブ化とユーザアイコンフォールバック対応でSPユーザー体験を向上する | ✅ 全AC達成（#34: 7AC / #33: 3AC）Sprint Reviewりょこさん指摘なし | DEVのbugPBI改修方針選択理由記載チャレンジ達成（#33 fix PBIで確認）。convention-reviewerがgit checkoutできないブロッカー発生→git diffで代替解決→convention-reviewer.md v1.3.0にgit checkout禁止・フォールバック手順を追記。reviewerのDiscord投稿問題が4スプリント連続持ち越し（Sprint 13で必ず根本解決する）。 |
 
 ---
 
@@ -46,6 +47,9 @@
 | Sprint 11  | developer.mdのtools:にTaskCreate/TaskUpdate/SendMessageを追加 | ✅ Opus DEV のTaskCreate不可問題を解消 | developer.md tools フィールド更新 |
 | Sprint 11  | reviewer 3ファイルにgit diffスコープ制限を明記       | ✅ フォルスポジティブ防止の仕組みを構築 | convention/security/performance-reviewer.md 更新 |
 | Sprint 11  | reviewerのDiscord投稿root cause調査                  | 🔄 enabledMcpjsonServers設定が原因と推定。Sprint 12へ持ち越し | - |
+| Sprint 12  | DEVのbugPBI改修方針に選択理由記載（#33で検証）       | ✅ fix PBIで選択理由記載を確認。Sprint 09〜12の4スプリント継続チャレンジが達成 | developer.md v1.11.0（記録済み）として定着確認 |
+| Sprint 12  | convention-reviewer.mdにgit checkout禁止・フォールバック手順追加 | ✅ ブロッカー再発防止として手順明文化 | convention-reviewer.md v1.3.0 |
+| Sprint 12  | reviewerのDiscord投稿root cause調査                  | ❌ 未調査のまま4スプリント連続持ち越し。Sprint 13で必ず根本解決する | - |
 
 ---
 
@@ -66,6 +70,7 @@
 - Opus 4.7（計画フェーズ）+ Sonnet 4.6（実装フェーズ）の2フェーズモデル（Sprint 10〜）
 - DEVが実装方針承認後に自分でTaskCreateする（Sprint 10〜）
 - SMがreviewerのgit diff外ファイル指摘をgit diffコマンドで検証してから受け入れる（Sprint 11〜）
+- DEVのbugPBI改修方針に選択理由・トレードオフを記載する（Sprint 12〜 定着確認）
 
 ### Stop（やめること）
 
@@ -78,6 +83,7 @@
 - reviewerが「指摘なし」の場合にシンプルな1行報告で済ませること（Sprint 08 → reviewer v1.2.0で観点別確認結果フォーマットを追加）
 - DEVがbugPBIで実装方針の選択理由を省いて報告すること（Sprint 08 → developer.md v1.11.0で「改修方針」に選択理由必須化）
 - reviewerが別ブランチで修正済みのファイルをdiff外と判定せずに指摘すること（Sprint 11 → reviewer 3ファイルにgit diffスコープ制限を明記）
+- convention-reviewerが `git checkout` でブランチを切り替えようとしてレビュー未完了になること（Sprint 12 → convention-reviewer.md v1.3.0でgit checkout禁止・フォールバック手順を明記）
 
 ### Avoid（回避すること）
 
@@ -95,6 +101,5 @@
 
 ### Challenge（次に試すこと）
 
-- DEVのbugPBI改修方針に選択理由記載（Sprint 09・10・11共にbugPBIなし未検証 → Sprint 12で検証）
-- Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6）
-- reviewerのDiscord投稿root cause調査（enabledMcpjsonServers設定の確認 → Sprint 12で調査）
+- Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6 / Opus 4.7）
+- reviewerのDiscord投稿root cause調査（enabledMcpjsonServers設定の確認 → **Sprint 13で必ず根本解決する。4スプリント連続持ち越しは許容しない**）

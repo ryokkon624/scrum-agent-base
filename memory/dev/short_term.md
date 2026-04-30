@@ -1,78 +1,86 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 10  
-**最終更新**: 2026-04-29
+**スプリント**: Sprint 12
+**最終更新**: 2026-04-30
 
 ---
 
 ## 担当タスクメモ
 
-### Issue #32: houseworkTaskStoreカプセル化（SP:2）
-- **ブランチ**: `refactor/32-housework-task-store-encapsulation`
-- 実装方針（りょこさん承認済み 2026-04-29）:
-  - `houseworkTaskStore.ts` に `tasksFor(householdId, status)` getter を追加（`itemsFor` と同パターン）
-  - 3コンポーネントの `cacheByKey` 直接参照をgetter経由に変更:
-    - `src/components/home/MyTasksCard.vue` (29行目)
-    - `src/components/home/UnassignedTasksCard.vue` (27行目)
-    - `src/components/home/HouseholdSituationCard.vue` (64-65行目)
-  - `getCacheKey` action の使用箇所確認後、不要なら削除
-  - `tasksFor` の単体テスト追加（TDD: RED → GREEN → REFACTOR）
-- **TaskCreateリスト**:
-  - [ ] #32 tasksFor getter追加（テスト先行）
-  - [ ] #32 3コンポーネントのgetter経由修正
-  - [ ] #32 getCacheKey action 不要なら削除
+### Issue #34: [SP版]買い物リスト画面の3フレームをタブ構成に変更（SP:5）
 
-### Issue #3: おうち未所属ガード＆導線整理（SP:5）
-- **ブランチ**: `feature/3-household-guard-guide`
-- 実装方針（りょこさん承認済み 2026-04-29）:
-  - **AC7先行（必須）**: `OnboardingCard` 内の「おうちに参加・作成する」カードを `OnboardingStepCard.vue` として切り出し。もう一つのカード切り出しはDEV判断
-  - **AC1**: `ShoppingListPage.vue` — おうち未所属時に `OnboardingStepCard` を表示（追加メッセージあり）
-  - **AC2**: `ShoppingListPage.vue` の「追加する」ボタンを非活性。`ShoppingItemCreatePage.vue` は登録ボタン非活性のみ（OnboardingCard表示は不要）
-  - **AC3**: `HouseworkSettingsPage.vue` — おうち未所属時に `OnboardingStepCard` を表示（追加メッセージあり）
-  - **AC4**: `HouseworkSettingsPage.vue` の登録ボタンを非活性。`HouseworkCreatePage.vue` は登録ボタン非活性のみ
-  - **AC5**: PC版 `AppLayout.vue` — 「おうちが選択されていません」を「＋ おうちに参加・作成」リンクボタンに変更（カッコよいスタイル・他ナビボタン踏襲不要）
-  - **AC6**: `HouseholdSwitcherField.vue` — `noneSelected` キーの使用箇所確認、他で使われていなければキーの値を「+ おうちに参加・作成」に変更。おうち設定画面へ遷移
-  - **i18n**: 新規追加・変更キーは ja/en/es 3言語全対応必須
+- **ブランチ**: `feature/34-shopping-list-tab-layout`
+- **対象**: hw-hub-frontend のみ
+- 実装方針（りょこさん承認済み 2026-04-30）:
+  - `src/components/shopping/ShoppingListTabBar.vue`（新規）
+    - 3タブ（未購入・かご・購入済み）のヘッダーUI
+    - 件数バッジ: 未購入・かごのみ（購入済みはバッジなし）
+    - `v-model:activeTab` で `'notPurchased' | 'basket' | 'completed'` を受け渡し
+    - `md:hidden` でPC時は非表示
+  - `src/views/shopping/ShoppingListPage.vue`（既存編集）
+    - `activeTab = ref<'notPurchased' | 'basket' | 'completed'>('notPurchased')` を導入（AC6: デフォルト「未購入」）
+    - SP時: `ShoppingListTabBar` を表示、各セクションを `:class="[activeTab === '...' ? 'block' : 'hidden', 'md:block']"` で切替
+    - SP時の購入済みタブ: 折りたたみ廃止・常時展開（PC時は折りたたみ維持）
+    - PC時（md以上）: 従来の2カラムgrid + 折りたたみ購入済みを完全維持（AC7）
+  - i18n追加（ja/en/es）:
+    - `shopping.list.tabs.notPurchased` = "未購入" / "Not purchased" / "Sin comprar"
+    - `shopping.list.tabs.basket` = "かご" / "Basket" / "Cesta"
+    - `shopping.list.tabs.completed` = "購入済み" / "Completed" / "Comprados"
+  - TDD: 全て View/Component の見た目変更のみ → テスト不要
+- **ステータス**: 実装完了・コミット済み（2026-04-30）
+- **コミット**: `269a80b feat: SP版買い物リスト画面を3タブ構成に変更 (ryokkon624/hw-hub-manage#34)`
 - **TaskCreateリスト**:
-  - [ ] #3 OnboardingStepCard.vue 切り出し（AC7先行）
-  - [ ] #3 AC1・AC2 ShoppingListPage修正
-  - [ ] #3 AC3・AC4 HouseworkSettingsPage修正
-  - [ ] #3 AC5 PC版AppLayout修正
-  - [ ] #3 AC6 HouseholdSwitcherField修正
-  - [ ] #3 i18n（ja/en/es）追加・変更
+  - [x] #35: ShoppingListTabBar.vue 新規作成（タブUIコンポーネント）
+  - [x] #36: ShoppingListPage.vue タブ切替対応（SP時のみ）
+  - [x] #37: i18n追加（ja/en/es: shopping.list.tabs.*）
+
+---
+
+### Issue #33: ユーザアイコンが取得できない場合にイニシャルアイコンを表示（SP:2）
+
+- **ブランチ**: `fix/33-user-icon-fallback`
+- **対象**: hw-hub-frontend のみ
+- 実装方針（りょこさん承認済み 2026-04-30）:
+  - **原因**: imgタグの `@error` イベントを未ハンドリング。iconUrlが設定されていても画像取得失敗時（403/404/ネットワークエラー）にbroken imageが表示される
+  - **改修方針選択理由**: 同じパターンが4箇所に分散しているため共通コンポーネント化を採用。インライン対応はコピペコードが増えるため非採用。AccountSettingsPageはAC3例外なので個別対応（共通化すると仕様分岐が増え可読性が下がる）
+  - `src/components/ui/UserAvatar.vue`（新規）
+    - props: `iconUrl: string | null`, `label: string`, `size?: 'sm' | 'md' | 'lg'`, `alt?: string`
+    - `imageError = ref(false)` を持ち `@error="imageError = true"` で切替
+    - `iconUrl` が null/空 OR `imageError === true` のときイニシャル表示
+    - イニシャル算出: `label.trim().slice(0, 2).toUpperCase()`
+    - スタイル統一: `bg-hwhub-surface-subtle`, `text-hwhub-heading`, `font-semibold`
+    - サイズ: size prop で切り替え（sm=w-6/h-6, md=w-8/h-8, lg=w-9/h-9）
+  - 置き換え対象（既存編集、UserAvatarを使う）:
+    - `src/components/AppHeader.vue`
+    - `src/views/settings/HouseholdSettingsPage.vue:296`
+    - `src/views/housework/assignment/HouseworkAssignmentPage.vue:64, 197`（2箇所）
+  - AC3例外（UserAvatarは使わず個別対応）:
+    - `src/views/settings/AccountSettingsPage.vue:117`
+    - `imageError = ref(false)` + `@error="imageError = true"` を付与
+    - 画像取得失敗時: `<img>` を非表示（`v-if="userIconUrl && !imageError"` に変更）にして空グレー丸を表示（イニシャルなし）
+  - TDD: 全て View/Component の見た目変更のみ → テスト不要
+- **ステータス**: 実装完了・コミット済み（2026-04-30）
+- **コミット**: `0b7a639 fix: ユーザアイコン取得失敗時にイニシャルアイコンを表示 (ryokkon624/hw-hub-manage#33)`
+- **TaskCreateリスト**:
+  - [x] #38: UserAvatar.vue 新規作成（共通アイコンコンポーネント）
+  - [x] #39: UserAvatarへの置き換え（AppHeader・HouseholdSettings・HouseworkAssignment）
+  - [x] #40: AccountSettingsPage.vue 画像取得失敗時の空グレー丸表示（AC3例外）
 
 ---
 
 ## 過去スプリントの担当タスクメモ
 
+### Issue #32: houseworkTaskStoreカプセル化（SP:2）
+- **ブランチ**: `refactor/32-housework-task-store-encapsulation`（Sprint 10）
+
+### Issue #3: おうち未所属ガード＆導線整理（SP:5）
+- **ブランチ**: `feature/3-household-guard-guide`（Sprint 10）
+
 ### Issue #31: 買い物アイテム更新APIのURL変更
-- ブランチ: refactor/31-shopping-item-put-url (hw-hub-backend / hw-hub-frontend)
-- 対応内容:
-  - **バックエンド**:
-    - `ShoppingItemController.update`: `PUT /api/households/{householdId}/shopping-items/{shoppingItemId}` → `PUT /api/shopping-items/{shoppingItemId}` に変更
-    - `ShoppingItemService.update`: `householdId` 引数を削除し、認可チェックを `updateStatus`/`updateFavorite` と同じく `item.getHouseholdId()` ベースに統一
-    - 例外を `IllegalArgumentException`/`IllegalStateException` から `ResourceNotFoundException`/`AccessDeniedException` に変更（他メソッドと統一）
-    - `ShoppingItemControllerSpec` / `ShoppingItemServiceSpec` を新シグネチャに更新（TDDで RED→GREEN）
-  - **フロントエンド**:
-    - `shoppingItemApi.updateItem`: 引数から `householdId` を削除し、URL を `/api/shopping-items/{shoppingItemId}` に変更
-    - `shoppingStore.updateItemBasicInfo`: 新シグネチャに合わせて API 呼び出しを更新
-    - `doc/api_integration.md` のURL記載を更新
-- **コードレビュー指摘対応 (2026-04-28追加)**:
-  - `ShoppingItemIntegrationSpec` に `PUT /api/shopping-items/{shoppingItemId}` の統合テストを追加
-    - 正常系（200）: name/memo/storeType/favorite を更新 → DBが更新されること
-    - 認可エラー（403）: 別世帯のアイテムを更新しようとして拒否されること
-  - `./gradlew test` および `./gradlew integrationTest` ともに BUILD SUCCESSFUL を確認
-  - コミット: `999ad9f` test: PUT /api/shopping-items/{id} の統合テストを追加 (ryokkon624/hw-hub-manage#31)
+- ブランチ: refactor/31-shopping-item-put-url（Sprint 9）
 
 ### Issue #28: storeの内部状態フィールドカプセル化
-- ブランチ: refactor/28-store-internal-field-encapsulation (hw-hub-frontend)
-- 対応内容:
-  - `houseworkStore` に `isFetchedFor(householdId: number): boolean` getter を追加
-  - `OnboardingCard.vue` の `lastFetchedAtByHouseholdId` への直接アクセスを `isFetchedFor` 経由に変更
-  - `houseworkStore.spec` に `isFetchedFor` の単体テストを追加（TDDで RED→GREEN）
-- 横展開確認結果:
-  - `lastFetchedAtByHouseholdId` の直接参照: 修正対象の `OnboardingCard.vue` のみ
-  - 別フィールド `itemsByHouseholdId` の直接参照を `HouseholdSettingsPage.vue:868` で発見 → りょこさんに別Issue化要確認（投げかけ済み、未返信）
+- ブランチ: refactor/28-store-internal-field-encapsulation（Sprint 9）
 
 ---
 
@@ -80,13 +88,7 @@
 
 | 日付 | 問題 | 原因 | 解決策 |
 |------|------|------|--------|
-| (Sprint 10ではなし) | | | |
-
----
-
-## POへの未解決質問
-
-- Issue #28 の AC3 横展開確認の結果、`HouseholdSettingsPage.vue:868` で `houseworkStore.itemsByHouseholdId` の直接参照を発見。別Issueに切り出すか今回スコープに含めるか判断待ち（Discord投稿済み）
+| (Sprint 12ではなし) | | | |
 
 ---
 
