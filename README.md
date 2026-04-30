@@ -59,6 +59,8 @@ Sprint XXのレトロスペクティブを開始してください。
 
 ## タスク進捗の可視化（claude-task-viewer）
 
+[claude-task-viewer](https://github.com/L1AD/claude-task-viewer)を利用。
+
 Agent Teamsが動いているとき、別ターミナルで以下を実行するとブラウザでKanbanが見える：
 
 ```powershell
