@@ -1,11 +1,63 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 12
+**スプリント**: Sprint 13
 **最終更新**: 2026-04-30
 
 ---
 
 ## 担当タスクメモ
+
+### Issue #42: 買い物リスト画面にスワイプジェスチャーを導入したい（SP:5）
+
+- **ブランチ**: `feature/42-swipe-gesture`
+- **対象**: hw-hub-frontend のみ（バックエンド変更なし。既存の updateStatus / deleteItem API を流用）
+- **実装方針（りょこさん承認済み 2026-04-30）**:
+  - **アーキテクチャ**:
+    1. スワイプ検知ロジックは `composables/useSwipeGesture.ts` に切り出す（TDD対象）
+       - touchstart / touchmove / touchend をハンドリング
+       - 入力: 要素のRef、左右の閾値（30%）、左/右コールバック
+       - 出力: translateX（リアルタイムオフセット）, swipeState（'idle' | 'dragging-left' | 'dragging-right'）
+       - マウスイベントは無視（タッチのみ）
+    2. アイテム単位で背景レイヤー＋前面レイヤーの2層構成
+       - 背景: スワイプ方向に応じた色＋アイコン
+       - 前面: 既存のリストアイテム（translateXでドラッグ追従）
+    3. 新規共通コンポーネント `components/shopping/SwipeableShoppingItem.vue`（SP版のスワイプUI担当）
+    4. 削除確認はブラウザの `confirm()` を使用（新規ConfirmDialog不要 / 承認済み）
+    5. AC5の「編集画面で更新してください」は `uiStore.showToast` で表示（承認済み）
+  - **PC/SP分岐戦略**: PC版はスワイプ不要（DEV判断 / 承認済み）
+    - SP版（md未満）でSwipeableShoppingItemを使用、PC版（md以上）は従来のボタン操作を維持
+  - **ファイル変更一覧**:
+    - 新規: `src/composables/useSwipeGesture.ts`（TDD必須）
+    - 新規: `src/__tests__/composables/useSwipeGesture.spec.ts`
+    - 新規: `src/components/shopping/SwipeableShoppingItem.vue`
+    - 編集: `src/views/shopping/ShoppingListPage.vue`
+    - 編集: `src/i18n/ja.json` / `en.json` / `es.json`
+  - **AC対応マッピング**:
+    - AC1 未購入→右: updateStatus(IN_BASKET) / 緑 / shopping-cart
+    - AC2 未購入→左: confirm() → deleteItem / 赤 / trash-2
+    - AC3 かご→左: updateStatus(NOT_PURCHASED) / グレー / list-restart
+    - AC4 かご→右: updateStatus(PURCHASED) / 緑 / wallet
+    - AC5 購入済み→左: uiStore.showToast でメッセージ表示
+    - AC6: ドラッグ追従＋画面幅30%閾値（useSwipeGesture内）
+    - AC7: SP版（md未満）のみ有効
+  - **TDD対象（useSwipeGesture.spec.ts）**:
+    - 右スワイプ30%以上で右コールバック発火
+    - 左スワイプ30%以上で左コールバック発火
+    - 30%未満で指を離すと translateX が0に戻る
+    - マウスイベントは無視される
+- **ステータス**: 実装完了・コミット済み（2026-04-30）
+- **コミット**: `bef3c31 feat: 買い物リスト画面にスワイプジェスチャーを導入 (ryokkon624/hw-hub-manage#42)`
+- **TaskCreateリスト**:
+  - [x] useSwipeGesture composable のテスト作成（RED）
+  - [x] useSwipeGesture composable の実装（GREEN）
+  - [x] SwipeableShoppingItem.vue 新規作成
+  - [x] ShoppingListPage.vue へSwipeableShoppingItem組み込み
+  - [x] i18n追加（ja/en/es）
+  - [x] コミット前チェック・コミット
+
+---
+
+## 過去スプリントの担当タスクメモ
 
 ### Issue #34: [SP版]買い物リスト画面の3フレームをタブ構成に変更（SP:5）
 
@@ -67,8 +119,6 @@
   - [x] #40: AccountSettingsPage.vue 画像取得失敗時の空グレー丸表示（AC3例外）
 
 ---
-
-## 過去スプリントの担当タスクメモ
 
 ### Issue #32: houseworkTaskStoreカプセル化（SP:2）
 - **ブランチ**: `refactor/32-housework-task-store-encapsulation`（Sprint 10）
