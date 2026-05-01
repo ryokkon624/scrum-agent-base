@@ -1,68 +1,52 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 15
+**スプリント**: Sprint 16
 **最終更新**: 2026-05-01
 
 ---
 
 ## スプリントゴール
 
-SP版のスワイプ体験を統一・改善する
+SP版の家事割り当て画面でスワイプ操作による直感的な担当変更体験を実現する
 
 ---
 
 ## 担当タスクメモ
 
-### Issue #48: [SP版] My Tasks画面の家事タスクカードにスワイプを導入（SP:3）
+### Issue #47: [SP版]家事割り当て画面の家事タスクカードにスワイプを導入したい（SP:5）
 
-- **ブランチ**: `feature/48-add-swipe-to-mytasks`
-- **コミット参照**: `(ryokkon624/hw-hub-manage#48)`
-- **ステータス**: 実装完了・push済み・レビュー待ち
+- **ブランチ**: `feature/47-add-swipe-to-assignment`
+- **コミット参照**: `(ryokkon624/hw-hub-manage#47)`
+- **ステータス**: 実装完了・レビュー待ち
 
-**新規ファイル**:
-- `src/components/housework/SwipeableTaskCard.vue`
-- `src/components/housework/__tests__/SwipeableTaskCard.spec.ts`
+**スワイプ仕様**:
+
+| 操作 | アクション | 背景色 | アイコン | 文字 (JP/EN/ES) |
+|--|--|--|--|--|
+| 左スワイプ | 自分にする（即時実行） | bg-sky-500 | UserCheck | 自分にする / Mine / Para mí |
+| 右スワイプ | メンバー選択モーダル起動 | bg-amber-500 | Users | メンバーへ / Members / Miembros |
+
+**新規作成ファイル**:
+- `src/components/housework/SwipeableAssignmentCard.vue` — SwipeableTaskCard.vue と同構造を踏襲
+- `src/components/housework/AssigneePickerModal.vue` — ボトムシート風モーダル（下からせり上がるアニメーション）
+- `src/components/housework/__tests__/SwipeableAssignmentCard.spec.ts`
+- `src/components/housework/__tests__/AssigneePickerModal.spec.ts`
 
 **編集ファイル**:
-- `src/views/housework/tasks/MyTasksPage.vue`
-- `src/i18n/ja.json` / `en.json` / `es.json`
+- `src/views/housework/assignment/HouseworkAssignmentPage.vue` — SP/PCで `md:hidden` / `hidden md:flex` 分岐（AC6担保）
+- `src/assets/main.css` — カラートークン追加（bg-hwhub-swipe-self: sky-500 / bg-hwhub-swipe-members: amber-500）
+- i18nファイル3件（ja/en/es）: assign.swipe.self / assign.swipe.members / assign.picker.title / assign.picker.unassigned
 
-**仕様**:
-- SwipeableShoppingItem.vue の2層構造（背景＋前面）を踏襲
-- 右スワイプ → 完了（`bg-hwhub-swipe-action` (emerald-500)背景、`CheckCheck`アイコン、白文字「完了/Done/Hecho」）
-- 左スワイプ → スキップ（`bg-hwhub-swipe-back` (slate-400)背景、`CircleMinus`アイコン、白文字「スキップ/Skip/Omitir」）
+**承認済み決定事項**:
+- モーダルアニメーションは固定速度（250ms ease-out）でAC5を満たす（スワイプ速度連動はBEST要件として後回し）
+- BaseModalは使わず、ボトムシート風コンポーネントを新規作成
+- 左スワイプの「自分にする」は確認ダイアログなしで即時実行
+
+**Sprint15参考**:
+- `SwipeableTaskCard.vue` の2層構造を踏襲
+- `useSwipeGesture` コンポーザブルをそのまま流用
 - 背景アイコンは大きめ（w-10相当）で不透明度20%
-- スキップ理由入力（window.prompt）は不要。理由なしでスキップ実行
-- SP版のみSwipeableTaskCard、PC版は既存ボタンUI維持（`hidden md:block` / `md:hidden`で分岐）
-- emit: `swipe-right` → `markDone(task)`、`swipe-left` → `skipTask(task)`
-- i18nキー: `myTasks.swipe.done` / `myTasks.swipe.skip`
-
----
-
-### Issue #49: [SP版] 買い物リスト画面の購入済みのスワイプ改善（SP:2）
-
-- **ブランチ**: `feature/49-improve-purchased-swipe`
-- **コミット参照**: `(ryokkon624/hw-hub-manage#49)`
-- **ステータス**: 実装完了・push済み・レビュー待ち
-
-**編集ファイル**:
-- `src/composables/useSwipeGesture.ts`
-- `src/composables/__tests__/useSwipeGesture.spec.ts`
-- `src/components/shopping/SwipeableShoppingItem.vue`
-
-**仕様**:
-- useSwipeGesture にオプション引数 `disableLeft?: boolean` / `disableRight?: boolean` を追加
-- `handleTouchMove` で該当方向の差分を0にクランプ
-- 購入済みアイテム（PURCHASED）に `disableRight: true` を渡す
-- 購入済みアイテムの左スワイプ背景を `bg-transparent` → `bg-hwhub-swipe-back` (slate-400) に変更
-- AC3: 未購入アイテムのスワイプ動作には影響しない
-
----
-
-## 作業順
-
-1. #48（feature/48-add-swipe-to-mytasks）→ TDD（テストファースト）→ コミット・push
-2. #49（feature/49-improve-purchased-swipe）→ TDD（テストファースト）→ コミット・push
+- SP版のみスワイプ対応、PC版は既存UIを温存（`md:hidden` / `hidden md:flex` で分岐）
 
 ---
 
@@ -70,7 +54,7 @@ SP版のスワイプ体験を統一・改善する
 
 | 日付 | 問題 | 原因 | 解決策 |
 |------|------|------|--------|
-| (Sprint 15ではまだなし) | | | |
+| (Sprint 16ではまだなし) | | | |
 
 ---
 
