@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-01
+**最終更新**: 2026-05-01（Sprint 17 Retro後）
 
 ---
 
@@ -24,6 +24,7 @@
 | Sprint 14  | スケルトンスクリーン導入とスワイプUX修正で、主要画面のローディング体験とスワイプ操作の視覚的一貫性を向上させる | ✅ 全AC達成（#45: 2AC / #44: 5AC）Sprint Reviewりょこさん指摘なし                                             | パフォーマンスレビューが有効に機能（不要computedの削除・memberMapのO(1)改善）。GraphQL APIでSprintフィールドを使いりょこさんに聞かずにIssue特定できることを確認→scrum-master-workflow手順①に追記。reviewer Discord投稿が3スプリント連続成功。                                                                               |
 | Sprint 15  | SP版のスワイプ体験を統一・改善する                                                                             | ✅ 全AC達成（#48: 4AC / #49: 3AC）Sprint Reviewりょこさん指摘なし                                             | DEVが仕様の懸念点（スキップ時window.prompt有無）を自ら提起して方針確定・別Issue化まで整理できた。convention-reviewerタイムアウトが1回発生したが即再起動で解決。reviewer Discord投稿が4スプリント連続成功。Retro後: 計画フェーズTaskCreate廃止（案A採用）・sprint_backlog.mdにIssue Body全体転記の2件をスキル更新。          |
 | Sprint 16  | SP版の家事割り当て画面でスワイプ操作による直感的な担当変更体験を実現する                                       | ✅ 全AC達成（#47: 6AC）Sprint Reviewりょこさん指摘なし                                                        | Sprint15で作ったSwipeableTaskCard.vueの構造・useSwipeGestureをそのまま流用でき効率的に実装。convention-reviewerがaltのi18n未統一（既存コード `t('assign.avatarAlt')` vs 新規 `alt="icon"`）を検出→対応済み。reviewer Discord投稿が5スプリント連続成功。Skillsの更新なし。                                                   |
+| Sprint 17  | @CurrentUserId アノテーションとArgumentResolverを実装し、全ControllerのユーザーID取得コードをシンプル化する      | ✅ 全AC達成（#41: 4AC / 1018テスト全グリーン）Sprint Reviewりょこさん指摘なし                                  | 横断的リファクタリングでUserController.changePasswordの置き換え漏れが発生→convention-reviewerが検出・対応済み。developer-workflowにgrep残存確認を追加。security-reviewerがdeleteHouseworkの認可チェック欠如（既存問題）を発見→Issue #50起票。reviewer Discord投稿が6スプリント連続成功。 |
 
 ---
 
@@ -64,6 +65,8 @@
 | Sprint 15  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点で投稿成功（4スプリント連続）。定着確認                                                         | 継続監視                                                    |
 | Sprint 16  | Claudeモデル最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                 | 次Planning時に再確認                                        |
 | Sprint 16  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（5スプリント連続）。定着確認                                 | 継続監視                                                    |
+| Sprint 17  | Claudeモデル最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                 | 次Planning時に再確認                                        |
+| Sprint 17  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー）で投稿成功（6スプリント連続）。定着確認                               | 継続監視                                                    |
 
 ---
 
@@ -88,6 +91,7 @@
 - PlanningでGraphQL APIのSprintフィールドフィルタリングを使って対象Issueを自律特定する（Sprint 14〜）
 - sprint_backlog.mdにIssue Body全体（概要・ユーザーストーリー・AC・備考）を転記し、DEVが背景・目的を把握した上で実装方針・代替案を考える（Sprint 15〜）
 - TaskCreateは実装フェーズのDEVが行う（計画フェーズでは作成しない）（Sprint 15〜）
+- 横断的リファクタリングのコミット前にgrepで置き換え対象パターンの残存を確認する（Sprint 17〜 → developer-workflow更新）
 
 ### Stop（やめること）
 
@@ -117,8 +121,9 @@
 - SM・DEVが投稿プレフィックスを省くこと（Sprint 09 → developer-workflow v1.1.0で必須化）
 - 指摘対応後の再レビューを省いてSprintReviewに進むこと（Sprint 09 → scrum-master-workflow v1.1.0で必須化）
 - DEVがコミット後にgit pushを忘れること（Sprint 13 → developer-workflow に push 手順を追記）
+- 横断的リファクタリングで対象箇所の置き換え漏れが発生すること（Sprint 17 → developer-workflowにgrep残存確認を追加）
 
 ### Challenge（次に試すこと）
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
-- reviewerのDiscord投稿問題: Sprint 13〜14で3スプリント連続成功。継続監視（根本原因は未特定）
+- reviewerのDiscord投稿継続監視（Sprint 13〜17で6スプリント連続成功。根本原因は未特定）

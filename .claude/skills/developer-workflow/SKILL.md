@@ -103,6 +103,7 @@ Discord操作は `discord-operations` スキルを参照すること。
 1. コミット前チェックを実施する：
    - [ ] ACをすべて満たしているか
    - [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format`）
+   - [ ] 横断的リファクタリングの場合: `grep` で置き換え対象パターンの残存がないことを確認する（例: `grep -r "authentication.getName()" src/main/java`）
 2. **`backlog/sprint_XX/sprint_backlog.md` のACをすべて `[x]` に更新する**
 3. コミットする（`git` ルール参照）
 4. **`git push -u origin {ブランチ名}` でリモートにプッシュする**（SMのPR作成に必要）
