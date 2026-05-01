@@ -25,6 +25,7 @@
 - スワイプ背景色は `main.css` に `bg-hwhub-swipe-action/delete/back/disabled` の4トークンを定義してカラートークン経由で指定する（生クラス禁止）
 - ユーザーアイコンの broken image 対策は `components/ui/UserAvatar.vue`（共通コンポーネント）で `imageError = ref(false)` + `@error="imageError = true"` パターン。AC3例外箇所は個別に空グレー丸表示で対応する
 - SP/PCのレイアウト分岐はTailwindの `md:` ブレークポイントで切り替え（`md:hidden` でSP専用UI、`md:block` でPC専用UI）
+- スケルトンスクリーンは `components/ui/SkeletonItem.vue`（variant別 + count指定）として共通化。初回ロード中は `withLoading` を使わず `isInitialLoading` フラグで制御することで二重ローディング表示を回避
 
 ---
 
@@ -35,6 +36,15 @@
 | #34 | SP版買い物リスト画面を3タブ構成に変更（SP:5） | ShoppingListTabBar.vue 新規・SP時のみタブ切替、PC時は2カラムgrid維持 |
 | #33 | ユーザーアイコン取得失敗時のイニシャル表示（SP:2） | UserAvatar.vue 共通化・AC3例外箇所のみ個別対応 |
 | #42 | 買い物リスト画面にスワイプジェスチャー導入（SP:5） | useSwipeGesture composable + SwipeableShoppingItem.vue・カラートークン4種追加 |
+
+---
+
+## Sprint 14 サマリー（2026-05-01完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #44 | スケルトンスクリーン導入（SP:3） | SkeletonItem.vue 新規・家事割り当て/MyTasks/買い物リスト3画面に適用。レビュー指摘で memberMap で O(1) 参照に改善 |
+| #45 | 購入済みアイテム左スワイプ時の背景アイコン削除（SP:1） | SwipeableShoppingItem の購入済み時の左スワイプ背景アイコン・背景色を削除 |
 
 ---
 

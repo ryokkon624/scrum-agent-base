@@ -147,12 +147,24 @@ curl -s -X PATCH \
 
 > **注意**: このクエリはProjectsに登録済みのアイテムのみを返す。また `first: 100` が上限であり、アイテム数が100件を超えるとページネーションが必要になる。**Refinementの最初のDraft確認には使わず、Readyフィールドの値確認・item_id取得の目的に限定すること。**
 
+> **⚠️ 複数リポジトリ混在に注意**: ProjectsにはHwHub配下の複数リポジトリのIssueが混在している。Issue `number` だけで絞り込むと別リポジトリの同番号Issueにヒットする。**item_idを特定する際は必ず `url` も取得し、`hw-hub-manage` が含まれることを確認すること。**
+
 ```bash
 curl -s -X POST \
   -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"query": "{ user(login: \"ryokkon624\") { projectV2(number: 1) { items(first: 100) { pageInfo { hasNextPage endCursor } nodes { id fieldValues(first: 20) { nodes { ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name } } } ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2Field { name } } } } } content { ... on Issue { number title state } } } } } } }"}' \
+  -d '{"query": "{ user(login: \"ryokkon624\") { projectV2(number: 1) { items(first: 100) { pageInfo { hasNextPage endCursor } nodes { id fieldValues(first: 20) { nodes { ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name } } } ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2Field { name } } } } } content { ... on Issue { number title url state } } } } } } }"}' \
   "https://api.github.com/graphql"
+```
+
+取得後は `url` に `hw-hub-manage` が含まれるアイテムのみを対象にすること：
+
+```python
+# フィルタリング例
+for item in items:
+    url = item.get('content', {}).get('url', '')
+    if 'hw-hub-manage' in url and item['content']['number'] == N:
+        item_id = item['id']
 ```
 
 100件を超える場合は `pageInfo.hasNextPage` が `true` になるので、`endCursor` を使って続きを取得する：
@@ -200,3 +212,4 @@ curl -s -X POST \
 - Issue作成後は必ず手順3のStep 2〜3を実行し、Projectへの追加とReadyフィールド（Draft）の設定まで行う
 - Refinement完了後のReady更新（Draft→Ready）およびStory Points設定はPOが手順5-2・5-4で実施する
 - **りょこさんが引き続き手動で行う作業**: Planning前の優先順位並び替え
+- **⚠️ Projectsには複数リポジトリのIssueが混在している**: GraphQLでitem_idを特定するときは `number` だけで絞り込まず、必ず `url` でリポジトリが `hw-hub-manage` であることを確認すること（同番号の別リポジトリIssueに誤ってフィールド更新するミスが発生した実績あり）

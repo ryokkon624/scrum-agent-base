@@ -22,6 +22,7 @@
 | Sprint 12  | SP版買い物リスト画面のタブ化とユーザアイコンフォールバック対応でSPユーザー体験を向上する | ✅ 全AC達成（#34: 7AC / #33: 3AC）Sprint Reviewりょこさん指摘なし | DEVのbugPBI改修方針選択理由記載チャレンジ達成（#33 fix PBIで確認）。convention-reviewerがgit checkoutできないブロッカー発生→git diffで代替解決→convention-reviewer.md v1.3.0にgit checkout禁止・フォールバック手順を追記。reviewerのDiscord投稿問題が4スプリント連続持ち越し（Sprint 13で必ず根本解決する）。 |
 | Sprint 13  | 買い物リスト画面にスワイプジェスチャーを導入して、スマートフォンの片手操作体験を向上させる | ✅ 全AC達成（#42: 7AC）Sprint Reviewでりょこさん指摘1件（購入済み左スワイプの背景アイコン不要→Issue #45起票） | reviewerのDiscord投稿問題が全3観点で解消（5スプリントぶり。根本原因は特定できず）。DEVがコミット後にpushを忘れSMがカバー→developer-workflowにpush手順追記。gh不在でcurl+REST APIでPR作成→scrum-master-workflowのPR作成手順⑥にcurl代替を追記。 |
 | Sprint 14  | スケルトンスクリーン導入とスワイプUX修正で、主要画面のローディング体験とスワイプ操作の視覚的一貫性を向上させる | ✅ 全AC達成（#45: 2AC / #44: 5AC）Sprint Reviewりょこさん指摘なし | パフォーマンスレビューが有効に機能（不要computedの削除・memberMapのO(1)改善）。GraphQL APIでSprintフィールドを使いりょこさんに聞かずにIssue特定できることを確認→scrum-master-workflow手順①に追記。reviewer Discord投稿が3スプリント連続成功。 |
+| Sprint 15  | SP版のスワイプ体験を統一・改善する | ✅ 全AC達成（#48: 4AC / #49: 3AC）Sprint Reviewりょこさん指摘なし | DEVが仕様の懸念点（スキップ時window.prompt有無）を自ら提起して方針確定・別Issue化まで整理できた。convention-reviewerタイムアウトが1回発生したが即再起動で解決。reviewer Discord投稿が4スプリント連続成功。Retro後: 計画フェーズTaskCreate廃止（案A採用）・sprint_backlog.mdにIssue Body全体転記の2件をスキル更新。 |
 
 ---
 
@@ -58,6 +59,8 @@
 | Sprint 14  | Claudeモデル最新バージョン確認                         | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。アップグレード不要。継続監視 | 次Planning時に再確認 |
 | Sprint 14  | reviewerのDiscord投稿継続監視                          | ✅ 全3観点・初回＆再レビュー両方で投稿成功（3スプリント連続）。実害解消定着を確認 | 継続監視 |
 | Sprint 14  | GraphQL APIでSprintフィールドからIssue番号を自律取得    | ✅ SprintフィールドでフィルタリングしてIssue #44・#45を自律特定。りょこさんに確認不要 | scrum-master-workflow手順①を更新 |
+| Sprint 15  | Claudeモデル最新バージョン確認                         | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。継続監視 | 次Planning時に再確認 |
+| Sprint 15  | reviewerのDiscord投稿継続監視                          | ✅ 全3観点で投稿成功（4スプリント連続）。定着確認 | 継続監視 |
 
 ---
 
@@ -80,6 +83,8 @@
 - SMがreviewerのgit diff外ファイル指摘をgit diffコマンドで検証してから受け入れる（Sprint 11〜）
 - DEVのbugPBI改修方針に選択理由・トレードオフを記載する（Sprint 12〜 定着確認）
 - PlanningでGraphQL APIのSprintフィールドフィルタリングを使って対象Issueを自律特定する（Sprint 14〜）
+- sprint_backlog.mdにIssue Body全体（概要・ユーザーストーリー・AC・備考）を転記し、DEVが背景・目的を把握した上で実装方針・代替案を考える（Sprint 15〜）
+- TaskCreateは実装フェーズのDEVが行う（計画フェーズでは作成しない）（Sprint 15〜）
 
 ### Stop（やめること）
 
@@ -93,6 +98,7 @@
 - DEVがbugPBIで実装方針の選択理由を省いて報告すること（Sprint 08 → developer.md v1.11.0で「改修方針」に選択理由必須化）
 - reviewerが別ブランチで修正済みのファイルをdiff外と判定せずに指摘すること（Sprint 11 → reviewer 3ファイルにgit diffスコープ制限を明記）
 - convention-reviewerが `git checkout` でブランチを切り替えようとしてレビュー未完了になること（Sprint 12 → convention-reviewer.md v1.3.0でgit checkout禁止・フォールバック手順を明記）
+- 計画フェーズ（Opus 4.7）でTaskCreateすること（Sprint 15 → 別エージェントインスタンスの実装フェーズが引き継げず無視される。scrum-master-workflow・developer-workflow更新）
 
 ### Avoid（回避すること）
 
