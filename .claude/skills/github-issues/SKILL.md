@@ -1,6 +1,6 @@
 ---
 name: github-issues
-description: HwHubプロジェクトのGitHub Issue参照・作成・更新の手順。SM・DEV・POがIssueを取得する、Issueを作成する、IssueのBodyを更新する操作が必要なときは必ずこのスキルを参照すること。GitHub MCPはPrivate repoに対応していないため、起動方法によってcurlとMCPを使い分ける必要があり、このスキルを読まずに操作してはならない。
+description: HwHubプロジェクトのGitHub Issue参照・作成・更新の手順。SM・DEV・POがIssueを取得する、Issueを作成する、IssueのBodyを更新する操作が必要なときは必ずこのスキルを参照すること。Issue操作はMCPを優先し、Projectsフィールド操作はGraphQL APIを使う。このスキルを読まずに操作してはならない。
 ---
 
 # GitHub Issues Operations
@@ -21,16 +21,16 @@ HwHubスクラムチームのGitHub Issue参照・作成・更新の手順。
 
 ---
 
-## ツールの使い分け（最重要）
+## ツールの使い分け
 
-Claude Codeの起動方法によってGitHub MCPの使用可否が異なる。
-
-| 起動方法 | GitHub MCP | 使用するツール |
+| 操作 | 優先ツール | 代替 |
 |---|---|---|
-| ターミナル（CLI）起動 | ✅ 使用可能 | `mcp__github__*` 系ツール |
-| デスクトップアプリ起動 | ❌ Private repo不可 | curl |
+| Issue一覧取得・個別取得・作成・Body更新 | `mcp__github__*` 系ツール | curl |
+| Projectsフィールド操作（Ready/Sprint/SP） | GraphQL API（curl） | なし（MCPは非対応） |
 
-**迷ったらcurlを使う。** curlはどちらの環境でも動作する。
+- **MCPはPrivate repoでも使用可能**（2026-04-30 デスクトップアプリ起動で動作確認済み）
+- MCPが何らかの理由で動作しない場合はcurlにフォールバックする
+- curlはどちらの環境でも必ず動作する
 
 ---
 
@@ -38,14 +38,14 @@ Claude Codeの起動方法によってGitHub MCPの使用可否が異なる。
 
 ### 1. Issue一覧を取得する
 
-**CLIの場合（MCP）:**
+**MCPを使う場合（優先）:**
 ```
 ツール: mcp__github__list_issues
 パラメータ:
   owner: ryokkon624
   repo: hw-hub-manage
   state: open
-  per_page: 50
+  per_page: 100
 ```
 
 **curlの場合:**
@@ -53,11 +53,24 @@ Claude Codeの起動方法によってGitHub MCPの使用可否が異なる。
 curl -s \
   -H "Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
   -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/ryokkon624/hw-hub-manage/issues?state=open&per_page=50"
+  "https://api.github.com/repos/ryokkon624/hw-hub-manage/issues?state=open&per_page=100"
 ```
+
+> **重要**: Refinementの最初のDraft確認はこの手順でopenなIssueを網羅的に取得すること。
+> GraphQLのProjectsクエリ（手順5-1）はアイテム数が100件を超えるとページネーション漏れが発生するため、Issue一覧の取得には使わない。
 
 ### 2. 特定のIssueを取得する
 
+**MCPを使う場合（優先）:**
+```
+ツール: mcp__github__get_issue（スキーマをToolSearchで取得してから使う）
+パラメータ:
+  owner: ryokkon624
+  repo: hw-hub-manage
+  issue_number: {N}
+```
+
+**curlの場合:**
 ```bash
 curl -s \
   -H "Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
@@ -130,14 +143,23 @@ curl -s -X PATCH \
 
 ### 5. GitHub ProjectsのフィールドをGraphQLで操作する
 
-#### 5-1. Project一覧をReadyフィールド付きで取得する
+#### 5-1. ProjectのIssue一覧をReadyフィールド付きで取得する
+
+> **注意**: このクエリはProjectsに登録済みのアイテムのみを返す。また `first: 100` が上限であり、アイテム数が100件を超えるとページネーションが必要になる。**Refinementの最初のDraft確認には使わず、Readyフィールドの値確認・item_id取得の目的に限定すること。**
 
 ```bash
 curl -s -X POST \
   -H "Authorization: bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"query": "{ user(login: \"ryokkon624\") { projectV2(number: 1) { items(first: 200) { nodes { id fieldValues(first: 20) { nodes { ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name } } } ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2Field { name } } } } } content { ... on Issue { number title state } } } } } } }"}' \
+  -d '{"query": "{ user(login: \"ryokkon624\") { projectV2(number: 1) { items(first: 100) { pageInfo { hasNextPage endCursor } nodes { id fieldValues(first: 20) { nodes { ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name } } } ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2Field { name } } } } } content { ... on Issue { number title state } } } } } } }"}' \
   "https://api.github.com/graphql"
+```
+
+100件を超える場合は `pageInfo.hasNextPage` が `true` になるので、`endCursor` を使って続きを取得する：
+
+```bash
+# after: "[endCursor]" を追加してページネーション
+-d '{"query": "{ user(login: \"ryokkon624\") { projectV2(number: 1) { items(first: 100, after: \"[endCursor]\") { pageInfo { hasNextPage endCursor } nodes { ... } } } } }"}'
 ```
 
 #### 5-2. ReadyフィールドをReadyに更新する（Refinement完了後）

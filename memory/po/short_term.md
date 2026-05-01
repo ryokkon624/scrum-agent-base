@@ -1,7 +1,7 @@
 # PO 短期記憶
 
-**スプリント**: Sprint 10  
-**最終更新**: 2026-04-28
+**スプリント**: Sprint 14 Planning準備中  
+**最終更新**: 2026-04-30
 
 ---
 
@@ -25,6 +25,9 @@
 - 2026-04-28 Refinement実施：#3・#31のBody整備完了、Ready=Ready・Project設定完了
   - #3: featureラベル。おうち未所属ガード＆導線整理。SP=5（3→5に変更）、Sprint=10。ブランチ `feature/3-household-guard-guide`
   - #31: refactorラベル。買い物アイテム更新APIのURL変更。SP=2、Sprint=10。ブランチ `refactor/31-shopping-item-put-url`
+- 2026-04-30 Refinement実施：#45のBody整備・Projectsへの追加完了、#44・#45をSprint14に設定
+  - #45: bugラベル。購入済みアイテム左スワイプ時の背景アイコン削除。SP=1、Sprint=14。ブランチ `fix/45-remove-swipe-bg-icon`
+  - #44: スケルトンスクリーン導入。SP=3、Sprint=14（Ready済みを割り当て）
 
 ---
 
