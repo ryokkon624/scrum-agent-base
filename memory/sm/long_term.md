@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-01（Sprint 17 Retro後）
+**最終更新**: 2026-05-01（Sprint 18 Retro後）
 
 ---
 
@@ -25,6 +25,7 @@
 | Sprint 15  | SP版のスワイプ体験を統一・改善する                                                                             | ✅ 全AC達成（#48: 4AC / #49: 3AC）Sprint Reviewりょこさん指摘なし                                             | DEVが仕様の懸念点（スキップ時window.prompt有無）を自ら提起して方針確定・別Issue化まで整理できた。convention-reviewerタイムアウトが1回発生したが即再起動で解決。reviewer Discord投稿が4スプリント連続成功。Retro後: 計画フェーズTaskCreate廃止（案A採用）・sprint_backlog.mdにIssue Body全体転記の2件をスキル更新。          |
 | Sprint 16  | SP版の家事割り当て画面でスワイプ操作による直感的な担当変更体験を実現する                                       | ✅ 全AC達成（#47: 6AC）Sprint Reviewりょこさん指摘なし                                                        | Sprint15で作ったSwipeableTaskCard.vueの構造・useSwipeGestureをそのまま流用でき効率的に実装。convention-reviewerがaltのi18n未統一（既存コード `t('assign.avatarAlt')` vs 新規 `alt="icon"`）を検出→対応済み。reviewer Discord投稿が5スプリント連続成功。Skillsの更新なし。                                                   |
 | Sprint 17  | @CurrentUserId アノテーションとArgumentResolverを実装し、全ControllerのユーザーID取得コードをシンプル化する      | ✅ 全AC達成（#41: 4AC / 1018テスト全グリーン）Sprint Reviewりょこさん指摘なし                                  | 横断的リファクタリングでUserController.changePasswordの置き換え漏れが発生→convention-reviewerが検出・対応済み。developer-workflowにgrep残存確認を追加。security-reviewerがdeleteHouseworkの認可チェック欠如（既存問題）を発見→Issue #50起票。reviewer Discord投稿が6スプリント連続成功。 |
+| Sprint 18  | ダークモード対応を完成させ、システム設定連動と手動切り替えを両立した快適な夜間利用体験を実現する                 | ✅ 全AC達成（#43: 4AC / 622テスト全グリーン）Sprint Reviewりょこさん指摘なし                                   | りょこさんが色定義を事前にmain.cssで確定済みで渡してくれたことでDEVが色検討不要で実装に集中できた。大規模色置換はスコープを主要レイアウト/ページコンテナ/モーダルに絞り、残存94箇所/34ファイルをgrep集計して別Issue（#51）化する有効フローを確立。convention-reviewerがSMへのSendMessageで内容を送らずidle通知のみになったがDiscord投稿は成功（実害なし、継続監視）。reviewer Discord投稿が7スプリント連続成功。 |
 
 ---
 
@@ -67,6 +68,8 @@
 | Sprint 16  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（5スプリント連続）。定着確認                                 | 継続監視                                                    |
 | Sprint 17  | Claudeモデル最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                 | 次Planning時に再確認                                        |
 | Sprint 17  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー）で投稿成功（6スプリント連続）。定着確認                               | 継続監視                                                    |
+| Sprint 18  | Claudeモデル最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                 | 次Planning時に再確認                                        |
+| Sprint 18  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（7スプリント連続）。convention-reviewerのSMへのSendMessageがidle通知のみだったがDiscord投稿は成功（実害なし） | 継続監視                                                    |
 
 ---
 
@@ -92,6 +95,8 @@
 - sprint_backlog.mdにIssue Body全体（概要・ユーザーストーリー・AC・備考）を転記し、DEVが背景・目的を把握した上で実装方針・代替案を考える（Sprint 15〜）
 - TaskCreateは実装フェーズのDEVが行う（計画フェーズでは作成しない）（Sprint 15〜）
 - 横断的リファクタリングのコミット前にgrepで置き換え対象パターンの残存を確認する（Sprint 17〜 → developer-workflow更新）
+- 大規模CSSリファクタリング時はスコープを絞り（主要レイアウト/ページコンテナ/モーダル）、残存箇所をgrepで集計して別Issue化する（Sprint 18〜）
+- デザイントークン系タスクでは事前にりょこさんから色定義をCSSファイルで確定してもらい、DEVに渡す（Sprint 18〜）
 
 ### Stop（やめること）
 
@@ -126,4 +131,4 @@
 ### Challenge（次に試すこと）
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
-- reviewerのDiscord投稿継続監視（Sprint 13〜17で6スプリント連続成功。根本原因は未特定）
+- reviewerのDiscord投稿継続監視（Sprint 13〜18で7スプリント連続成功。根本原因は未特定）

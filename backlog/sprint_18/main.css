@@ -1,0 +1,322 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────────────────
+   Dark Mode 戦略
+   ─────────────────────────────────────────────────────────
+   - 既定は OS 設定 (prefers-color-scheme) に追従
+   - ユーザーが明示的に切り替えたい場合は <html class="dark">
+     または <html class="light"> をつければ上書きされる
+   - Tailwind v4 では @custom-variant で dark: の挙動を定義
+   ───────────────────────────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *):not(.light *):not(.light));
+
+/* OS 追従用: html に class が無いときは prefers-color-scheme で切替 */
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) {
+    color-scheme: dark;
+  }
+  html:not(.light):not(.dark) body {
+    /* 下の :root.dark と同じトークンを引き継ぐ */
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Design Tokens (CSS Custom Properties)
+   ─────────────────────────────────────────────────────────
+   ライト/ダークで値だけが変わる。Tailwind の utility と
+   .bg-hwhub-* クラスはこの変数を参照するので、テーマ切替で
+   全 UI が一斉に追従する。
+   ───────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  /* Surface */
+  --hwhub-surface:           #f7f8f6;
+  --hwhub-surface-card:      #ffffff;
+  --hwhub-surface-subtle:    #ecfdf5;   /* emerald-50 */
+  --hwhub-surface-login:     #e2e8f0;   /* slate-200 */
+
+  /* Border */
+  --hwhub-border:            #e2e8f0;   /* slate-200 */
+  --hwhub-border-subtle:     #d1fae5;   /* emerald-100 */
+
+  /* Text */
+  --hwhub-text-heading:      #0f172a;   /* slate-900 */
+  --hwhub-text-body:         #1e293b;   /* slate-800 */
+  --hwhub-text-muted:        #64748b;   /* slate-500 */
+  --hwhub-text-brand:        #0f172a;
+  --hwhub-text-nav-inactive: #475569;   /* slate-600 */
+  --hwhub-text-nav-inactive-mobile: #94a3b8; /* slate-400 */
+
+  /* Primary (emerald) */
+  --hwhub-primary:           #059669;   /* emerald-600 */
+  --hwhub-primary-hover:     #047857;   /* emerald-700 */
+  --hwhub-primary-50:        #ecfdf5;   /* emerald-50 */
+  --hwhub-primary-text:      #047857;   /* emerald-700 */
+  --hwhub-primary-border:    #6ee7b7;   /* emerald-300 */
+  --hwhub-primary-ring:      #34d399;   /* emerald-400 */
+  --hwhub-on-primary:        #ffffff;
+
+  /* Accent (amber) */
+  --hwhub-accent-soft:       #fffbeb;   /* amber-50 */
+  --hwhub-accent-border:     #fde68a;   /* amber-200 */
+  --hwhub-accent-badge-bg:   #fef3c7;   /* amber-100 */
+  --hwhub-accent-badge-text: #b45309;   /* amber-700 */
+
+  /* Sidebar */
+  --hwhub-sidebar:           #1a2e1a;
+  --hwhub-sidebar-logo:      #86efac;   /* green-300 */
+  --hwhub-sidebar-active:    #ffffff;
+  --hwhub-sidebar-active-bg: rgba(255, 255, 255, 0.12);
+  --hwhub-sidebar-hover-bg:  rgba(255, 255, 255, 0.08);
+  --hwhub-sidebar-nav:       #bbf7d0;   /* green-200 */
+  --hwhub-sidebar-border:    rgba(255, 255, 255, 0.10);
+
+  /* Danger (rose) */
+  --hwhub-danger-soft:       #fff1f2;   /* rose-50 */
+  --hwhub-danger:            #e11d48;   /* rose-600 */
+  --hwhub-danger-border:     #fecdd3;   /* rose-200 */
+
+  /* Info (blue) */
+  --hwhub-info-soft:         #eff6ff;   /* blue-50 */
+  --hwhub-info:              #1d4ed8;   /* blue-700 */
+
+  /* Swipe */
+  --hwhub-swipe-action:      #10b981;   /* emerald-500 */
+  --hwhub-swipe-delete:      #f43f5e;   /* rose-500 */
+  --hwhub-swipe-back:        #94a3b8;   /* slate-400 */
+  --hwhub-swipe-disabled:    #cbd5e1;   /* slate-300 */
+  --hwhub-swipe-self:        #0ea5e9;   /* sky-500 */
+  --hwhub-swipe-members:     #f59e0b;   /* amber-500 */
+
+  /* Store */
+  --hwhub-store-super:       #10b981;   /* emerald-500 */
+  --hwhub-store-online:      #0ea5e9;   /* sky-500 */
+  --hwhub-store-drug:        #f43f5e;   /* rose-500 */
+}
+
+/* ─── DARK (B案: Carbon Slate) ─── */
+:root.dark,
+:root.dark body {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    color-scheme: dark;
+  }
+}
+
+/* ダーク値: .dark クラス または OS dark (light を明示してない場合) */
+:where(:root.dark),
+:where(html:not(.light):not(.dark)) {
+}
+
+/* 実際の値は両方のセレクタで宣言する */
+:root.dark,
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {}
+}
+
+/* ─────────────────────────────────────────────────────────
+   ↓ ここからダーク値の本体。
+   .dark クラス と OS dark を一つの変数ブロックで管理する
+   ために :where() で セレクタを束ねる。
+   ───────────────────────────────────────────────────────── */
+:root.dark {
+  /* Surface */
+  --hwhub-surface:           #0e1116;
+  --hwhub-surface-card:      #181c23;
+  --hwhub-surface-subtle:    #141821;
+  --hwhub-surface-login:     #181c23;
+
+  /* Border */
+  --hwhub-border:            #262b35;
+  --hwhub-border-subtle:     #232834;
+
+  /* Text */
+  --hwhub-text-heading:      #e7eaf0;
+  --hwhub-text-body:         #c4cad6;
+  --hwhub-text-muted:        #7a8294;
+  --hwhub-text-brand:        #f3f5f9;
+  --hwhub-text-nav-inactive: #9ba3b3;
+  --hwhub-text-nav-inactive-mobile: #6a7387;
+
+  /* Primary (emerald — 暗背景で発色させるため少し明るく) */
+  --hwhub-primary:           #10b981;   /* emerald-500 */
+  --hwhub-primary-hover:     #34d399;   /* emerald-400 (hover で明るく) */
+  --hwhub-primary-50:        rgba(16, 185, 129, 0.13);
+  --hwhub-primary-text:      #34d399;   /* emerald-400 (本文と並べて読みやすく) */
+  --hwhub-primary-border:    rgba(16, 185, 129, 0.40);
+  --hwhub-primary-ring:      #34d399;
+  --hwhub-on-primary:        #04130c;   /* 暗緑 (明色 primary 上で AA 確保) */
+
+  /* Accent (amber) */
+  --hwhub-accent-soft:       rgba(245, 158, 11, 0.10);
+  --hwhub-accent-border:     rgba(245, 158, 11, 0.35);
+  --hwhub-accent-badge-bg:   rgba(245, 158, 11, 0.18);
+  --hwhub-accent-badge-text: #fbbf24;   /* amber-400 */
+
+  /* Sidebar (もとから暗いので微調整のみ) */
+  --hwhub-sidebar:           #0a0d12;
+  --hwhub-sidebar-logo:      #6ee7b7;
+  --hwhub-sidebar-active:    #ffffff;
+  --hwhub-sidebar-active-bg: rgba(16, 185, 129, 0.16);
+  --hwhub-sidebar-hover-bg:  rgba(255, 255, 255, 0.06);
+  --hwhub-sidebar-nav:       #9ba3b3;
+  --hwhub-sidebar-border:    rgba(255, 255, 255, 0.06);
+
+  /* Danger (rose — 刺激を抑える) */
+  --hwhub-danger-soft:       rgba(244, 63, 94, 0.10);
+  --hwhub-danger:            #fb7185;   /* rose-400 */
+  --hwhub-danger-border:     rgba(244, 63, 94, 0.32);
+
+  /* Info */
+  --hwhub-info-soft:         rgba(59, 130, 246, 0.10);
+  --hwhub-info:              #60a5fa;   /* blue-400 */
+
+  /* Swipe */
+  --hwhub-swipe-action:      #10b981;
+  --hwhub-swipe-delete:      #f43f5e;
+  --hwhub-swipe-back:        #475569;
+  --hwhub-swipe-disabled:    #3a4250;
+  --hwhub-swipe-self:        #0ea5e9;
+  --hwhub-swipe-members:     #f59e0b;
+
+  /* Store (識別性が要るので明度のみ調整) */
+  --hwhub-store-super:       #10b981;
+  --hwhub-store-online:      #38bdf8;
+  --hwhub-store-drug:        #fb7185;
+}
+
+/* OS dark への追従 (html に .light/.dark が無いときだけ適用) */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    --hwhub-surface:           #0e1116;
+    --hwhub-surface-card:      #181c23;
+    --hwhub-surface-subtle:    #141821;
+    --hwhub-surface-login:     #181c23;
+    --hwhub-border:            #262b35;
+    --hwhub-border-subtle:     #232834;
+    --hwhub-text-heading:      #e7eaf0;
+    --hwhub-text-body:         #c4cad6;
+    --hwhub-text-muted:        #7a8294;
+    --hwhub-text-brand:        #f3f5f9;
+    --hwhub-text-nav-inactive: #9ba3b3;
+    --hwhub-text-nav-inactive-mobile: #6a7387;
+    --hwhub-primary:           #10b981;
+    --hwhub-primary-hover:     #34d399;
+    --hwhub-primary-50:        rgba(16, 185, 129, 0.13);
+    --hwhub-primary-text:      #34d399;
+    --hwhub-primary-border:    rgba(16, 185, 129, 0.40);
+    --hwhub-primary-ring:      #34d399;
+    --hwhub-on-primary:        #04130c;
+    --hwhub-accent-soft:       rgba(245, 158, 11, 0.10);
+    --hwhub-accent-border:     rgba(245, 158, 11, 0.35);
+    --hwhub-accent-badge-bg:   rgba(245, 158, 11, 0.18);
+    --hwhub-accent-badge-text: #fbbf24;
+    --hwhub-sidebar:           #0a0d12;
+    --hwhub-sidebar-logo:      #6ee7b7;
+    --hwhub-sidebar-active:    #ffffff;
+    --hwhub-sidebar-active-bg: rgba(16, 185, 129, 0.16);
+    --hwhub-sidebar-hover-bg:  rgba(255, 255, 255, 0.06);
+    --hwhub-sidebar-nav:       #9ba3b3;
+    --hwhub-sidebar-border:    rgba(255, 255, 255, 0.06);
+    --hwhub-danger-soft:       rgba(244, 63, 94, 0.10);
+    --hwhub-danger:            #fb7185;
+    --hwhub-danger-border:     rgba(244, 63, 94, 0.32);
+    --hwhub-info-soft:         rgba(59, 130, 246, 0.10);
+    --hwhub-info:              #60a5fa;
+    --hwhub-swipe-action:      #10b981;
+    --hwhub-swipe-delete:      #f43f5e;
+    --hwhub-swipe-back:        #475569;
+    --hwhub-swipe-disabled:    #3a4250;
+    --hwhub-swipe-self:        #0ea5e9;
+    --hwhub-swipe-members:     #f59e0b;
+    --hwhub-store-super:       #10b981;
+    --hwhub-store-online:      #38bdf8;
+    --hwhub-store-drug:        #fb7185;
+  }
+}
+
+html, body {
+  font-family:
+    'Biz UD Gothic', Meiryo, 'メイリオ', 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3',
+    Roboto, sans-serif;
+  background-color: var(--hwhub-surface);
+  color: var(--hwhub-text-body);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Utilities
+   ─────────────────────────────────────────────────────────
+   既存の .bg-hwhub-* クラスを CSS 変数参照に書き換え。
+   これだけでライト/ダーク両対応になる。
+   既存の HTML 側のクラス名は変更不要。
+   ───────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Primary */
+  .bg-hwhub-primary       { background-color: var(--hwhub-primary); color: var(--hwhub-on-primary); }
+  .hover\:bg-hwhub-primary:hover { background-color: var(--hwhub-primary-hover); }
+  .bg-hwhub-primary-50    { background-color: var(--hwhub-primary-50); }
+  .text-hwhub-primary     { color: var(--hwhub-primary-text); }
+  .border-hwhub-primary   { border-color: var(--hwhub-primary-border); }
+  .ring-hwhub-primary     { --tw-ring-color: var(--hwhub-primary-ring); }
+
+  /* Accent */
+  .bg-hwhub-accent-soft   { background-color: var(--hwhub-accent-soft); }
+  .border-hwhub-accent    { border-color: var(--hwhub-accent-border); }
+  .bg-hwhub-accent-badge  { background-color: var(--hwhub-accent-badge-bg); }
+  .text-hwhub-accent-badge{ color: var(--hwhub-accent-badge-text); }
+
+  /* Surface */
+  .bg-hwhub-surface         { background-color: var(--hwhub-surface); }
+  .bg-hwhub-surface-subtle  { background-color: var(--hwhub-surface-subtle); }
+  .bg-hwhub-surface-login   { background-color: var(--hwhub-surface-login); }
+  .bg-hwhub-surface-card    { background-color: var(--hwhub-surface-card); }
+
+  /* Sidebar */
+  .bg-hwhub-sidebar         { background-color: var(--hwhub-sidebar); }
+  .text-hwhub-sidebar-logo  { color: var(--hwhub-sidebar-logo); }
+  .text-hwhub-sidebar-active{ color: var(--hwhub-sidebar-active); }
+  .bg-hwhub-sidebar-active  { background-color: var(--hwhub-sidebar-active-bg); }
+  .hover\:bg-hwhub-sidebar-hover:hover { background-color: var(--hwhub-sidebar-hover-bg); }
+  .text-hwhub-sidebar-nav   { color: var(--hwhub-sidebar-nav); }
+  .border-hwhub-sidebar     { border-color: var(--hwhub-sidebar-border); }
+
+  /* Border */
+  .border-hwhub-border      { border-color: var(--hwhub-border); }
+
+  /* Text */
+  .text-hwhub-heading       { color: var(--hwhub-text-heading); }
+  .text-hwhub-body          { color: var(--hwhub-text-body); }
+  .text-hwhub-muted         { color: var(--hwhub-text-muted); }
+  .text-hwhub-brand         { color: var(--hwhub-text-brand); }
+  .text-hwhub-nav-inactive  { color: var(--hwhub-text-nav-inactive); }
+  .text-hwhub-nav-inactive-mobile { color: var(--hwhub-text-nav-inactive-mobile); }
+
+  /* Danger */
+  .bg-hwhub-danger-soft     { background-color: var(--hwhub-danger-soft); }
+  .text-hwhub-danger        { color: var(--hwhub-danger); }
+  .border-hwhub-danger      { border-color: var(--hwhub-danger-border); }
+
+  /* Info */
+  .bg-hwhub-info-soft       { background-color: var(--hwhub-info-soft); }
+  .text-hwhub-info          { color: var(--hwhub-info); }
+
+  /* Swipe */
+  .bg-hwhub-swipe-action    { background-color: var(--hwhub-swipe-action); }
+  .bg-hwhub-swipe-delete    { background-color: var(--hwhub-swipe-delete); }
+  .bg-hwhub-swipe-back      { background-color: var(--hwhub-swipe-back); }
+  .bg-hwhub-swipe-disabled  { background-color: var(--hwhub-swipe-disabled); }
+  .bg-hwhub-swipe-self      { background-color: var(--hwhub-swipe-self); }
+  .bg-hwhub-swipe-members   { background-color: var(--hwhub-swipe-members); }
+
+  /* Store */
+  .bg-hwhub-store-super     { background-color: var(--hwhub-store-super); }
+  .bg-hwhub-store-online    { background-color: var(--hwhub-store-online); }
+  .bg-hwhub-store-drug      { background-color: var(--hwhub-store-drug); }
+  .border-hwhub-store-super { border-left: 6px solid var(--hwhub-store-super); }
+  .border-hwhub-store-online{ border-left: 6px solid var(--hwhub-store-online); }
+  .border-hwhub-store-drug  { border-left: 6px solid var(--hwhub-store-drug); }
+}
