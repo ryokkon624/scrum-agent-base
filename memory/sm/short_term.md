@@ -1,13 +1,13 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 14（未開始）
-**最終更新**: 2026-04-30
+**スプリント**: Sprint 15（未開始）
+**最終更新**: 2026-05-01
 
 ---
 
-Sprint 13 Retrospective完了。次スプリント開始待ち。
+Sprint 14 Retrospective完了。次スプリント開始待ち。
 
 ## 引き継ぎ事項
 
-- reviewerのDiscord投稿問題: Sprint 13で全3観点が投稿成功。根本原因は特定できていないが実害は解消。継続監視する
-- Issue #45（購入済み左スワイプの背景アイコン削除）を起票済み。次スプリントで対応予定
+- reviewerのDiscord投稿: Sprint 14で3スプリント連続成功。継続監視
+- Claudeモデル: 現在 Sonnet 4.6（実装）/ Opus 4.7（計画）が最新。次Planningで再確認

@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-04-29
+**最終更新**: 2026-05-01
 
 ---
 
@@ -21,6 +21,7 @@
 | Sprint 11  | フロントエンドstore設計とUI導線の品質向上：storeカプセル化の完結とおうち未所属ユーザーへのガイド導線整備 | ✅ 全AC達成（#32・#3 全10AC） | developer.md tools に TaskCreate/TaskUpdate/SendMessage/Edit/Write/Bash を追加（Opus DEV がTaskCreate不可の問題解消）。reviewer 3ファイルにgit diffスコープ外ファイルを読まない制約を追加（フォルスポジティブ防止）。reviewer の Discord投稿問題は未解決（enabledMcpjsonServersの設定が原因と推定 → Sprint 12チャレンジ）。 |
 | Sprint 12  | SP版買い物リスト画面のタブ化とユーザアイコンフォールバック対応でSPユーザー体験を向上する | ✅ 全AC達成（#34: 7AC / #33: 3AC）Sprint Reviewりょこさん指摘なし | DEVのbugPBI改修方針選択理由記載チャレンジ達成（#33 fix PBIで確認）。convention-reviewerがgit checkoutできないブロッカー発生→git diffで代替解決→convention-reviewer.md v1.3.0にgit checkout禁止・フォールバック手順を追記。reviewerのDiscord投稿問題が4スプリント連続持ち越し（Sprint 13で必ず根本解決する）。 |
 | Sprint 13  | 買い物リスト画面にスワイプジェスチャーを導入して、スマートフォンの片手操作体験を向上させる | ✅ 全AC達成（#42: 7AC）Sprint Reviewでりょこさん指摘1件（購入済み左スワイプの背景アイコン不要→Issue #45起票） | reviewerのDiscord投稿問題が全3観点で解消（5スプリントぶり。根本原因は特定できず）。DEVがコミット後にpushを忘れSMがカバー→developer-workflowにpush手順追記。gh不在でcurl+REST APIでPR作成→scrum-master-workflowのPR作成手順⑥にcurl代替を追記。 |
+| Sprint 14  | スケルトンスクリーン導入とスワイプUX修正で、主要画面のローディング体験とスワイプ操作の視覚的一貫性を向上させる | ✅ 全AC達成（#45: 2AC / #44: 5AC）Sprint Reviewりょこさん指摘なし | パフォーマンスレビューが有効に機能（不要computedの削除・memberMapのO(1)改善）。GraphQL APIでSprintフィールドを使いりょこさんに聞かずにIssue特定できることを確認→scrum-master-workflow手順①に追記。reviewer Discord投稿が3スプリント連続成功。 |
 
 ---
 
@@ -54,6 +55,9 @@
 | Sprint 13  | reviewerのDiscord投稿問題の解消（最優先）             | ✅ 全3観点のreviewerがDiscord投稿に成功（初回・再レビュー両方）。根本原因は不明だが実害解消。継続監視する | - |
 | Sprint 13  | gh不在時のcurl代替PR作成手順整備                      | ✅ scrum-master-workflow⑥にWrite+curl手順を追記 | scrum-master-workflow ⑥更新 |
 | Sprint 13  | DEVコミット後のpush手順をworkflowに明記               | ✅ developer-workflowの作業完了時手順4にpush追加 | developer-workflow 更新 |
+| Sprint 14  | Claudeモデル最新バージョン確認                         | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。アップグレード不要。継続監視 | 次Planning時に再確認 |
+| Sprint 14  | reviewerのDiscord投稿継続監視                          | ✅ 全3観点・初回＆再レビュー両方で投稿成功（3スプリント連続）。実害解消定着を確認 | 継続監視 |
+| Sprint 14  | GraphQL APIでSprintフィールドからIssue番号を自律取得    | ✅ SprintフィールドでフィルタリングしてIssue #44・#45を自律特定。りょこさんに確認不要 | scrum-master-workflow手順①を更新 |
 
 ---
 
@@ -75,6 +79,7 @@
 - DEVが実装方針承認後に自分でTaskCreateする（Sprint 10〜）
 - SMがreviewerのgit diff外ファイル指摘をgit diffコマンドで検証してから受け入れる（Sprint 11〜）
 - DEVのbugPBI改修方針に選択理由・トレードオフを記載する（Sprint 12〜 定着確認）
+- PlanningでGraphQL APIのSprintフィールドフィルタリングを使って対象Issueを自律特定する（Sprint 14〜）
 
 ### Stop（やめること）
 
@@ -106,5 +111,5 @@
 
 ### Challenge（次に試すこと）
 
-- Claudeモデルの最新バージョン確認（Planning時に確認、現在: claude-sonnet-4-6 / Opus 4.7）
-- reviewerのDiscord投稿問題: Sprint 13で全員投稿成功。継続監視する（根本原因は未特定）
+- Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
+- reviewerのDiscord投稿問題: Sprint 13〜14で3スプリント連続成功。継続監視（根本原因は未特定）

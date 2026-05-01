@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-04-28
+**最終更新**: 2026-05-01
 
 ---
 
@@ -21,6 +21,20 @@
 - ローカライズユーティリティはcomposablesに移動済み
 - Pinia + Composition APIで状態管理
 - store の内部状態フィールド（`lastFetchedAtByHouseholdId` 等）はコンポーネントから直接参照せず、getter（`isFetchedFor` 等）経由でアクセスする（カプセル化）
+- スワイプジェスチャーは `composables/useSwipeGesture.ts` に切り出し、touchstart/touchmove/touchend のみ扱う（マウスイベントは無視）。translateX をリアルタイム返却して2層構成（背景＋前面）でドラッグ追従を実現
+- スワイプ背景色は `main.css` に `bg-hwhub-swipe-action/delete/back/disabled` の4トークンを定義してカラートークン経由で指定する（生クラス禁止）
+- ユーザーアイコンの broken image 対策は `components/ui/UserAvatar.vue`（共通コンポーネント）で `imageError = ref(false)` + `@error="imageError = true"` パターン。AC3例外箇所は個別に空グレー丸表示で対応する
+- SP/PCのレイアウト分岐はTailwindの `md:` ブレークポイントで切り替え（`md:hidden` でSP専用UI、`md:block` でPC専用UI）
+
+---
+
+## Sprint 13 サマリー（2026-04-30完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #34 | SP版買い物リスト画面を3タブ構成に変更（SP:5） | ShoppingListTabBar.vue 新規・SP時のみタブ切替、PC時は2カラムgrid維持 |
+| #33 | ユーザーアイコン取得失敗時のイニシャル表示（SP:2） | UserAvatar.vue 共通化・AC3例外箇所のみ個別対応 |
+| #42 | 買い物リスト画面にスワイプジェスチャー導入（SP:5） | useSwipeGesture composable + SwipeableShoppingItem.vue・カラートークン4種追加 |
 
 ---
 
