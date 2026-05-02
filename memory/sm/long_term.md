@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-01（Sprint 18 Retro後）
+**最終更新**: 2026-05-02（Sprint 20 Retro後）
 
 ---
 
@@ -27,6 +27,7 @@
 | Sprint 17  | @CurrentUserId アノテーションとArgumentResolverを実装し、全ControllerのユーザーID取得コードをシンプル化する      | ✅ 全AC達成（#41: 4AC / 1018テスト全グリーン）Sprint Reviewりょこさん指摘なし                                  | 横断的リファクタリングでUserController.changePasswordの置き換え漏れが発生→convention-reviewerが検出・対応済み。developer-workflowにgrep残存確認を追加。security-reviewerがdeleteHouseworkの認可チェック欠如（既存問題）を発見→Issue #50起票。reviewer Discord投稿が6スプリント連続成功。 |
 | Sprint 18  | ダークモード対応を完成させ、システム設定連動と手動切り替えを両立した快適な夜間利用体験を実現する                 | ✅ 全AC達成（#43: 4AC / 622テスト全グリーン）Sprint Reviewりょこさん指摘なし                                   | りょこさんが色定義を事前にmain.cssで確定済みで渡してくれたことでDEVが色検討不要で実装に集中できた。大規模色置換はスコープを主要レイアウト/ページコンテナ/モーダルに絞り、残存94箇所/34ファイルをgrep集計して別Issue（#51）化する有効フローを確立。convention-reviewerがSMへのSendMessageで内容を送らずidle通知のみになったがDiscord投稿は成功（実害なし、継続監視）。reviewer Discord投稿が7スプリント連続成功。 |
 | Sprint 19  | 残存する生Tailwindカラークラスをカラートークンに完全移行し、ダークモードを全画面で一貫させる                       | ✅ 全AC達成（#51: 4AC）Sprint Review りょこさん指摘1件（OnboardingCardのダークモード対応漏れ→bug Issue #53起票） | 大規模CSS置換でgrepのみに頼った確認では全コンポーネントの漏れが発生する（OnboardingCard）。reviewer Discord投稿が8スプリント連続成功。 |
+| Sprint 20  | OnboardingCardのダークモード対応漏れを修正し、設定画面の意味的カラークラスをカラートークン化することで、ダークモードの全画面一貫体験を完成させる | ✅ 全AC達成（#53: 2AC / #52: 4AC）Sprint Reviewりょこさん指摘なし | 既存ブランチへの追加改修時に `git diff main...branch` でreviewerに指示すると前スプリントのファイルも含まれスコープ外指摘が発生（convention-reviewerが4件誤指摘）。コミット範囲指定（`git diff <sprint-start-commit>^...HEAD`）で解決。scrum-master-workflow③④を更新。reviewer Discord投稿が9スプリント連続成功。 |
 
 ---
 
@@ -73,6 +74,9 @@
 | Sprint 18  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（7スプリント連続）。convention-reviewerのSMへのSendMessageがidle通知のみだったがDiscord投稿は成功（実害なし） | 継続監視                                                    |
 | Sprint 19  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
 | Sprint 19  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・2ラウンド再レビュー両方）で投稿成功（8スプリント連続）。定着確認                               | 継続監視                                                    |
+| Sprint 20  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 20  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（9スプリント連続）。convention-reviewerがタイムアウト1回発生したが即再起動で解決。定着確認 | 継続監視                                                    |
+| Sprint 20  | 既存ブランチ継続時のreviewerへのコミット範囲指定（りょこさん提案）   | ✅ scrum-master-workflow③④を更新。新規ブランチは従来通り、既存ブランチ継続時は `git diff <sprint-start-commit>^...HEAD` を指定する手順を追加 | 次スプリントで効果確認                                       |
 
 ---
 
@@ -131,8 +135,9 @@
 - DEVがコミット後にgit pushを忘れること（Sprint 13 → developer-workflow に push 手順を追記）
 - 横断的リファクタリングで対象箇所の置き換え漏れが発生すること（Sprint 17 → developer-workflowにgrep残存確認を追加）
 - 大規模CSS置換タスクでgrepのみに頼って全コンポーネントの動作確認を省くこと（Sprint 19 → OnboardingCardの漏れ発生 → bug Issue #53起票）
+- 既存ブランチへの追加改修時に `git diff main...branch` でreviewerに指示すること（Sprint 20 → 前スプリントのファイルも含まれスコープ外指摘が4件発生 → scrum-master-workflow③④でコミット範囲指定を必須化）
 
 ### Challenge（次に試すこと）
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
-- reviewerのDiscord投稿継続監視（Sprint 13〜19で8スプリント連続成功。根本原因は未特定）
+- reviewerのDiscord投稿継続監視（Sprint 13〜20で9スプリント連続成功。根本原因は未特定）
