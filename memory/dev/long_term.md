@@ -48,6 +48,21 @@
 
 ---
 
+## Sprint 18 サマリー（2026-05-01完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #43 | ダークモード対応（SP:5） | `main.css` に CSS変数ベースのライト/ダーク2テーマ実装、`@custom-variant dark` 宣言、`prefers-color-scheme` 連動 + `<html class="dark/light">` で手動上書き。`themeStore.ts`（SYSTEM/LIGHT/DARK 3択・LSキー `hwhub_theme`）と `ThemeSwitcher.vue`（SegmentControl）新規。`index.html` に FOUC防止インラインスクリプト、`main.ts` で `useThemeStore().init()` 配線。主要レイアウト・ページコンテナ・モーダルは `bg-hwhub-surface-card`/`text-hwhub-heading`/`border-hwhub-border` 等のトークンに置換。残存生Tailwindカラーは Sprint19 へ持ち越し（Issue #51） |
+
+### Sprint 18 で習得したこと（テーマ実装）
+- Tailwind v4 では `@custom-variant dark (&:where(.dark, .dark *):not(.light *):not(.light));` で `dark:` バリアントを定義する
+- `:root` に CSS変数を定義し、`:root.dark` で上書き、さらに `@media (prefers-color-scheme: dark) { :root:not(.light):not(.dark) {...} }` で OS追従を実現する三段構成
+- FOUC（テーマ切替時の白フラッシュ）防止は `index.html` の `<head>` 内インラインスクリプトで LS から読んで即 `<html class>` をセットする方式が確実
+- `themeStore.init()` を `main.ts` で `app.use(router)` の前に呼ぶ（matchMedia リスナー登録のため）
+- カラートークン化は「ライト/ダーク両方で意味的に同じ役割を持つ色」を抽象化する作業。`bg-white` のように「ダークモードでは別色になるべき箇所」と「意図的に白固定にしたい箇所」（トグルつまみ・Googleブランドボタン・ダーク背景上の半透明白オーバーレイ等）を見極めて使い分ける
+
+---
+
 ## 習得したスキルログ
 
 | スプリント | 習得内容 | 備考 |
