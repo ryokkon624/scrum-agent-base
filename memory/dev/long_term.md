@@ -74,6 +74,20 @@
 
 ---
 
+## Sprint 21 サマリー（2026-05-04完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #54 | ダークモード設定のDB永続化 | `m_code` に ThemeMode区分（0026）追加、`m_user.theme_mode` カラム追加、`PUT /api/users/me/theme` API実装、ログイン時のDB値同期・変更時のAPI呼び出しをフロントに実装 |
+| #50 | deleteHouseworkエンドポイント削除 | フロント未使用を確認しAC2のパス（エンドポイント削除）を選択。Controller/Service/Repository/MyBatisRepository から削除し関連Spockテストも削除 |
+
+### Sprint 21 で習得したこと
+- `mybatisGenerator` は既存XMLに追記する動作のため、実行前に `rm -rf src/main/resources/mapper/generated` を必ず実行する。省略すると全Mapper XMLに定義が二重に重なってSpring Boot起動不可
+- Spockで例外検証する場合は `thrown(IllegalArgumentException)` のように具体的な型を指定し、「想定外の例外をパス」しないようにする
+- UserModel.reconstruct のシグネチャ変更は既存テスト全体に影響するため、影響範囲を grep で先に把握してから着手する
+
+---
+
 ## 習得したスキルログ
 
 | スプリント | 習得内容 | 備考 |

@@ -29,6 +29,7 @@
 | Sprint 19  | 残存する生Tailwindカラークラスをカラートークンに完全移行し、ダークモードを全画面で一貫させる                       | ✅ 全AC達成（#51: 4AC）Sprint Review りょこさん指摘1件（OnboardingCardのダークモード対応漏れ→bug Issue #53起票） | 大規模CSS置換でgrepのみに頼った確認では全コンポーネントの漏れが発生する（OnboardingCard）。reviewer Discord投稿が8スプリント連続成功。 |
 | Sprint 20  | OnboardingCardのダークモード対応漏れを修正し、設定画面の意味的カラークラスをカラートークン化することで、ダークモードの全画面一貫体験を完成させる | ✅ 全AC達成（#53: 2AC / #52: 4AC）Sprint Reviewりょこさん指摘なし | 既存ブランチへの追加改修時に `git diff main...branch` でreviewerに指示すると前スプリントのファイルも含まれスコープ外指摘が発生（convention-reviewerが4件誤指摘）。コミット範囲指定（`git diff <sprint-start-commit>^...HEAD`）で解決。scrum-master-workflow③④を更新。reviewer Discord投稿が9スプリント連続成功。 |
 | Sprint 21  | ダークモード設定のDB永続化によるマルチデバイス体験向上と、deleteHouseworkエンドポイントのセキュリティ修正（認可チェック追加または廃止）を実現する | ✅ 全AC達成（#54: 7AC / #50: 5AC）Sprint Review指摘1件（フロントの未使用deleteHousework関連コード削除→Issue #55起票） | mybatisGenerator実行時に既存XMLを削除せずに実行したため全22 Mapper XMLに定義が重複しSpring Boot起動不可になった。`database.md` に手順はあったが、developer-workflowのコミット前チェックリストにも追記。reviewer Discord投稿が10スプリント連続成功。convention-reviewerが5ラウンドの指摘（userApi.spec.tsテスト不足・テスト名誤り・ThemeModeSpec未作成・UserConverterSpec不足・thrown型不正確）を全件検出して対応済み。 |
+| Sprint 22  | アナウンスバナー機能を追加し、DBスキーマ整備・バックエンドAPI実装・フロントエンドUI実装を完了させ、システム管理者が重要なお知らせをユーザーに周知できる基盤を構築する | ✅ 全AC達成（#56: 10AC）Sprint Review指摘4件（m_announcement重複→りょこさん対応済み / severity定数化→Issue #58 / AnnouncementScope定数化→Issue #59 / featureScope子ルート未設定→Issue #60） | flyway migrateで既存テーブルm_announcementと重複エラーが発生。DEVがSMに報告せず自己判断で対処しようとした→developer-workflowにブロッカー＝予期せぬエラーはSM報告必須を明記。convention-reviewerがisExpanded getter化・generateEnums未使用を検出。performance-reviewerがLIMIT句・isLoadedガードを検出。reviewer Discord投稿が11スプリント連続成功。 |
 
 ---
 
@@ -81,6 +82,9 @@
 | Sprint 21  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
 | Sprint 21  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー両方）で投稿成功（10スプリント連続）。定着確認                                    | 継続監視                                                    |
 | Sprint 21  | mybatisGenerator実行前の既存XML削除をdeveloper-workflowに追記     | ✅ developer-workflowのコミット前チェックリストに「mybatisGenerator使用時の事前削除確認」を追加。database.mdには既述だがDEVが見落とした経緯から二重管理で防止 | 次スプリントで効果確認                                       |
+| Sprint 22  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 22  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー両方）で投稿成功（11スプリント連続）。定着確認                                    | 継続監視                                                    |
+| Sprint 22  | ブロッカー発生時のSM報告必須をdeveloper-workflowに明記             | ✅ developer-workflowに「予期せぬエラーはすべてブロッカーとして扱う・自己判断で回避禁止・SMに報告してりょこさんの判断を仰ぐ」を追記 | 次スプリントで効果確認                                       |
 
 ---
 
