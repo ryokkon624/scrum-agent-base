@@ -139,6 +139,8 @@ Flywayマイグレーションファイル命名
   V00_000_001__create_user.sql
 ```
 
+DB操作コマンド（Flyway / MBG / generateEnums）の詳細手順は `.claude/rules/database.md` を参照。
+
 ---
 
 ## 7. テスト方針（Groovy / Spock）
