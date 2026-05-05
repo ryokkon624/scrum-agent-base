@@ -88,6 +88,24 @@
 
 ---
 
+## Sprint 22 サマリー（2026-05-05完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #56 | アナウンスバナー機能の追加 | hw-hub-database に `m_announcement` テーブル + `m_code` 0027(AnnouncementScope)/0028(AnnouncementSeverity) 追加。hw-hub-backend で `GET /api/announcements/active` API実装（Domain/Repository/Service/Controller + Spock）。hw-hub-frontend で `announcementApi`/`announcementStore`/`AnnouncementBanner.vue` 新規・`AppLayout` 最上部組込み・router meta に `featureScope` 追加。severity 別カラートークン適用（INFO/WARN/ERROR）。レビュー対応で `findActiveAt` に `LIMIT 100` 追加・authStore 3ログインパスに `isLoaded` ガード追加 |
+
+### Sprint 22 で習得したこと（DB/Flyway 失敗時のリカバリ）
+- flywayMigrate 失敗で `Already exists` エラー発生時：
+  1. docker exec で直接 `DELETE FROM flyway_schema_history WHERE version='XX.XXX.XXX'` を実行
+  2. 失敗マイグレーションが部分的に成功した形跡（テーブル/レコード）を手動で削除
+  3. flywayMigrate を再実行
+- `m_code.code_value` は **VARCHAR(10)** 制限。長いコード値を入れる場合は短縮する（例：`HOUSEWORK_ASSIGN` → `HW_ASSIGN`）。Flyway失敗の原因になりやすい
+- フロントの sessionStorage 永続化セット（`closedIds: Set<number>`）は `JSON.stringify([...set])` ⇔ `new Set(JSON.parse())` で変換する
+- store の internal state（`expandedIds.has(id)`）はコンポーネントから直接参照せず、必ず getter（`isExpanded(id)`）経由でアクセスする（カプセル化）
+- 認証経路が複数ある場合（login/register/completeOAuthLogin）、不要な再フェッチを避けるため `if (!store.isLoaded)` ガードを各経路に入れる
+
+---
+
 ## 習得したスキルログ
 
 | スプリント | 習得内容 | 備考 |

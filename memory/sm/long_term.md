@@ -30,6 +30,7 @@
 | Sprint 20  | OnboardingCardのダークモード対応漏れを修正し、設定画面の意味的カラークラスをカラートークン化することで、ダークモードの全画面一貫体験を完成させる | ✅ 全AC達成（#53: 2AC / #52: 4AC）Sprint Reviewりょこさん指摘なし | 既存ブランチへの追加改修時に `git diff main...branch` でreviewerに指示すると前スプリントのファイルも含まれスコープ外指摘が発生（convention-reviewerが4件誤指摘）。コミット範囲指定（`git diff <sprint-start-commit>^...HEAD`）で解決。scrum-master-workflow③④を更新。reviewer Discord投稿が9スプリント連続成功。 |
 | Sprint 21  | ダークモード設定のDB永続化によるマルチデバイス体験向上と、deleteHouseworkエンドポイントのセキュリティ修正（認可チェック追加または廃止）を実現する | ✅ 全AC達成（#54: 7AC / #50: 5AC）Sprint Review指摘1件（フロントの未使用deleteHousework関連コード削除→Issue #55起票） | mybatisGenerator実行時に既存XMLを削除せずに実行したため全22 Mapper XMLに定義が重複しSpring Boot起動不可になった。`database.md` に手順はあったが、developer-workflowのコミット前チェックリストにも追記。reviewer Discord投稿が10スプリント連続成功。convention-reviewerが5ラウンドの指摘（userApi.spec.tsテスト不足・テスト名誤り・ThemeModeSpec未作成・UserConverterSpec不足・thrown型不正確）を全件検出して対応済み。 |
 | Sprint 22  | アナウンスバナー機能を追加し、DBスキーマ整備・バックエンドAPI実装・フロントエンドUI実装を完了させ、システム管理者が重要なお知らせをユーザーに周知できる基盤を構築する | ✅ 全AC達成（#56: 10AC）Sprint Review指摘4件（m_announcement重複→りょこさん対応済み / severity定数化→Issue #58 / AnnouncementScope定数化→Issue #59 / featureScope子ルート未設定→Issue #60） | flyway migrateで既存テーブルm_announcementと重複エラーが発生。DEVがSMに報告せず自己判断で対処しようとした→developer-workflowにブロッカー＝予期せぬエラーはSM報告必須を明記。convention-reviewerがisExpanded getter化・generateEnums未使用を検出。performance-reviewerがLIMIT句・isLoadedガードを検出。reviewer Discord投稿が11スプリント連続成功。 |
+| Sprint 23  | フロントエンドのコード品質向上 — デッドコード削除・マジックストリングの定数化・アナウンスバナーの子ルート対応 | ✅ 全AC達成（#55: 4AC / #58: 4AC / #59: 4AC / #60: 4AC）Sprint Reviewりょこさん指摘なし | DEVが実装フェーズでPRを作成してしまった（禁止事項に記載あり「PRはりょこさんが行う」が古い表現だったため混乱と推定）→developer-workflowを「PRはSMが行う」に修正。convention-reviewerがSCOPE_TO_ROUTE_MAPの未使用定数（#60実装でデッドコード化）を検出・対応済み。reviewer Discord投稿が12スプリント連続成功。 |
 
 ---
 
@@ -85,6 +86,9 @@
 | Sprint 22  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
 | Sprint 22  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー両方）で投稿成功（11スプリント連続）。定着確認                                    | 継続監視                                                    |
 | Sprint 22  | ブロッカー発生時のSM報告必須をdeveloper-workflowに明記             | ✅ developer-workflowに「予期せぬエラーはすべてブロッカーとして扱う・自己判断で回避禁止・SMに報告してりょこさんの判断を仰ぐ」を追記 | 次スプリントで効果確認                                       |
+| Sprint 23  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 23  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（12スプリント連続）。定着確認                                         | 継続監視                                                    |
+| Sprint 23  | developer-workflowのPR作成禁止事項の記述修正                      | ✅ 「PRはりょこさんが行う」→「PRはSMが行う。DEVはpushまでが担当」に修正。DEVが実装フェーズでPRを作成してしまった原因と推定される古い記述を更新 | 次スプリントで効果確認                                       |
 
 ---
 
@@ -126,6 +130,7 @@
 - reviewerが別ブランチで修正済みのファイルをdiff外と判定せずに指摘すること（Sprint 11 → reviewer 3ファイルにgit diffスコープ制限を明記）
 - convention-reviewerが `git checkout` でブランチを切り替えようとしてレビュー未完了になること（Sprint 12 → convention-reviewer.md v1.3.0でgit checkout禁止・フォールバック手順を明記）
 - 計画フェーズ（Opus 4.7）でTaskCreateすること（Sprint 15 → 別エージェントインスタンスの実装フェーズが引き継げず無視される。scrum-master-workflow・developer-workflow更新）
+- DEVが実装フェーズでPRを作成すること（Sprint 23 → developer-workflowの禁止事項の記述が「PRはりょこさんが行う」と古く「PRはSMが行う」に修正）
 
 ### Avoid（回避すること）
 

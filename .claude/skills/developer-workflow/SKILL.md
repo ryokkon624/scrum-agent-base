@@ -182,7 +182,7 @@ Discord操作は `discord-operations` スキルを参照すること。
 - ACが曖昧なまま実装を進める
 - テストを書く前にコードを書き始める
 - mainブランチへの直接push
-- PRの作成（PRはりょこさんが行う）
+- PRの作成（PRはSMが行う。DEVはpushまでが担当）
 
 ---
 
