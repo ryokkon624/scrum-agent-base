@@ -33,20 +33,23 @@ Discord操作は `discord-operations` スキルを参照すること。
 
 ### 計画フェーズ（Opus 4.7で起動される）
 
-1. **memory/dev/short_term.md のスプリント番号と、SMから指定されたスプリント番号を比較する**
-   - **異なる場合（前スプリントの内容が残っている）**: short_term.md の内容を memory/dev/long_term.md に要約して追記し、short_term.md を今スプリント用にリセットする
-   - **同じ場合（計画フェーズの再起動など）**: 整理せずそのまま読んで続きから始める
+1. **memory/dev/short_term.md を読む**
+   - **「実装状況」や「担当タスクメモ」などの実装内容が書かれている場合**: short_term.md の内容を memory/dev/long_term.md に要約して追記し、short_term.md を今スプリント用にリセットする
+   - **実装内容がない場合（すでにリセット済みなど）**: そのまま続ける
 2. `#20-sprint` の作業スレッドを確認する
 3. 担当するバックログアイテムのACと**コミットコメントに付与する番号**を確認する
    - 番号はIssue番号を利用する
    - 例：`(ryokkon624/hw-hub-manage#6)`
-3. **実装方針を整理してりょこさんに提示し、承認を得る**
+4. **実装方針を整理する**
    - **ACだけでなく、概要・ユーザーストーリー・備考も含めて全体を読んで方針を考える**
    - ACを満たすより良い実装案があれば代替案として積極的に提案する
    - どのファイルを新規作成・編集するか
    - バックエンド / フロントエンドそれぞれの変更箇所
-   - 懸念点・不明点があればりょこさんに確認する
-4. **`#20-sprint` の作業スレッドに承認済み実装方針を投稿する：**
+   - 懸念点・不明点はりょこさんへの確認事項としてまとめる
+5. **`memory/dev/short_term.md` に実装方針を記録する（りょこさんへの提示前）**
+6. **りょこさんに実装方針を提示し、承認を得る**
+7. **りょこさんの回答で方針に変更があれば `memory/dev/short_term.md` を update する**
+8. **`#20-sprint` の作業スレッドに承認済み実装方針を投稿する：**
 
    ```
    [DEV] 実装方針（承認済み）
@@ -63,8 +66,7 @@ Discord操作は `discord-operations` スキルを参照すること。
    2. ...
    ```
 
-5. **実装方針を `memory/dev/short_term.md` に記録する**
-6. **SMにSendMessageで報告してここで作業を止める：**
+9. **SMにSendMessageで報告してここで作業を止める：**
    ```
    実装方針承認・memory記録完了。Sonnetで再起動してください。
    実装方針は memory/dev/short_term.md に記録しました。
@@ -104,6 +106,7 @@ Discord操作は `discord-operations` スキルを参照すること。
    - [ ] ACをすべて満たしているか
    - [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format`）
    - [ ] 横断的リファクタリングの場合: `grep` で置き換え対象パターンの残存がないことを確認する（例: `grep -r "authentication.getName()" src/main/java`）
+   - [ ] mybatisGenerator を使った場合: 実行前に `rm -rf src/main/resources/mapper/generated` を実行したことを確認する（省略すると全Mapper XMLに定義が重複してSpring Bootが起動不可になる）
 2. **`backlog/sprint_XX/sprint_backlog.md` のACをすべて `[x]` に更新する**
 3. コミットする（`git` ルール参照）
 4. **`git push -u origin {ブランチ名}` でリモートにプッシュする**（SMのPR作成に必要）

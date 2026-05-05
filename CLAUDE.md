@@ -47,6 +47,12 @@ SM・DEV・PO・各レビュアーが協調してスプリントを回す。
 
 ---
 
+## 環境制約
+
+- `gh` CLI は未インストール → PR作成はcurl + GitHub REST API を使う
+
+---
+
 ## バックログの場所
 
 - 各スプリントバックログ: `backlog/sprint_XX/sprint_backlog.md`
