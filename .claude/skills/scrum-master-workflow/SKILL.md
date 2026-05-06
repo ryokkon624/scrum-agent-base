@@ -207,14 +207,39 @@ SendMessageでDEVに以下を伝える：
 
 全レビュアー「指摘なし」確認後、**SMが直接 PR を作成する**（DEV再起動不要）。
 
-**ブランチが属するリポジトリのディレクトリで実行する：**
+> ⚠️ **既存ブランチ継続時（前スプリントから同一ブランチを使い続けている場合）は新規PRを作成しない。**
+> 既存PRにコミットが自動追従しているため、既存PRのbodyをPATCHで更新してSprint N分の `closes` 行を追加する。
+
+**【既存PRがある場合】bodyをPATCHで更新する：**
+
+Write ツールで `C:/work/claude/pr_[リポジトリ]_[PR番号].json` に更新後のbody全体を書き出す：
+```json
+{
+  "body": "[既存のbody全文]\ncloses ryokkon624/hw-hub-manage#N"
+}
+```
+
+```bash
+curl -s -X PATCH \
+  -H "Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  -H "Content-Type: application/json" \
+  "https://api.github.com/repos/ryokkon624/hw-hub-[リポジトリ名]/pulls/[PR番号]" \
+  --data-binary "@C:/work/claude/pr_[リポジトリ]_[PR番号].json"
+```
+
+既存PRのURLを `#20-sprint` の作業スレッドに投稿して ⑦ Sprint Reviewへ進む。
+
+---
+
+**【新規PRを作成する場合】ブランチが属するリポジトリのディレクトリで実行する：**
 
 | ブランチのprefix例 | 実行ディレクトリ |
 |---|---|
 | フロントエンド変更 | `C:\work\hw-hub\hw-hub-frontend` |
 | バックエンド変更 | `C:\work\hw-hub\hw-hub-backend` |
 
-複数リポジトリにまたがる場合は、それぞれのディレクトリでPRを作成する。
+複数リポジトリにまたがる場合は、それぞれのリポジトリで同じ手順を実施する。
 
 **gh が使える場合（推奨）:**
 
