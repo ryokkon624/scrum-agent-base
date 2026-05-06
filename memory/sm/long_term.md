@@ -31,6 +31,8 @@
 | Sprint 21  | ダークモード設定のDB永続化によるマルチデバイス体験向上と、deleteHouseworkエンドポイントのセキュリティ修正（認可チェック追加または廃止）を実現する | ✅ 全AC達成（#54: 7AC / #50: 5AC）Sprint Review指摘1件（フロントの未使用deleteHousework関連コード削除→Issue #55起票） | mybatisGenerator実行時に既存XMLを削除せずに実行したため全22 Mapper XMLに定義が重複しSpring Boot起動不可になった。`database.md` に手順はあったが、developer-workflowのコミット前チェックリストにも追記。reviewer Discord投稿が10スプリント連続成功。convention-reviewerが5ラウンドの指摘（userApi.spec.tsテスト不足・テスト名誤り・ThemeModeSpec未作成・UserConverterSpec不足・thrown型不正確）を全件検出して対応済み。 |
 | Sprint 22  | アナウンスバナー機能を追加し、DBスキーマ整備・バックエンドAPI実装・フロントエンドUI実装を完了させ、システム管理者が重要なお知らせをユーザーに周知できる基盤を構築する | ✅ 全AC達成（#56: 10AC）Sprint Review指摘4件（m_announcement重複→りょこさん対応済み / severity定数化→Issue #58 / AnnouncementScope定数化→Issue #59 / featureScope子ルート未設定→Issue #60） | flyway migrateで既存テーブルm_announcementと重複エラーが発生。DEVがSMに報告せず自己判断で対処しようとした→developer-workflowにブロッカー＝予期せぬエラーはSM報告必須を明記。convention-reviewerがisExpanded getter化・generateEnums未使用を検出。performance-reviewerがLIMIT句・isLoadedガードを検出。reviewer Discord投稿が11スプリント連続成功。 |
 | Sprint 23  | フロントエンドのコード品質向上 — デッドコード削除・マジックストリングの定数化・アナウンスバナーの子ルート対応 | ✅ 全AC達成（#55: 4AC / #58: 4AC / #59: 4AC / #60: 4AC）Sprint Reviewりょこさん指摘なし | DEVが実装フェーズでPRを作成してしまった（禁止事項に記載あり「PRはりょこさんが行う」が古い表現だったため混乱と推定）→developer-workflowを「PRはSMが行う」に修正。convention-reviewerがSCOPE_TO_ROUTE_MAPの未使用定数（#60実装でデッドコード化）を検出・対応済み。reviewer Discord投稿が12スプリント連続成功。 |
+| Sprint 24  | アナウンスマスタメンテ画面を管理画面配下に追加し、システム管理者が開発者の手を借りずにアナウンスを管理できる機能を完成させる | ✅ 全AC達成（#57: 5AC）Sprint Review指摘4件（yupメッセージi18n未対応→#62 / タイトル200バイト超入力可→#63 / 重要度バッジDARKモード未対応→#64 / AnnouncementSummary不要マッピング→#65） | security-reviewerが権限保護済み管理者専用エンドポイントのエラーメッセージを5回のレビューで計3回指摘（いずれもりょこさん判断でスコープ外）→security-reviewer.mdに「指摘対象外の判断基準」セクションを追加。Planningで承認した設計（AnnouncementSummary再利用）が後からHwHub規約違反と判明→#65で次スプリント以降に対応。reviewer Discord投稿が13スプリント連続成功。 |
+| Sprint 25  | Sprint 24レビュー指摘4件（フロントエンドバグ3件・バックエンドリファクタリング1件）を解消し、アナウンス管理機能を完成品質に引き上げる | ✅ 全AC達成（#62/#63/#64/#65）Sprint Reviewりょこさん指摘なし | 既存ブランチへの追加コミット時に既存PRのbody PATCH更新でclosesを追加する手順がSkillsに未記載 → scrum-master-workflow⑥に追記。reviewer Discord投稿が14スプリント連続成功。コードレビュー3者全員一発「指摘なし」。 |
 
 ---
 
@@ -89,6 +91,12 @@
 | Sprint 23  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
 | Sprint 23  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（12スプリント連続）。定着確認                                         | 継続監視                                                    |
 | Sprint 23  | developer-workflowのPR作成禁止事項の記述修正                      | ✅ 「PRはりょこさんが行う」→「PRはSMが行う。DEVはpushまでが担当」に修正。DEVが実装フェーズでPRを作成してしまった原因と推定される古い記述を更新 | 次スプリントで効果確認                                       |
+| Sprint 24  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 24  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー両方）で投稿成功（13スプリント連続）。定着確認                                    | 継続監視                                                    |
+| Sprint 24  | security-reviewer.mdに指摘対象外の判断基準を追加                   | ✅ 権限保護済み管理者専用エンドポイントのエラーメッセージ・自動生成コードのエラーメッセージを指摘対象外とする基準を追記。Sprint 24で計3回スコープ外判断が発生した実績を受けてルール化 | 次スプリントで効果確認                                       |
+| Sprint 25  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 25  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回）で投稿成功（14スプリント連続）。コードレビュー一発クリア。定着確認                               | 継続監視                                                    |
+| Sprint 25  | 既存ブランチ継続時の既存PR body PATCH更新手順をSkillsに追記         | ✅ scrum-master-workflow⑥に「既存PRがある場合はbodyをPATCHで更新してclosesを追加する」手順を明記。Sprint 25で初めて既存PRへのclosesのみ追加対応が必要になり、手順未記載だった | 次スプリントで効果確認                                       |
 
 ---
 
@@ -154,4 +162,4 @@
 ### Challenge（次に試すこと）
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
-- reviewerのDiscord投稿継続監視（Sprint 13〜21で10スプリント連続成功。根本原因は未特定）
+- reviewerのDiscord投稿継続監視（Sprint 13〜25で14スプリント連続成功。根本原因は未特定）

@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-01
+**最終更新**: 2026-05-06
 
 ---
 
@@ -103,6 +103,39 @@
 - フロントの sessionStorage 永続化セット（`closedIds: Set<number>`）は `JSON.stringify([...set])` ⇔ `new Set(JSON.parse())` で変換する
 - store の internal state（`expandedIds.has(id)`）はコンポーネントから直接参照せず、必ず getter（`isExpanded(id)`）経由でアクセスする（カプセル化）
 - 認証経路が複数ある場合（login/register/completeOAuthLogin）、不要な再フェッチを避けるため `if (!store.isLoaded)` ガードを各経路に入れる
+
+---
+
+## Sprint 23 サマリー（2026-05-05完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #55 | 未使用 deleteHousework コード削除 | `houseworkApi.deleteHousework` / `houseworkStore.delete` および関連テストを削除（バックエンドはSprint 21で削除済み） |
+| #58 | AnnouncementBanner.vue の severity 文字列を定数化 | `code.constants.ts` に `ANNOUNCEMENT_SEVERITY` 追加（コードタイプ 0028）・型 `AnnouncementSeverityCode` を導入。バナー / Domain / API契約箇所を順次置換 |
+| #59 | router/index.ts の featureScope を定数化 | `code.constants.ts` に `ANNOUNCEMENT_SCOPE` 追加（コードタイプ 0027）・型 `AnnouncementScopeCode` を導入。`SCOPE_TO_ROUTE_MAP` のキーも定数化 |
+| #60 | 子ルートに featureScope を引き継ぐ | `visibleForRoute` を `(routeName, currentScope)` シグネチャに変更し、AnnouncementBanner.vue 側で `route.meta.featureScope` を取り出して渡す形に。settings/housework・shopping・settings/inquiry の子ルートに featureScope を設定。admin 配下子ルートは権限が限られるため例外として未設定 |
+
+### Sprint 23 で習得したこと
+- `as const` + `(typeof X)[keyof typeof X]` パターンで code.constants.ts に定数とブランド型を定義し、ベタ書き文字列を `XXX.YY` 参照に置換すると安全に横展開できる
+- `route.meta.featureScope` を Banner 側で読み取り、Store getter のシグネチャに渡す（`visibleForRoute(routeName, currentScope)`）形にすると子ルート対応が一発で効く
+- API契約のDTO型は `string` のままにして `toModel` でブランド型へキャストするのが最小影響
+- 「同名文字列」が別意味で使われる箇所（`'ALL'` のローカルフィルタ等）は横展開対象外として明示的に除外する
+
+---
+
+## Sprint 24 サマリー（2026-05-06完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #57 | アナウンスマスタメンテ画面（管理画面配下）追加 | 3リポジトリ横断の大規模実装。**hw-hub-database**: `m_code` 0025 に `AnnouncementMng`(40) 追加、`m_role_permission` に ADMIN/SUPPORT × 40 を追加、`m_code` 0012 に `OnlAdmAnn` 追加（Flyway: `V00_001_017`）。**hw-hub-backend**: `application/service/announcement/` パッケージ新設・`AnnouncementService` を移動・`AnnouncementSummary` Inner record として定義、`AdminAnnouncementService`（getAll/getById/create/update/delete）新規、`AdminAnnouncementController`（GET/POST/PUT/DELETE `/api/admin/announcements`）を `@RequiresPermission(ANNOUNCEMENT_MANAGEMENT)` 付きで新規、`AnnouncementModel.create()` ファクトリ追加（startAt < endAt / NotBlank / severity・scope 有効値チェック）、`AnnouncementRepository` に findAll/findById/insert/update/delete を追加、`AnnouncementConverter.toEntity` を追加。**hw-hub-frontend**: `PERMISSION.ANNOUNCEMENT_MNG` 追加・`useRole.canManageAnnouncement` 拡張、`adminApi` に CRUD 関数追加、`adminAnnouncementStore`（loadAll/create/update/remove + isLoaded キャッシュ）新規、`AdminAnnouncementsPage`（PC=テーブル/ソート/ページング、SP=カード/ページング、3区分ステータス）と `AdminAnnouncementFormPage`（vee-validate + yup）新規、`AdminTopPage` にカード追加、router に `admin.announcements` 系3ルート追加、ja/en/es i18n 追加 |
+
+### Sprint 24 で習得したこと
+- パッケージ移動を含むリファクタは GREEN 状態を維持しながら段階的に進める（先に移動・参照更新で全テスト通る状態を作ってから新機能追加に入る）
+- `@RequiresPermission` 1つで複数ロール（ADMIN/SUPPORT）を許可する場合、`m_role_permission` に複数行入れるだけ（コード側に分岐を増やさない）
+- AnnouncementSummary のような「Domain Model と全フィールド一致する Inner record」は HwHub 規約上不要なボイラープレート。Service は Domain Model を直接返してよい（Sprint 25 の #65 で是正）
+- yup の `required()` メッセージは i18n キー文字列を渡しておき、テンプレ側で `t(errors.xxx)` の形にしないとロケール切替で動かない
+- バイト長バリデーションは `new TextEncoder().encode(s).length` で計算する。マルチバイト/絵文字も正しく数えられる（`houseworkForm.validation.ts` のパターン）
+- バッジ色のダークモード対応は `bg-{color}-50/text-{color}-600` を `bg-hwhub-palette-{color}-soft / border-hwhub-palette-{color} / text-hwhub-palette-{color}` に置換（`main.css` で `:root.dark` 上書き済み）。問い合わせ管理のカテゴリバッジが参考実装
 
 ---
 

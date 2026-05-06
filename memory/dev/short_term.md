@@ -1,275 +1,232 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 24
+**スプリント**: Sprint 25
 **最終更新**: 2026-05-06
 
 ---
 
 ## スプリントゴール
 
-アナウンスマスタメンテ画面を管理画面配下に追加し、システム管理者が開発者の手を借りずにアナウンスを管理できる機能を完成させる
+Sprint 24レビュー指摘4件（フロントエンドバグ3件・バックエンドリファクタリング1件）を解消し、アナウンス管理機能を完成品質に引き上げる
 
 ---
 
-## Sprint 24 コミット開始点（reviewerへの差分指示用）
+## Sprint 25 コミット開始点（reviewerへの差分指示用）
 
-- **ブランチ**: `feature/57-admin-announcements`（hw-hub-frontend / hw-hub-backend / hw-hub-database 共通）
-- **Sprint 24 開始時の HEAD**: `a7b1888`（Sprint 23完了版コミット）
-- **reviewer 指示時の差分範囲**: `git diff a7b1888..HEAD`
+- **ブランチ**: `feature/57-admin-announcements`（既存ブランチへの追加コミット。新規ブランチ作成なし）
+- **対象リポジトリ**: hw-hub-frontend（#62/#63/#64） / hw-hub-backend（#65）
+- **Sprint 25 開始時の HEAD**: 各リポジトリの現状 HEAD（Sprint 24 push済みコミット）
+- **reviewer 指示時の差分範囲**: 各リポジトリで Sprint 25 で追加するコミットのみ
 
 ---
 
-## 実装方針（りょこさん承認済み 2026-05-06）
-
-### 承認・修正サマリ
-
-| 項目 | 確定内容 |
-|-----|---------|
-| Q1. 権限付与対象 | **ADMIN + SUPPORT** 両方に付与（`m_role_permission` に2行追加） |
-| Q2. 一覧ステータス | **3区分（開始前 / 有効中 / 期限切れ）** で実装 |
-| Q3. パッケージ構成 | `application.service.announcement` パッケージを新設し、既存 `AnnouncementService` を移動。`AnnouncementSummary` を独立 record として切り出し。新規 Service も同パッケージ配下 |
-| Q4. Domain チェック | `AnnouncementModel.create()` 内で startAt < endAt / severity・targetScope の有効値 / 各タイトル・本文 NotBlank をチェック |
+## 実装方針（提示中・りょこさん承認待ち）
 
 ### 全体方針
 
-#57 単独だが、フロント・バックエンド・DB の3層に渡るため、以下の順で TDD で実装する。
-
-1. DB（Flyway / 権限マッピング） → 2. バックエンド（Domain/Service/Controller） → 3. フロント（Store/View/Form）
-
-ブランチ命名は `feature/57-admin-announcements`（3リポジトリ共通）。
-
----
-
-### 1. hw-hub-database（Flyway）
-
-**新規 Flyway**: `V00_001_017__add_announcement_management_permission.sql`
-
-| 追加項目 | 値 |
-|---------|---|
-| `m_code` 0025（パーミッション）に追加 | `code_value='40'`, `name='AnnouncementMng'`, `display_name_ja='アナウンス管理'` 等 |
-| `m_role_permission` に追加 | `('ADMIN', '40')` および **`('SUPPORT', '40')`** の2行（Q1反映） |
-| `m_code` 0012（プログラム種別）に追加 | `code_value='OnlAdmAnn'`, `name='ONL_ADM_ANN'` |
+- 全4件は**既存ブランチ `feature/57-admin-announcements` への追加コミット**。新規ブランチは作成しない。
+- #62 と #63 は同一ファイル（`AdminAnnouncementFormPage.vue`）変更のため、**1コミットにまとめる**。
+- 作業順は フロント（#62+#63 → #64） → バックエンド（#65）。各 Issue 完了ごとにコミット。
+- TDD: バリデーションスキーマは utils 層に切り出すため Vitest 必須。バックエンドは既存 Spec の更新中心。
 
 ---
 
-### 2. hw-hub-backend
+### #62 + #63: yup バリデーション i18n 化 + タイトル200バイト上限（同一コミット）
 
-#### 2.1 パッケージ再編（Q3反映）
+**対象リポジトリ**: hw-hub-frontend
+**コミット参照**: `(ryokkon624/hw-hub-manage#62, ryokkon624/hw-hub-manage#63)`
 
-| 操作 | 対象 |
-|-----|-----|
-| 移動 | `application/service/AnnouncementService.java` → `application/service/announcement/AnnouncementService.java` |
-| 切り出し | 既存 `AnnouncementService` の Inner Class `AnnouncementSummary` (record) を独立ファイル `application/service/announcement/AnnouncementSummary.java` へ |
-| 新規追加 | `application/service/announcement/AdminAnnouncementService.java` |
-| 影響範囲（import 更新） | `presentation/rest/announcement/AnnouncementController.java` / `presentation/rest/announcement/dto/AnnouncementDto.java` / `test/.../AnnouncementControllerSpec.groovy`（`AnnouncementService.AnnouncementSummary` を `AnnouncementSummary` へ） |
+#### 変更ファイル
 
-> 既存テストが先に通る状態を保ったままパッケージ移動を行う（リファクタは GREEN 状態を維持）。
+| 種別 | ファイル | 変更内容 |
+|------|---------|---------|
+| 新規 | `src/domain/announcement/announcementForm.validation.ts` | `houseworkForm.validation.ts` と同じ構造で yup スキーマを切り出し。i18n キーをエラーメッセージとして渡す |
+| 編集 | `src/views/admin/AdminAnnouncementFormPage.vue` | インラインの yup スキーマ削除 → 上記 utils を `toTypedSchema` で読み込む。エラー表示を `{{ t(errors.xxx) }}` 形式に変更 |
+| 編集 | `src/i18n/ja.json` `en.json` `es.json` | `admin.announcement.validation` に `titleJa.required` / `titleEn.required` / `titleEs.required` / `bodyJa.required` / `bodyEn.required` / `bodyEs.required` / `severity.required` / `targetScope.required` / `startAt.required` / `endAt.required` / `titleJa.maxBytes` / `titleEn.maxBytes` / `titleEs.maxBytes` を追加。既存 `endAtAfterStartAt` は維持 |
+| 新規（テスト） | `src/__tests__/domain/announcement/announcementForm.validation.spec.ts` | 各フィールドの required / タイトル3言語の200バイト上限 / endAt > startAt をホワイトボックステスト |
 
-#### 2.2 Permission Enum / ProgramType Enum 追加
-
-| ファイル | 変更 |
-|---------|------|
-| `domain/enums/Permission.java` | `ANNOUNCEMENT_MANAGEMENT("40")` を追加 |
-| `domain/enums/ProgramType.java` | `ONL_ADM_ANN("OnlAdmAnn")` を追加 |
-
-#### 2.3 既存 AnnouncementModel に `create` ファクトリ + Domain チェック追加（Q4反映）
-
-| ファイル | 変更 |
-|---------|------|
-| `domain/model/AnnouncementModel.java` | `create(...)` ファクトリ（id を null で生成）。バリデーション: `startAt < endAt` / severity が `AnnouncementSeverity` enum の有効値 / targetScope が `AnnouncementScope` enum の有効値 / 各タイトル・本文 NotBlank（空文字・null・空白のみ NG）。違反時は `IllegalArgumentException` |
-| `domain/repository/AnnouncementRepository.java` | `findAll()` / `findById(Long id)` / `insert(model, operatorUserId, program)` / `update(model, operatorUserId, program)` / `delete(id, operatorUserId, program)` を追加 |
-| `infrastructure/mybatis/repository/MyBatisAnnouncementRepository.java` | 既存に追加実装（Sprint 22 で `findActiveAt` のみ実装済み） |
-| `infrastructure/mybatis/converter/AnnouncementConverter.java` | `toEntity(model)` を追加（既存は `toModel(entity)` のみ） |
-| `infrastructure/mybatis/custom/mapper/AnnouncementCustomMapper.java` | 必要なら `update` 等を追加（WHO カラム手動更新用） |
-
-#### 2.4 Service 層
-
-新規 `application/service/announcement/AdminAnnouncementService.java`（既存 `AnnouncementService.getActiveAnnouncements` には手を入れない）：
-
-```java
-@Transactional(readOnly = true)
-public List<AnnouncementSummary> getAll();
-
-@Transactional(readOnly = true)
-public AnnouncementSummary getById(Long id);
-
-@Transactional
-public AnnouncementSummary create(AnnouncementModel model, Long operatorUserId);
-
-@Transactional
-public void update(AnnouncementModel model, Long operatorUserId);
-
-@Transactional
-public void delete(Long id, Long operatorUserId);
-```
-
-> `AnnouncementSummary` は読み取り系の戻り値として再利用する（フィールド一致）。
-
-#### 2.5 Controller 層
-
-新規: `presentation/rest/admin/announcement/AdminAnnouncementController.java`
-
-```
-GET    /api/admin/announcements         一覧取得
-POST   /api/admin/announcements         新規登録
-PUT    /api/admin/announcements/{id}    更新
-DELETE /api/admin/announcements/{id}    削除
-```
-
-すべて `@RequiresPermission(Permission.ANNOUNCEMENT_MANAGEMENT)` を付与。
-
-新規 DTO（`presentation/rest/admin/announcement/dto/`）:
-- `AdminAnnouncementRequest.java`（titleJa/En/Es, bodyJa/En/Es, severity, targetScope, startAt, endAt + Bean Validation `@NotBlank`）
-- `AdminAnnouncementResponse.java`（id + Request 相当 + WHO カラム）
-
-#### 2.6 Spock テスト（TDDのRED-GREEN）
-
-| 新規/編集テストファイル | 対象 |
-|-------------------------|------|
-| `AnnouncementModelSpec.groovy`（新規 or 既存追記） | create() の各バリデーション（where: で網羅） |
-| `AdminAnnouncementServiceSpec.groovy`（新規） | getAll / getById / create / update / delete |
-| `MyBatisAnnouncementRepositorySpec.groovy`（既存があれば追記） | findAll / findById / insert / update / delete |
-| `AdminAnnouncementControllerSpec.groovy`（新規） | エンドポイント動作・権限チェック（ADMIN/SUPPORT 許可、その他 403） |
-
----
-
-### 3. hw-hub-frontend
-
-#### 3.1 PERMISSION 定数 / useRole 拡張
-
-| ファイル | 変更 |
-|---------|------|
-| `constants/code.constants.ts` | `PERMISSION` に `ANNOUNCEMENT_MNG: '40'` を追加 |
-| `composables/useRole.ts` | `canManageAnnouncement = computed(() => hasPermission(PERMISSION.ANNOUNCEMENT_MNG))` を追加 |
-
-#### 3.2 API クライアント
-
-`api/adminApi.ts` に追加：
+#### バリデーション仕様（AC1, AC2 対応）
 
 ```ts
-async fetchAdminAnnouncements(): Promise<AdminAnnouncementModel[]>
-async fetchAdminAnnouncement(id: number): Promise<AdminAnnouncementModel>
-async createAdminAnnouncement(req: AdminAnnouncementRequest): Promise<AdminAnnouncementModel>
-async updateAdminAnnouncement(id: number, req: AdminAnnouncementRequest): Promise<void>
-async deleteAdminAnnouncement(id: number): Promise<void>
+// announcementForm.validation.ts（イメージ）
+const byteLength = (s: string | undefined | null): number =>
+  s ? new TextEncoder().encode(s).length : 0
+
+export const announcementFormSchema = yup.object({
+  titleJa: yup.string()
+    .required('admin.announcement.validation.titleJa.required')
+    .test('byte-length', 'admin.announcement.validation.titleJa.maxBytes',
+      (v) => byteLength(v) <= 200),
+  titleEn: yup.string()
+    .required('admin.announcement.validation.titleEn.required')
+    .test('byte-length', 'admin.announcement.validation.titleEn.maxBytes',
+      (v) => byteLength(v) <= 200),
+  titleEs: yup.string()
+    .required('admin.announcement.validation.titleEs.required')
+    .test('byte-length', 'admin.announcement.validation.titleEs.maxBytes',
+      (v) => byteLength(v) <= 200),
+  bodyJa: yup.string().required('admin.announcement.validation.bodyJa.required'),
+  bodyEn: yup.string().required('admin.announcement.validation.bodyEn.required'),
+  bodyEs: yup.string().required('admin.announcement.validation.bodyEs.required'),
+  severity: yup.string().required('admin.announcement.validation.severity.required'),
+  targetScope: yup.string().required('admin.announcement.validation.targetScope.required'),
+  startAt: yup.string().required('admin.announcement.validation.startAt.required'),
+  endAt: yup.string()
+    .required('admin.announcement.validation.endAt.required')
+    .test('end-after-start', 'admin.announcement.validation.endAtAfterStartAt',
+      (value, ctx) => {
+        const start = ctx.parent.startAt as string | undefined
+        if (!value || !start) return true
+        return new Date(value) > new Date(start)
+      }),
+})
 ```
 
-#### 3.3 Store
+#### View 側の変更ポイント
 
-新規: `stores/adminAnnouncementStore.ts`
-（`adminHouseworkTemplateStore` と同じ構造：`items[]` / `isLoading` / `isSubmitting` + `loadAll/create/update/remove/clear`）
+- `<p v-if="errors.titleJa" ...>{{ errors.titleJa }}</p>` → `{{ t(errors.titleJa) }}` に変更（全12箇所）
+- 登録/更新ボタンは `:disabled="store.isSubmitting || formSubmitting || Object.keys(errors).length > 0"` でも良いが、yup と vee-validate の標準動作で `formSubmitting` 中は無効化される。AC2 は「200バイト超の入力時にエラーメッセージが表示され、登録・更新ボタンが無効化される」なので、`Object.keys(errors).length > 0` を追加して防御的に対応する。
 
-#### 3.4 Domain
+#### AC 対応マッピング
 
-新規: `domain/announcement/adminAnnouncement.model.ts`
-
-```ts
-export interface AdminAnnouncementModel {
-  id: number
-  titleJa: string; titleEn: string; titleEs: string
-  bodyJa: string; bodyEn: string; bodyEs: string
-  severity: AnnouncementSeverityCode
-  targetScope: AnnouncementScopeCode
-  startAt: string
-  endAt: string
-}
-```
-
-#### 3.5 ルーティング
-
-`router/index.ts` の `admin` 子ルートに追加：
-
-```
-{ path: 'announcements',           name: 'admin.announcements',      meta: { requiresPermission: PERMISSION.ANNOUNCEMENT_MNG } }
-{ path: 'announcements/new',       name: 'admin.announcements.new',  meta: { requiresPermission: PERMISSION.ANNOUNCEMENT_MNG } }
-{ path: 'announcements/:id/edit',  name: 'admin.announcements.edit', meta: { requiresPermission: PERMISSION.ANNOUNCEMENT_MNG }, props: ... }
-```
-
-> Sprint 23 #60 のルールに従い、admin 配下の子ルートには `featureScope` を設定しない。
-
-#### 3.6 Page / Form 実装
-
-新規:
-- `views/admin/AdminAnnouncementsPage.vue`（一覧。`AdminHouseworkTemplatesPage` と同じ構造：PC=テーブル+ソート+ページング、SP=カード+ページング）
-- `views/admin/AdminAnnouncementFormPage.vue`（新規/編集兼用。`AdminHouseworkTemplateFormPage` と同じく vee-validate + yup を使用）
-
-AdminTopPage.vue にもアナウンス管理カードを追加：
-- アイコン: `Megaphone`（lucide-vue-next）
-- アイコン色: 既存と被らないトーンを選定（cyan系を予定）
-- `:can-access="canManageAnnouncement"`
-
-#### 3.7 一覧画面の表示項目（AC2 対応）
-
-| 列 | 値 |
-|----|---|
-| タイトル | 表示言語に応じて `titleJa/En/Es` から選択 |
-| 重要度 | `m_code` 0028（AnnouncementSeverity）の display_name でラベル化。色つきバッジ |
-| 対象スコープ | `m_code` 0027（AnnouncementScope）の display_name でラベル化 |
-| 有効期間 | `startAt 〜 endAt`（locale-aware フォーマット） |
-| ステータス（Q2: 3区分確定） | `now < startAt` → 開始前 / `startAt <= now < endAt` → 有効中 / `endAt <= now` → 期限切れ |
-
-#### 3.8 フォーム入力項目（AC3 対応）
-
-| 項目 | 必須 | 入力方法 |
-|------|------|---------|
-| タイトル ja/en/es | 必須 | text |
-| 本文 ja/en/es | 必須 | textarea |
-| 重要度 | 必須 | select（codeStore から `m_code` 0028 取得） |
-| 対象スコープ | 必須 | select（codeStore から `m_code` 0027 取得） |
-| 有効開始日時 | 必須 | `<input type="datetime-local">` |
-| 有効終了日時 | 必須 | `<input type="datetime-local">`（startAt < endAt のチェック） |
-
-#### 3.9 i18n 追加
-
-`i18n/ja.json` `en.json` `es.json` に以下を追加：
-- `admin.sections.announcement.title` / `subtitle`
-- `admin.announcement.*`（columns / form / toast / validation 各キー）
-- `pageTitles.adminAnnouncements` / `adminAnnouncementNew` / `adminAnnouncementEdit`
-
-#### 3.10 Vitest（TDD）
-
-| ファイル | 対象 |
-|---------|------|
-| `__tests__/api/adminApi.spec.ts`（既存に追記） | fetchAdminAnnouncements / create / update / delete |
-| `__tests__/stores/adminAnnouncementStore.spec.ts`（新規） | loadAll / create / update / remove |
-| `__tests__/composables/useRole.spec.ts`（既存があれば追記） | canManageAnnouncement |
-
-> View / Form のテストは見た目主体のため省略（規約通り）。
+| AC | 対応 |
+|----|----|
+| #62 AC1: 全 yup メッセージが i18n キー | utils 切り出し + `t(errors.xxx)` |
+| #62 AC2: ja/en/es 各言語で正しく表示 | 3言語に同キー追加 |
+| #62 AC3: 既存テストが全通過 | バリデーション spec 追加・既存 spec への影響は `t()` 呼び出しのみ |
+| #63 AC1: タイトル ja/en/es の200バイト上限 | 各 `titleXx` に `byte-length` test 追加 |
+| #63 AC2: 200バイト超でエラー + ボタン無効化 | エラー表示 + `errors` 件数で `disabled` 制御 |
+| #63 AC3: 既存テストが全通過 | バリデーション spec で網羅 |
 
 ---
 
-## 作業順
+### #64: 重要度バッジのダークモード対応
 
-1. **DB**: Flyway 追加 → `flywayMigrate` 実行 → `mybatisGenerator`（事前に `rm -rf src/main/resources/mapper/generated`）
-2. **Backend**:
-   - パッケージ移動: AnnouncementService を `application/service/announcement/` へ、AnnouncementSummary を独立 record に切り出し（参照元 import を grep で全更新、既存テスト緑のまま）
-   - Permission enum / ProgramType enum 追加
-   - AnnouncementModel に `create` + Domain チェック追加（TDD・Spec 先行）
-   - Repository / Converter 拡張（TDD）
-   - AdminAnnouncementService 新規（TDD）
-   - AdminAnnouncementController 新規（TDD・権限チェック ADMIN/SUPPORT 両方許可、その他 403）
-3. **Frontend**:
-   - PERMISSION 定数 + useRole 拡張（TDD・spec先行）
-   - adminApi 追加（TDD）
-   - adminAnnouncementStore 新規（TDD）
-   - domain モデル / i18n / ルーティング追加
-   - AdminAnnouncementsPage / AdminAnnouncementFormPage 実装
-   - AdminTopPage にカード追加
-4. **動作確認**: ADMIN ユーザーでログイン → アナウンス CRUD が一通り動くこと → SUPPORT ユーザーでも CRUD 可能 → 他ロールはメニュー非表示 / 直アクセス 403 確認
+**対象リポジトリ**: hw-hub-frontend
+**コミット参照**: `(ryokkon624/hw-hub-manage#64)`
 
-各層完了ごとにコミット → 全層完了後にまとめて push（3リポジトリそれぞれ）。
+#### 変更ファイル
+
+| 種別 | ファイル | 変更内容 |
+|------|---------|---------|
+| 編集 | `src/views/admin/AdminAnnouncementsPage.vue` | `severityColorClass` の戻り値を palette トークンに置換 |
+
+#### 置換マッピング（問い合わせ管理 categoryColorClass と同じスタイル）
+
+```diff
+ const severityColorClass = (severity: string): string => {
+   switch (severity) {
+     case ANNOUNCEMENT_SEVERITY.INFO:
+-      return 'bg-blue-50 border border-blue-200 text-blue-600'
++      return 'bg-hwhub-palette-blue-soft border border-hwhub-palette-blue text-hwhub-palette-blue'
+     case ANNOUNCEMENT_SEVERITY.WARN:
+-      return 'bg-amber-50 border border-amber-200 text-amber-600'
++      return 'bg-hwhub-palette-amber-soft border border-hwhub-palette-amber text-hwhub-palette-amber'
+     case ANNOUNCEMENT_SEVERITY.ERROR:
+-      return 'bg-rose-50 border border-rose-200 text-rose-600'
++      return 'bg-hwhub-palette-rose-soft border border-hwhub-palette-rose text-hwhub-palette-rose'
+     default:
+       return 'bg-hwhub-surface-subtle text-hwhub-muted'
+   }
+ }
+```
+
+> palette トークンは `main.css` の `:root.dark` で上書き済みのため、ダークモードで自動的に色が切り替わる。
+
+#### AC 対応マッピング
+
+| AC | 対応 |
+|----|----|
+| AC1: ダークモード対応カラートークンを使用 | `bg-hwhub-palette-*-soft` / `border-hwhub-palette-*` / `text-hwhub-palette-*` に置換 |
+| AC2: ダークモード時に適切なコントラスト | palette トークンが OS テーマ + 手動切替に追従 |
+| AC3: 既存テストが全通過 | 見た目変更のためテストなし（規約通り） |
+
+---
+
+### #65: AnnouncementService の AnnouncementSummary を削除し Domain Model 直返し
+
+**対象リポジトリ**: hw-hub-backend
+**コミット参照**: `(ryokkon624/hw-hub-manage#65)`
+
+#### 変更方針
+
+- `AnnouncementService.getActiveAnnouncements` の戻り値を `List<AnnouncementSummary>` → `List<AnnouncementModel>` に変更
+- `AdminAnnouncementService.getAll/getById/create` の戻り値を `AnnouncementSummary` → `AnnouncementModel` に変更
+- `AnnouncementSummary` Inner record を **削除**
+- DTO（`AnnouncementDto.from` / `AdminAnnouncementResponse.from`）の引数を `AnnouncementSummary` → `AnnouncementModel` に変更
+- Controller 側の import 整理（`AnnouncementSummary` の参照を全削除）
+
+#### 変更ファイル一覧
+
+| 種別 | ファイル | 変更内容 |
+|------|---------|---------|
+| 編集 | `application/service/announcement/AnnouncementService.java` | `AnnouncementSummary` Inner record を**削除**。`getActiveAnnouncements` の戻り値を `List<AnnouncementModel>` に変更 |
+| 編集 | `application/service/announcement/AdminAnnouncementService.java` | 戻り値を `AnnouncementModel` に変更（`getAll/getById/create`）。`AnnouncementSummary::from` の map を削除 |
+| 編集 | `presentation/rest/announcement/AnnouncementController.java` | 変数型を `AnnouncementModel`、import から `AnnouncementSummary` 除去 |
+| 編集 | `presentation/rest/announcement/dto/AnnouncementDto.java` | `from(AnnouncementSummary)` → `from(AnnouncementModel)` にシグネチャ変更。getter 呼び出しに変更（`model.getId()` 等） |
+| 編集 | `presentation/rest/admin/announcement/AdminAnnouncementController.java` | 変数型を `AnnouncementModel`、import から `AnnouncementSummary` 除去 |
+| 編集 | `presentation/rest/admin/announcement/dto/AdminAnnouncementResponse.java` | `from(AnnouncementSummary)` → `from(AnnouncementModel)` にシグネチャ変更 |
+| 編集 | `test/.../announcement/AnnouncementControllerSpec.groovy` | `AnnouncementSummary` を `AnnouncementModel.reconstruct(...)` に置換 |
+| 編集 | `test/.../announcement/AdminAnnouncementServiceSpec.groovy` | 戻り値型のアサーション調整（`result[0].id == 1L` 等は変わらない） |
+| 編集 | `test/.../admin/announcement/AdminAnnouncementControllerSpec.groovy` | service のモック戻り値を `AnnouncementModel` に変更 |
+
+#### Domain Model を Controller に返す妥当性
+
+CLAUDE.md / backend-conventions の依存ルール表で **Domain Model は Presentation 層から参照可能** と明記されている。`AnnouncementSummary` は Model と全フィールド一致しており、独自の振る舞いも持たないため、HwHub 規約上は不要なボイラープレート。
+
+> Application Service の Inner Class DTO は「複数の Domain Model を束ねるとき」または「Model の一部フィールドだけ公開したいとき」に有効（バックログ #65 備考）。本ケースは該当しない。
+
+#### AC 対応マッピング
+
+| AC | 対応 |
+|----|----|
+| AC1: Service が `AnnouncementModel` を直接返す | 上記の通り |
+| AC2: Controller で Model → DTO 変換 | DTO の `from(model)` で変換 |
+| AC3: `AnnouncementSummary` Inner class を削除 | 削除 |
+| AC4: 既存テストが全通過 | Spock テストの mock 戻り値を Model に統一して通す |
+
+---
+
+## りょこさんへの確認事項
+
+なし。バックログとAC・参考実装が明確で、技術選択も既存パターン踏襲のため迷う点なし。
+
+---
+
+## 作業順（実装フェーズで実施）
+
+1. **フロント #62 + #63**（同一コミット）
+   - RED: `announcementForm.validation.spec.ts` を新規作成（required / 200バイト上限 / endAt > startAt のテスト）
+   - GREEN: `announcementForm.validation.ts` を新規作成
+   - REFACTOR: `AdminAnnouncementFormPage.vue` を utils 参照に書き換え + i18n 追加
+   - 動作確認: ja/en/es でメッセージ切替 / 200バイト超でボタン無効化
+2. **フロント #64**（単独コミット）
+   - `AdminAnnouncementsPage.vue` の `severityColorClass` を palette トークンに置換
+   - 動作確認: ライト/ダークでバッジ色が切り替わる
+3. **バックエンド #65**（単独コミット）
+   - `AdminAnnouncementServiceSpec` / `AnnouncementControllerSpec` / `AdminAnnouncementControllerSpec` のモック戻り値を Model に変更（RED）
+   - `AnnouncementSummary` 削除 + 各 Service / DTO / Controller を Model 直返しに変更（GREEN）
+   - `./gradlew spotlessApply` 実行
+4. 全完了後、各リポジトリで `git push` してSMにレビュー依頼
 
 ---
 
 ## 実装状況
 
-| 区分 | ブランチ | 状態 |
-|-----|---------|------|
-| DB | feature/57-admin-announcements | 完了（push済み） |
-| Backend | feature/57-admin-announcements | 完了（push済み） |
-| Frontend | feature/57-admin-announcements | 完了（push済み） |
+| Issue | 状態 |
+|-------|------|
+| #62 yup i18n 対応 | 完了 |
+| #63 タイトル200バイト上限 | 完了 |
+| #64 重要度バッジダークモード | 完了 |
+| #65 AnnouncementSummary 削除 | 完了 |
 
-**全AC完了・全リポジトリpush済み（2026-05-06）**
+## コミット履歴（Sprint 25）
+
+### hw-hub-frontend
+- `349966a` feat: アナウンスフォームバリデーションi18n化・200バイト上限追加・重要度バッジダークモード対応 (#62, #63, #64)
+
+### hw-hub-backend
+- `aee496a` refactor: AnnouncementSummary Inner record を削除し Service が AnnouncementModel を直接返すよう変更 (#65)
 
 ---
 
