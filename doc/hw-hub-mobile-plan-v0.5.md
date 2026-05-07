@@ -232,7 +232,7 @@ class _FakeHouseholdNotifier extends HouseholdNotifier { ... }
 
 ---
 
-### Phase 3: 共通基盤の構築（Flutter側）
+### Phase 3: 共通基盤の構築（Flutter側）（未着手）
 
 バックエンドは完了済み。Flutter側の共通基盤を実装する。スプリントに乗せて進める。
 
