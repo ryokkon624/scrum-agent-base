@@ -150,24 +150,40 @@ common/image_upload.md
 - Bundle IDを`com.hwhub.app`に修正済み
 - GitHubへ初回コミット・プッシュ完了
 
-### Phase 2: バックエンド改修 + テスト基盤整備 ✅ 完了
+### Phase 2: 共通基盤の構築 ✅ 完了
 
-v0.4時点の「Phase 2 共通基盤の構築」から、**バックエンド改修とFlutterテスト基盤** を切り出して先行対応した。
+実施順序は ①Flutter共通基盤 → ②テスト基盤 → ③バックエンド改修 の順。
 
-#### 2-1. バックエンド改修（ブランチ: `feature/mobile-backend-support`）
+#### 2-1. Flutter 共通基盤（バックエンド改修より先に実施）
+
+| 項目 | 実装内容 | 状況 |
+|---|---|---|
+| デザインシステム | `AppColors`（Light/Dark 100+色）、`AppSpacing`、`AppRadius`、`AppTheme`（Material 3）、`AppColorScheme`（ThemeExtension）。NotoSansJP フォント指定 | ✅ |
+| 認証基盤 | `AuthState`（sealed class）、`AuthNotifier`、`TokenStorage`（flutter_secure_storage）、`AuthInterceptor`（Flag+Queueパターン。リフレッシュ呼び出し部分はバックエンド完了後に有効化済み）、iOS再インストール時のKeychain自動クリア対応 | ✅ |
+| APIクライアント | `DioClient`（AuthInterceptor + ErrorInterceptor + LogInterceptor）、`AppException`（sealed class: NetworkException / UnauthorizedException / ServerException / ApiException） | ✅ |
+| ルーティング骨格 | `go_router` + `StatefulShellRoute.indexedStack`（5タブ）、認証状態による自動リダイレクト、ディープリンクパス（`/email-verify` / `/invite/:token` / `/password/reset`）対応 | ✅ |
+| エラーハンドリング / トースト | `AppSnackBar`（success / error / warning / info）、`AppDialog`（confirm / alert）。`AppException.showAsSnackBar()` extension | ✅ |
+| HouseholdSwitcher | `HouseholdState` / `HouseholdNotifier`（SharedPreferences で選択状態永続化）、`HouseholdIndicatorBar`、`HouseholdSwitcherSheet`（BottomSheet）、`MainShell`（5タブ + インジケーターバー） | ✅ |
+
+**未完了（Phase 3 で対応）**
+
+- `retrofit_generator` は `dart_mappable` との非互換（後述）により一時削除。freezed モデルおよび API インターフェース定義は各画面実装時に追加する
+- iOS Universal Links: Xcode の `Runner.entitlements` への `applinks:` 追加と Apple Developer Portal の Associated Domains 設定が必要
+
+#### 2-2. テスト基盤（Flutter共通基盤の直後に実施）
+
+- `mockito` + `build_runner` によるMockクラス生成（`@GenerateMocks`）
+- ユニットテスト: `AppException`、`HouseholdState`、`TokenStorage`、`HouseholdNotifier`（計27テスト）
+- ウィジェットテスト: `HouseholdIndicatorBar`（`ProviderContainer` + `overrideWith` によるFake注入、計3テスト）
+- カバレッジ: `flutter test --coverage` → `coverage/lcov.info` → VS Code **Coverage Gutters** 拡張でガター表示
+
+#### 2-3. バックエンド改修（ブランチ: `feature/mobile-backend-support`）
 
 | コミット | 内容 |
 |---|---|
 | feat: リフレッシュトークン発行・検証 | `JwtProperties.refreshExpiryMillis` 追加。`POST /api/auth/refresh` 実装。ログイン・登録レスポンスに `refreshToken` フィールドを追加 |
 | feat: Googleモバイル認証エンドポイント | `POST /oauth/google/mobile`。idTokenをGoogleのtokeninfo APIで検証し、HwHub JWTを返却 |
 | feat: .well-known配信エンドポイント | `GET /.well-known/apple-app-site-association`（iOS Universal Links）、`GET /.well-known/assetlinks.json`（Android App Links）。`DeepLinkProperties`でアプリID・パッケージ名・SHA256フィンガープリントを設定ファイルで管理 |
-
-#### 2-2. Flutterテスト基盤整備
-
-- `mockito` + `build_runner` によるMockクラス生成（`@GenerateMocks`）
-- ユニットテスト: `AppException`（sealed class）、`HouseholdState`、`TokenStorage`、`HouseholdNotifier`
-- ウィジェットテスト: `HouseholdIndicatorBar`（`ProviderContainer` + `overrideWith` によるFake注入）
-- カバレッジ: `flutter test --coverage` → `coverage/lcov.info` → VS Code **Coverage Gutters** 拡張でガター表示
 
 ---
 
@@ -183,7 +199,7 @@ v0.4では `POST /api/auth/google/mobile` と記載していたが、既存の `
 
 #### retrofit_generator を一時的に削除
 
-`retrofit 4.9.2` + `retrofit_generator 9.7.0` は `dart_mappable` との組み合わせで **コンパイルエラー**（`Parser.DartMappable` が switch case で未処理）になる。Phase 3でAPIクライアント実装を始める際に、互換バージョンを調査して再導入する。
+`retrofit 4.9.2` + `retrofit_generator 9.7.0` は `dart_mappable` との組み合わせで **コンパイルエラー**（`Parser.DartMappable` が switch case で未処理）になる。Phase 3 で各 API インターフェースを実装する際に、互換バージョンを調査して再導入する。
 
 ---
 
@@ -232,40 +248,14 @@ class _FakeHouseholdNotifier extends HouseholdNotifier { ... }
 
 ---
 
-### Phase 3: 共通基盤の構築（Flutter側）（未着手）
-
-バックエンドは完了済み。Flutter側の共通基盤を実装する。スプリントに乗せて進める。
-
-1. **デザインシステムの移植**
-   - `main.css`のトークン（color / spacing / typography / radius）をFlutterの`ThemeData` + 独自`AppTokens`クラスに翻訳
-   - 共通Widget（Button / Card / Input / Toast等）を整備
-
-2. **認証基盤**
-   - ログイン / ログアウト / アクセストークン保持（flutter_secure_storage）
-   - リフレッシュトークンの Flag + Queue パターン実装（dioインターセプタ）
-     - 401受信 → `isRefreshing=true` → `POST /api/auth/refresh` 呼び出し
-     - 並行リクエストはキューに積んで待機 → リフレッシュ完了後リトライ
-   - 未認証時のリダイレクト
-   - iOSアプリ削除時の罠対策（SharedPreferencesにインストールフラグ）
-
-3. **APIクライアント**
-   - dioのインターセプタで認証ヘッダ・エラーハンドリング・ログを集約
-   - retrofit を互換バージョンで再導入、freezedでモデル生成
-
-4. **ルーティング骨格**
-   - go_routerで認証済み / 未認証のシェル分け
-   - ディープリンク対応（`common/deep_link.md`参照）
-   - iOS: Xcode の `Runner.entitlements` に `applinks:` エントリを追加する（Apple Developer Portal での Associated Domains 設定も必要）
-
-5. **エラーハンドリング / トースト**
-   - 全画面共通のSnackBar / Dialog
-
-6. **HouseholdSwitcher**
-   - `common/household_switcher.md`参照
-
-### Phase 4: 機能実装（スプリント分割）
+### Phase 3: 機能実装（スプリント分割）
 
 優先度順に1機能=1スプリント程度で進める。
+
+**Phase 3 着手前に済ませること**
+
+- `retrofit_generator` を互換バージョンで再導入し、freezed モデルと API インターフェース定義を整備する
+- iOS: Xcode の `Runner.entitlements` に `applinks:` エントリ追加 + Apple Developer Portal で Associated Domains 設定
 
 **推奨実装順序**
 
