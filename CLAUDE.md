@@ -14,6 +14,7 @@ SM・DEV・PO・各レビュアーが協調してスプリントを回す。
 | バックエンド     | `C:\work\hw-hub\hw-hub-backend`   |
 | バッチ           | `C:\work\hw-hub\hw-hub-batch`     |
 | データベース     | `C:\work\hw-hub\hw-hub-database`  |
+| モバイル         | `C:\work\hw-hub\hw-hub-mobile`    |
 
 ---
 
