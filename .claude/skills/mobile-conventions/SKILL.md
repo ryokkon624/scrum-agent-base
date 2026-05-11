@@ -132,8 +132,35 @@ lib/
 |---|---|---|
 | Repository impl | **必須** | 成功パス + DioException→AppException 変換 |
 | Notifier | **必須** | 各操作の状態遷移（成功・エラー） |
-| Page（UI） | **不要** | ウィジェットテストは対象外 |
+| Page（ウィジェット） | **必須** | 主要な表示確認・ユーザー操作のゴールデンパス |
 | 自動生成ファイル（`.g.dart` / `.mocks.dart`） | **不要** | 除外対象 |
+
+### ウィジェットテストの書き方
+
+```dart
+testWidgets('ログインボタン押下でsubmitが呼ばれる', (tester) async {
+  final container = ProviderContainer(
+    overrides: [loginNotifierProvider.overrideWith((_) => mockNotifier)],
+  );
+  addTearDown(container.dispose);
+
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: LoginPage()),
+    ),
+  );
+
+  await tester.tap(find.text('ログイン'));
+  await tester.pump();
+
+  verify(mockNotifier.submit()).called(1);
+});
+```
+
+- `ProviderContainer` + `UncontrolledProviderScope` で Notifier をモックに差し替える
+- ウィジェットテストでは表示テキスト・ボタン操作・エラーメッセージ表示などゴールデンパスを中心に書く
+- すべての分岐を網羅する必要はない。UI固有の振る舞いに絞る
 
 ### Notifier テストの書き方
 
@@ -165,7 +192,6 @@ expect(container.read(someNotifierProvider).value, ...);
 - `lib/core/di/*`（Provider 配線のみ）
 - `lib/features/shell/*`（ナビゲーションシェル）
 - `*/*.g.dart` / `*/*.mocks.dart`（コード生成）
-- `*/presentation/*_page.dart`（UIのみ）
 
 ---
 
