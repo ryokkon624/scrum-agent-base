@@ -191,6 +191,9 @@ Discord操作は `discord-operations` スキルを参照すること。
 - エージェント基盤: `C:\work\claude\scrum-agent-base`
 - フロントエンド: `C:\work\hw-hub\hw-hub-frontend`
 - バックエンド: `C:\work\hw-hub\hw-hub-backend`
+- バッチ: `C:\work\hw-hub\hw-hub-batch`
+- データベース: `C:\work\hw-hub\hw-hub-database`
+- モバイル: `C:\work\hw-hub\hw-hub-mobile`
 
 ---
 
