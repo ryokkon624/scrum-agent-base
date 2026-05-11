@@ -135,47 +135,122 @@ lib/
 | Page（ウィジェット） | **必須** | 主要な表示確認・ユーザー操作のゴールデンパス |
 | 自動生成ファイル（`.g.dart` / `.mocks.dart`） | **不要** | 除外対象 |
 
-### ウィジェットテストの書き方
+### ウィジェットテストのヘルパー
+
+`test/helpers/widget_test_helpers.dart` に共通ヘルパーがある。
 
 ```dart
-testWidgets('ログインボタン押下でsubmitが呼ばれる', (tester) async {
-  final container = ProviderContainer(
-    overrides: [loginNotifierProvider.overrideWith((_) => mockNotifier)],
-  );
-  addTearDown(container.dispose);
+// 通常のウィジェットテスト（GoRouter不要な場合）
+await tester.pumpWidget(buildTestPage(const LoginPage(), overrides: [...]));
 
-  await tester.pumpWidget(
-    UncontrolledProviderScope(
-      container: container,
-      child: const MaterialApp(home: LoginPage()),
-    ),
-  );
-
-  await tester.tap(find.text('ログイン'));
-  await tester.pump();
-
-  verify(mockNotifier.submit()).called(1);
-});
+// ナビゲーションテスト（context.go/push を含む場合）
+await tester.pumpWidget(buildTestPageWithRouter(
+  routes: [
+    GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+    GoRoute(path: '/signup', builder: (_, __) => const Scaffold(body: Text('signup-page'))),
+  ],
+  overrides: [...],
+  initialLocation: '/login',
+));
+await tester.pumpAndSettle();
+await tester.tap(find.text('新規登録'));
+await tester.pumpAndSettle();
+expect(find.text('signup-page'), findsOneWidget);
 ```
 
-- `ProviderContainer` + `UncontrolledProviderScope` で Notifier をモックに差し替える
-- ウィジェットテストでは表示テキスト・ボタン操作・エラーメッセージ表示などゴールデンパスを中心に書く
-- すべての分岐を網羅する必要はない。UI固有の振る舞いに絞る
+### Provider オーバーライドのパターン
+
+```dart
+// 非ファミリープロバイダー
+loginNotifierProvider.overrideWith(() => _FakeLoginNotifier())
+
+// ファミリープロバイダー（引数あり）
+// NG: passwordResetSentNotifierProvider('email').overrideWith(...)  ← コンパイルエラー
+// OK: ファミリープロバイダー本体に対して呼ぶ
+passwordResetSentNotifierProvider.overrideWith(() => _FakeNotifier())
+```
+
+### フェイク Notifier の実装パターン
+
+```dart
+// 初期状態だけ差し替える（最もシンプル）
+class _ErrorLoginNotifier extends LoginNotifier {
+  @override
+  LoginState build() => const LoginState(errorMessage: 'エラー');
+}
+
+// build() 後に状態遷移させて ref.listen / SnackBar / ナビゲーションをトリガーする
+class _SentEmailNotifier extends PasswordForgotNotifier {
+  @override
+  PasswordForgotState build() {
+    Future.microtask(() => state = state.copyWith(sentEmail: 'test@example.com'));
+    return const PasswordForgotState();
+  }
+}
+```
+
+### `pump()` vs `pumpAndSettle()` の選択ルール
+
+```
+CircularProgressIndicator が画面にある → pumpAndSettle() でタイムアウトする
+→ pump() を使う（アニメーションを1フレーム進めるだけで十分）
+
+画面遷移・SnackBar表示など、アニメーションが終わるまで待ちたい → pumpAndSettle()
+Future.microtask による状態遷移を待つ場合 → pump(); pump(); で2フレーム進める
+```
 
 ### Notifier テストの書き方
 
 ```dart
-// ProviderContainer を使ってオーバーライド
-final container = ProviderContainer(
-  overrides: [repositoryProvider.overrideWith((_) => mockRepo)],
-);
-addTearDown(container.dispose);
+ProviderContainer makeContainer(String email) {
+  final container = ProviderContainer(
+    overrides: [
+      secureStorageProvider.overrideWithValue(mockStorage),
+      authRepositoryProvider.overrideWithValue(mockRepo),
+    ],
+  );
+  addTearDown(container.dispose);
+  return container;
+}
 
-// 非同期 build() を待ってから操作する
-await container.read(someNotifierProvider.future);
+// 操作してから状態を確認
 await container.read(someNotifierProvider.notifier).doSomething();
-expect(container.read(someNotifierProvider).value, ...);
+expect(container.read(someNotifierProvider).isSending, false);
 ```
+
+### タイマーを含む Notifier のテスト（fakeAsync）
+
+`fake_async` を `pubspec.yaml` の `dev_dependencies` に直接追加する（`flutter_test` 経由では使えない）。
+
+```yaml
+dev_dependencies:
+  fake_async: ^1.3.1
+```
+
+```dart
+import 'package:fake_async/fake_async.dart';
+
+test('1秒後にcooldownが減少する', () {
+  fakeAsync((fake) {
+    final container = makeContainer('test@example.com');
+    // AutoDispose を防ぐためサブスクリプションを保持する（必須）
+    final sub = container.listen(
+      emailVerifyWaitNotifierProvider('test@example.com'),
+      (_, __) {},
+    );
+
+    container.read(emailVerifyWaitNotifierProvider('test@example.com').notifier).resend();
+    fake.flushMicrotasks(); // async処理を完了させる
+
+    fake.elapse(const Duration(seconds: 1));
+    expect(container.read(emailVerifyWaitNotifierProvider('test@example.com')).cooldownSeconds, 59);
+
+    sub.close();
+  });
+});
+```
+
+**注意**: `container.listen()` がないと AutoDispose が `fake.flushMicrotasks()` のタイミングでプロバイダーを破棄し、タイマーが消えて状態が初期値に戻る。
 
 ### モックの定義場所
 
@@ -192,6 +267,15 @@ expect(container.read(someNotifierProvider).value, ...);
 - `lib/core/di/*`（Provider 配線のみ）
 - `lib/features/shell/*`（ナビゲーションシェル）
 - `*/*.g.dart` / `*/*.mocks.dart`（コード生成）
+
+カバレッジ計測は `coverage.ps1` を実行する（Windows PowerShell ネイティブで lcov フィルタリングを行う）。
+
+### 構造的に到達できないコード
+
+以下は現行実装の制約上テストで到達できない。カバレッジ除外対象にしてよい。
+
+- `household_notifier.dart` build() のハードコード空リスト返却（実APIコール前の仮実装）
+- `auth_notifier.dart` の `Platform.isIOS` 分岐（iOS ビルドが存在しないため）
 
 ---
 
