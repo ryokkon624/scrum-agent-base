@@ -14,6 +14,7 @@ SM・DEV・PO・各レビュアーが協調してスプリントを回す。
 | バックエンド     | `C:\work\hw-hub\hw-hub-backend`   |
 | バッチ           | `C:\work\hw-hub\hw-hub-batch`     |
 | データベース     | `C:\work\hw-hub\hw-hub-database`  |
+| モバイル         | `C:\work\hw-hub\hw-hub-mobile`    |
 
 ---
 
@@ -24,6 +25,7 @@ SM・DEV・PO・各レビュアーが協調してスプリントを回す。
 | フロントエンド | Vue 3 / TypeScript / Pinia / Tailwind CSS / Vite / Vitest                  |
 | バックエンド   | Java 21 / Spring Boot 4.x / MyBatis / Flyway / MySQL 8.4 / Groovy + Spock  |
 | バッチ         | Java 21 / Spring Boot 4.x / Spring Batch / MyBatis / Groovy + Spock        |
+| モバイル       | Flutter 3.x / Dart 3.x / Riverpod 2.x / go_router 14.x / Dio 5.x          |
 | インフラ       | AWS ECS Fargate / RDS / S3 / CloudFront / ALB / Terraform / GitHub Actions |
 
 ---
