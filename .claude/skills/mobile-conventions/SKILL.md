@@ -252,6 +252,20 @@ test('1秒後にcooldownが減少する', () {
 
 **注意**: `container.listen()` がないと AutoDispose が `fake.flushMicrotasks()` のタイミングでプロバイダーを破棄し、タイマーが消えて状態が初期値に戻る。
 
+### 複数の使い捨て引数は `_` を繰り返す（unnecessary_underscores）
+
+Dart の `unnecessary_underscores` lint は `__`（2つ以上のアンダースコア変数）を禁止する。複数の無視引数は全て `_` を使う。
+
+```dart
+// NG: GoRoute builder / container.listen などで __ を使うとlintエラー
+GoRoute(path: '/login', builder: (_, __) => const LoginPage())
+container.listen(provider, (_, __) {})
+
+// OK
+GoRoute(path: '/login', builder: (_, _) => const LoginPage())
+container.listen(provider, (_, _) {})
+```
+
 ### モックの定義場所
 
 - `test/features/{feature}/auth_mocks.dart` にまとめて `@GenerateMocks([...])` を定義する
@@ -269,6 +283,12 @@ test('1秒後にcooldownが減少する', () {
 - `*/*.g.dart` / `*/*.mocks.dart`（コード生成）
 
 カバレッジ計測は `coverage.ps1` を実行する（Windows PowerShell ネイティブで lcov フィルタリングを行う）。
+
+CI（`coverage-mobile.yml`）の lcov コマンドには `--ignore-errors unused` を付ける。除外パターンが lcov.info に存在しない場合、lcov が exit code 25 で終了するため。
+
+```yaml
+lcov --remove coverage/lcov.info $PATTERNS --ignore-errors unused --output-file coverage/lcov_filtered.info
+```
 
 ### 構造的に到達できないコード
 
