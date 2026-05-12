@@ -79,10 +79,28 @@ lib/
 ```
 
 - `const` コンストラクタを積極的に使い、不要な再ビルドを避ける
-- コード値（APIから返される文字列/数値の区分値）はマジックストリングで直接比較せず、`core/models/` 配下に enum を定義して使う
+- コード値（APIから返される文字列/数値の区分値）はマジックストリングで直接比較せず、`core/models/` 配下の enum を使う
+
+### m_code で管理されている区分値（自動生成）
+
+`lib/core/models/` には `hw-hub-database` の `./gradlew generateEnums` で生成した enum が配置済み。  
+`PurchaseLocationType`, `TaskStatus`, `Category` など m_code に登録されている区分値はすべてここにある。  
+**新しく作らず、生成済みのファイルを import して使うこと。**
 
 ```dart
-// lib/core/models/purchase_location_type.dart の例
+// 生成済みの enum を import して使う例
+import 'package:hw_hub_mobile/core/models/purchase_location_type.dart';
+
+// コード値との比較
+if (item.storeType == PurchaseLocationType.supermarket.code) { ... }
+
+// コード値から enum に変換
+final type = PurchaseLocationType.fromCode(item.storeType); // 不正値は null
+```
+
+生成済み enum はすべて以下の形式になっている。
+
+```dart
 enum PurchaseLocationType {
   supermarket('1'),
   online('2'),
@@ -95,14 +113,24 @@ enum PurchaseLocationType {
     for (final v in values) {
       if (v.code == code) return v;
     }
-    return null; // 不正値はnullで安全に処理
+    return null;
   }
 }
 ```
 
-  - バックエンド（Java enum）・フロントエンド（as const オブジェクト）と同じ命名・コード値を使う
-  - `fromCode()` は null 安全（不正値で例外を投げずに null を返す）
-  - 横展開: 同じコード値を使っている箇所を `grep` で確認してすべて置き換える
+m_code が更新された場合は `./gradlew generateEnums`（hw-hub-database）を実行し、生成ファイルを `lib/core/models/` に上書きコピーしてコミットする。
+
+### m_code で管理されていない区分値（カスタム定義）
+
+画面固有の状態や API の仕様に由来するが m_code に登録されていない区分値は、`core/models/` に手動で作成する。
+
+```dart
+// lib/core/models/password_reset_result.dart の例（m_codeに無いカスタム enum）
+enum PasswordResetResult { success, expired, invalid }
+```
+
+- カスタム enum はコード値を持たない（画面状態の分岐にのみ使う）ことが多い
+- API レスポンスのフラグなど文字列/数値のマッピングが必要な場合は生成済み enum と同じ形式（`fromCode` + null 安全）で作る
 
 ---
 
