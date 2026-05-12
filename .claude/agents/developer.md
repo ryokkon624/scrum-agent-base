@@ -5,6 +5,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash, TaskCreate, TaskUpdate, SendMessage,
 skills:
   - developer-workflow
   - discord-operations
+  - github-issues
   - backend-conventions
   - frontend-conventions
   - mobile-conventions
