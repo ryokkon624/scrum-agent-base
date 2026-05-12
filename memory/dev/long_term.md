@@ -123,6 +123,22 @@
 
 ---
 
+## Sprint 25 サマリー（2026-05-06完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #62 | yup バリデーション i18n 化 | `announcementForm.validation.ts` を utils に切り出し、エラーメッセージをi18nキー化。`t(errors.xxx)` で各言語切替 |
+| #63 | タイトル200バイト上限 | `byteLength = new TextEncoder().encode(s).length` で計算し yup `test('byte-length')` で検証。ja/en/es 3言語タイトルに適用、ボタン disabled 連動 |
+| #64 | 重要度バッジダークモード対応 | `bg-{color}-50` 等を `bg-hwhub-palette-{color}-soft / border-hwhub-palette-{color} / text-hwhub-palette-{color}` に置換 |
+| #65 | AnnouncementSummary 削除 | Inner record を削除し Service から Domain Model（`AnnouncementModel`）を直接 Controller に返す形に変更。Spock テストの mock 戻り値も Model に置換 |
+
+### Sprint 25 で習得したこと
+- HwHub 規約の依存ルール表に従い、Domain Model と完全一致する Inner record は不要なボイラープレート。Service は Domain Model を直接返してよい
+- yup の `byte-length` テストはマルチバイト・絵文字を含む文字列にも安全（`TextEncoder`）
+- vee-validate の `errors` が空でない場合 `Object.keys(errors).length > 0` でボタン無効化制御を行うと AC「エラー時ボタン無効化」を防御的に満たせる
+
+---
+
 ## Sprint 24 サマリー（2026-05-06完了）
 
 | Issue | 内容 | 成果 |
