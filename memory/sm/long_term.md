@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-11（Sprint 26 Retro後）
+**最終更新**: 2026-05-12（Sprint 27 Retro後）
 
 ---
 
@@ -34,6 +34,7 @@
 | Sprint 24  | アナウンスマスタメンテ画面を管理画面配下に追加し、システム管理者が開発者の手を借りずにアナウンスを管理できる機能を完成させる | ✅ 全AC達成（#57: 5AC）Sprint Review指摘4件（yupメッセージi18n未対応→#62 / タイトル200バイト超入力可→#63 / 重要度バッジDARKモード未対応→#64 / AnnouncementSummary不要マッピング→#65） | security-reviewerが権限保護済み管理者専用エンドポイントのエラーメッセージを5回のレビューで計3回指摘（いずれもりょこさん判断でスコープ外）→security-reviewer.mdに「指摘対象外の判断基準」セクションを追加。Planningで承認した設計（AnnouncementSummary再利用）が後からHwHub規約違反と判明→#65で次スプリント以降に対応。reviewer Discord投稿が13スプリント連続成功。 |
 | Sprint 25  | Sprint 24レビュー指摘4件（フロントエンドバグ3件・バックエンドリファクタリング1件）を解消し、アナウンス管理機能を完成品質に引き上げる | ✅ 全AC達成（#62/#63/#64/#65）Sprint Reviewりょこさん指摘なし | 既存ブランチへの追加コミット時に既存PRのbody PATCH更新でclosesを追加する手順がSkillsに未記載 → scrum-master-workflow⑥に追記。reviewer Discord投稿が14スプリント連続成功。コードレビュー3者全員一発「指摘なし」。 |
 | Sprint 26  | モバイルアプリのホーム画面を実装し、家事・買い物の状況が一目で確認できるダッシュボードを完成させる | ✅ 全AC達成（#66: 9AC / 190件全通過）Sprint Review指摘5件（①デザインwebSP版合わせ→#69 / ②My Tasks件数集計バグ→#70 / ③買い物リスト場所名称→#71 / ④グラフ積み上げ順序→#72 / ⑤縦軸目盛り→#73） | 初モバイルスプリント: mobile-conventions・3観点reviewerのモバイル対応が正常に機能した。レビュー4ラウンドを経て全員「指摘なし」。Mobileのspecで指定がない場合webのSP版を参照する原則をmobile-conventionsに追加（Sprint Reviewで指摘あり）。reviewer Discord投稿が15スプリント連続成功。 |
+| Sprint 27  | モバイルホーム画面のSprint 26 Review指摘5件を全件解消し、webのSP版と完全に統一されたUIを実現する | ✅ 全AC達成（#69/#70/#71/#72/#73）Sprint Reviewりょこさん指摘なし | Agent Teams messaging failure: dev/dev2がSendMessageに応答せずSMが直接計画フェーズを担当（Sonnet DEVでの実装は正常動作）。convention-reviewerがBashでgit diffを実行できずSMが手動でファイル一覧を送付→convention-reviewer.mdにBashフォールバック手順を追記。りょこさんからの規約指摘でshopping_card.dartのマジックストリング'1'/'2'/'3'をPurchaseLocationTypeEnum（core/models/）に抽出→mobile-conventionsにenumルールを追記。reviewer Discord投稿が16スプリント連続成功。 |
 
 ---
 
@@ -101,6 +102,10 @@
 | Sprint 26  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
 | Sprint 26  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（Round 1〜4 全投稿）で投稿成功（**15スプリント連続**）。定着確認                                       | 継続監視                                                    |
 | Sprint 26  | 初モバイルスプリント: mobile-conventions・reviewer3観点のモバイル対応確認 | ✅ fl_chart・HouseholdSwitcher等のモバイル固有実装にもreviewerが正常に対応。mobile-conventionsのデザイン参照方針がSprint Review指摘を受けて不足と判明→section 11追加 | mobile-conventions SKILL.md section 11追加                 |
+| Sprint 27  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 27  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー）で投稿成功（**16スプリント連続**）。定着確認                                   | 継続監視                                                    |
+| Sprint 27  | convention-reviewerのBash未使用時フォールバック手順追加           | ✅ convention-reviewer.mdのレビュー手順2に「⚠️ Bash が使えない場合はSMに変更ファイル一覧を要求する」を追記。Sprint 27でBash利用不可のブロッカー発生→手順明文化で再発防止 | convention-reviewer.md更新                                  |
+| Sprint 27  | mobile-conventionsにコード値enumルール追加                        | ✅ shopping_card.dartのマジックストリング'1'/'2'/'3'をPurchaseLocationType enumに抽出（りょこさん指摘）。backend Java enum / frontend as constと同じ命名・コード値で統一する原則をsection 3に追記 | mobile-conventions SKILL.md section 3追記                  |
 
 ---
 

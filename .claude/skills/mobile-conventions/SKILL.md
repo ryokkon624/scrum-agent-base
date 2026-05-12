@@ -79,6 +79,30 @@ lib/
 ```
 
 - `const` コンストラクタを積極的に使い、不要な再ビルドを避ける
+- コード値（APIから返される文字列/数値の区分値）はマジックストリングで直接比較せず、`core/models/` 配下に enum を定義して使う
+
+```dart
+// lib/core/models/purchase_location_type.dart の例
+enum PurchaseLocationType {
+  supermarket('1'),
+  online('2'),
+  drugstore('3');
+
+  const PurchaseLocationType(this.code);
+  final String code;
+
+  static PurchaseLocationType? fromCode(String? code) {
+    for (final v in values) {
+      if (v.code == code) return v;
+    }
+    return null; // 不正値はnullで安全に処理
+  }
+}
+```
+
+  - バックエンド（Java enum）・フロントエンド（as const オブジェクト）と同じ命名・コード値を使う
+  - `fromCode()` は null 安全（不正値で例外を投げずに null を返す）
+  - 横展開: 同じコード値を使っている箇所を `grep` で確認してすべて置き換える
 
 ---
 
