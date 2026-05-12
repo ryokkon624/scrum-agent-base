@@ -1,13 +1,13 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 27
+**スプリント**: Sprint 28
 **最終更新**: 2026-05-12
 
 ---
 
 ## スプリントゴール
 
-モバイルホーム画面のSprint 26 Review指摘5件を全件解消し、webのSP版と完全に統一されたUIを実現する
+モバイルMy Tasks画面を実装してスワイプ操作で日々の家事管理を快適にし、AppRoutes定数クラス導入でルーティング品質を向上させる
 
 ---
 
@@ -15,11 +15,8 @@
 
 | Issue | 内容 | ブランチ |
 |-------|------|---------|
-| #70 | [mobile] My Tasksカードの件数集計バグ修正 | `feature/66-mobile-home`（hw-hub-mobileリポジトリ） |
-| #71 | [mobile] 買い物リストカードの購入場所名称表示バグ修正 | `feature/66-mobile-home` |
-| #69 | [mobile] ホーム画面デザインをwebのSP版に合わせる | `feature/66-mobile-home` |
-| #72 | [mobile] おうちの様子グラフ積み上げ順序修正（未割当を一番上に） | `feature/66-mobile-home` |
-| #73 | [mobile] おうちの様子グラフ縦軸目盛り追加 | `feature/66-mobile-home` |
+| #67 | [mobile] My Tasks画面を実装する (#12) | `feature/67-mobile-my-tasks`（hw-hub-mobile） |
+| #75 | 画面遷移時に指定するpathを定数に置き換えたい | `feature/67-mobile-my-tasks`（#67と同一ブランチ） |
 
 リポジトリパス: `C:\work\hw-hub\hw-hub-mobile`
 
@@ -27,74 +24,72 @@
 
 ## 承認済み実装方針
 
-### 実装順序
-#70 → #71（bugを先に）→ #72 → #73 → #69（デザイン確認が必要なため最後）
+### 全体方針
+- 同一ブランチ `feature/67-mobile-my-tasks` で #67 + #75 をまとめて実施
+- 実装順序: #75（AppRoutes定数化・低リスク先行）→ #67（My Tasks本体）
 
 ---
 
-### #70 My Tasksカードの件数集計バグ
+### #75 AppRoutes定数化
 
-**原因**: `home_notifier.dart:87` の `_calcMyTasksSummary` が `assigneeUserId != null`（割り当て済み全員）でフィルタリングしており、ログインユーザーのIDで絞り込んでいない（Phase 4のTODOコメントあり）
+**対象ファイル**: `lib/app_router.dart`
 
-**改修方針**:
-- `_load()` メソッド内で `authNotifierProvider` から `currentUserId` を取得する
-- `_calcMyTasksSummary` に `currentUserId` を引数として渡し、`t.assigneeUserId == currentUserId` でフィルタリングする
-- バックエンドAPIへの変更は不要（`HouseworkTaskResponse` に `assigneeUserId` フィールドは既存）
-
-**対象ファイル**: `lib/features/home/presentation/home_notifier.dart`
-
----
-
-### #71 買い物リストの購入場所名称表示バグ
-
-**原因**: `shopping_card.dart:131` の `_storeLabel` が `'supermarket'/'online'/'drug_store'` でswitch文を書いているが、バックエンドAPIは `'1'`（スーパー）、`'2'`（オンライン）、`'3'`（ドラッグストア）を返す。いずれのcaseにもマッチせず `default: return storeType;` でIDがそのまま表示されていた。
-
-**改修方針**: `_storeLabel` のswitch文を `'1'`/`'2'`/`'3'` キーに修正する（フロントエンドの `PURCHASE_LOCATION_TYPE` 定数と整合）
-
-**対象ファイル**: `lib/features/home/presentation/widgets/shopping_card.dart`
+**改修内容**:
+- `app_router.dart` 末尾に `AppRoutes` クラスを追加し、既存全ルートを定数として定義
+  - 認証系: `/login`, `/signup`, `/email-waiting`, `/forgot-password`, `/forgot-password/sent`, `/auth-result`, `/email-verify`, `/invite/:token`, `/password/reset`
+  - シェル内: `/`, `/housework`, `/tasks`, `/shopping`, `/shopping/new`, `/shopping/:id`, `/settings`, `/settings/account`, `/settings/household`, `/settings/housework`, `/settings/housework/new`, `/settings/housework/:id`, `/settings/inquiries`, `/settings/inquiries/new`, `/settings/inquiries/:id`, `/settings/app-info`, `/settings/terms`, `/settings/privacy`
+  - シェル外: `/notifications`
+- リポジトリ全体の `context.go('/xxx')` / `path: '/xxx'` を grep して `AppRoutes.xxx` に置換
+- `flutter analyze` 警告ゼロを確認
 
 ---
 
-### #72 おうちの様子グラフ積み上げ順序修正
+### #67 My Tasks画面
 
-**原因**: `household_overview_card.dart:129-147` で「未割当 → メンバー」の順で `rodStackItems` に追加しているため、未割当が棒グラフの下（底）に来る。
+**バックエンドAPI**（既存3エンドポイントをそのまま利用・変更なし）:
+- `GET /api/housework-tasks?householdId=X&status=0`
+- `PATCH /api/housework-tasks/{taskId}/status`
+- `PATCH /api/housework-tasks/bulk-status`
 
-**改修方針**: 順序を「メンバー → 未割当（最後）」に変更する。fl_chartでは配列の最後に追加されたセグメントが最上部に積み上がるため、未割当を最後に追加すれば頂点に表示される。
-
-**対象ファイル**: `lib/features/home/presentation/widgets/household_overview_card.dart`（`_OverviewChart.build()` の `rodStackItems` 構築ロジック L126-147）
-
----
-
-### #73 縦軸目盛り追加
-
-**改修方針**:
-```dart
-leftTitles: AxisTitles(
-  sideTitles: SideTitles(
-    showTitles: true,
-    reservedSize: 28,
-    getTitlesWidget: (value, meta) {
-      if (value != value.roundToDouble()) return const SizedBox.shrink();
-      return Text(
-        value.toInt().toString(),
-        style: TextStyle(fontSize: 10, color: colors.textMuted),
-      );
-    },
-  ),
-),
+**新規ファイル構成** (`lib/features/tasks/`):
+```
+data/
+  my_tasks_repository.dart          # GET / PATCH(status) / PATCH(bulk-status)
+presentation/
+  my_tasks_notifier.dart            # AsyncNotifier (pastTasks/futureTasks/filter/isLoading)
+  my_tasks_state.dart               # MyTasksState, MyTasksFilter (all/today/week)
+  my_tasks_page.dart                # 画面本体
+  widgets/
+    past_tasks_section.dart         # 過去の家事セクション（0件時非表示）
+    future_tasks_section.dart       # これからの家事セクション（フィルタ含む）
+    swipeable_task_card.dart        # スワイプカード（共通化）
+    bulk_complete_dialog.dart       # 「すべて完了」確認ダイアログ
+my_tasks_providers.dart             # Repository Provider
 ```
 
-**対象ファイル**: `lib/features/home/presentation/widgets/household_overview_card.dart`（`leftTitles` 設定 L186-188）
+**スワイプ実装**: Flutter標準の `Dismissible` を使用
+- 背景は `direction` 別に `background`/`secondaryBackground` で設定
+- `dismissThresholds: {DismissDirection.startToEnd: 0.3, DismissDirection.endToStart: 0.3}` でAC6の30%条件
+- 右スワイプ（完了）= emerald-500、左スワイプ（スキップ）= slate-400
+- `confirmDismiss` でAPI呼び出し、成功時にトースト表示・カード除去
+
+**ルーティング**: 既存の `/tasks` 仮実装（`_P('My Tasks')`）を本物の `MyTasksPage` に差し替え
+
+**HouseholdSwitcher**: Sprint 26実装済みの `main_shell.dart` の `HouseholdIndicatorBar` がボトムナビ直上に表示されるため、My Tasksページ側での個別実装は不要
+
+**テスト戦略**（AC10 ≥95%）:
+- `my_tasks_repository_test.dart`: Dio mockでAPI 3種類
+- `my_tasks_notifier_test.dart`: 過去/未来振り分け・フィルタ・完了/スキップ・bulk-status
+- `my_tasks_page_test.dart`: ウィジェットテスト（ローディング・空表示・スワイプ・確認ダイアログ・フィルタタブ）
 
 ---
 
-### #69 ホーム画面デザインをwebのSP版に合わせる
+### 確認事項（りょこさん All OK 回答済み）
 
-**改修方針**:
-- `hw-hub-frontend` のホーム画面SP版（`ShoppingListCard.vue` / `MyTasksCard.vue` / `UnassignedCard.vue` 等）を参照して各カードの色・余白・フォントサイズを確認・調整
-- spec未記載の要素はwebのSP版を正として実装
-
-**対象ファイル**: 確認後に決定（主に `lib/features/home/presentation/widgets/` 配下）
+1. AC8世帯バーは `main_shell` の既存実装を利用（追加実装不要）
+2. AC9はホーム画面同様 `AsyncNotifier.build()` + `ref.invalidate` 設計
+3. トーストは `ScaffoldMessenger.showSnackBar`
+4. AC7 bulk-status のリクエストボディ仕様は実装時にバックエンドコードで確認
 
 ---
 
@@ -112,7 +107,7 @@ leftTitles: AxisTitles(
 
 - コミットメッセージ形式: `fix: [内容] (ryokkon624/hw-hub-manage#N)` または `feat:`
 - [DEV] プレフィックスをDiscord投稿に必ずつける
-- 作業開始時・完了時・レビュー指摘対応完了時にDiscord作業スレッド（スレッドID: 1503569468045922354）に投稿する
+- 作業開始時・完了時・レビュー指摘対応完了時にDiscord作業スレッド（スレッドID: 1503649259403087912）に投稿する
 - PRはSMが行う。DEVはpushまでが担当
 
 ---
@@ -127,14 +122,8 @@ leftTitles: AxisTitles(
 
 | Issue | 状態 |
 |-------|------|
-| #70 My Tasksカード件数集計バグ | 完了 |
-| #71 購入場所名称表示バグ | 完了 |
-| #72 グラフ積み上げ順序修正 | 完了 |
-| #73 グラフ縦軸目盛り追加 | 完了 |
-| #69 デザインwebのSP版合わせ | 完了 |
-
-**push済みブランチ**: `feature/66-mobile-home`（hw-hub-mobile）
-**最終コミット**: `e7aae02` fix: Sprint27 ホーム画面5件修正
+| #75 AppRoutes定数化 | 完了（コミット: da8a8af） |
+| #67 My Tasks画面 | 完了（コミット: fc0d4b8） |
 
 ---
 

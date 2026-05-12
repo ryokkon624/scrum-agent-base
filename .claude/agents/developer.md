@@ -45,3 +45,4 @@ skills:
 
 - [ ] ACをすべて満たしているか
 - [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format` / `dart format .`）
+- [ ] モバイルでAppLocalizationsを使う場合、インポートパスが `package:flutter_gen/gen_l10n/` ではなく `lib/l10n/app_localizations.dart` への相対パスになっているか（`flutter run` でビルドエラーになる）

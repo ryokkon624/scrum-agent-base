@@ -35,6 +35,7 @@
 | Sprint 25  | Sprint 24レビュー指摘4件（フロントエンドバグ3件・バックエンドリファクタリング1件）を解消し、アナウンス管理機能を完成品質に引き上げる | ✅ 全AC達成（#62/#63/#64/#65）Sprint Reviewりょこさん指摘なし | 既存ブランチへの追加コミット時に既存PRのbody PATCH更新でclosesを追加する手順がSkillsに未記載 → scrum-master-workflow⑥に追記。reviewer Discord投稿が14スプリント連続成功。コードレビュー3者全員一発「指摘なし」。 |
 | Sprint 26  | モバイルアプリのホーム画面を実装し、家事・買い物の状況が一目で確認できるダッシュボードを完成させる | ✅ 全AC達成（#66: 9AC / 190件全通過）Sprint Review指摘5件（①デザインwebSP版合わせ→#69 / ②My Tasks件数集計バグ→#70 / ③買い物リスト場所名称→#71 / ④グラフ積み上げ順序→#72 / ⑤縦軸目盛り→#73） | 初モバイルスプリント: mobile-conventions・3観点reviewerのモバイル対応が正常に機能した。レビュー4ラウンドを経て全員「指摘なし」。Mobileのspecで指定がない場合webのSP版を参照する原則をmobile-conventionsに追加（Sprint Reviewで指摘あり）。reviewer Discord投稿が15スプリント連続成功。 |
 | Sprint 27  | モバイルホーム画面のSprint 26 Review指摘5件を全件解消し、webのSP版と完全に統一されたUIを実現する | ✅ 全AC達成（#69/#70/#71/#72/#73）Sprint Reviewりょこさん指摘なし | Agent Teams messaging failure: dev/dev2がSendMessageに応答せずSMが直接計画フェーズを担当（Sonnet DEVでの実装は正常動作）。convention-reviewerがBashでgit diffを実行できずSMが手動でファイル一覧を送付→convention-reviewer.mdにBashフォールバック手順を追記。りょこさんからの規約指摘でshopping_card.dartのマジックストリング'1'/'2'/'3'をPurchaseLocationTypeEnum（core/models/）に抽出→mobile-conventionsにenumルールを追記。reviewer Discord投稿が16スプリント連続成功。 |
+| Sprint 28  | モバイルMy Tasks画面を実装してスワイプ操作で日々の家事管理を快適にし、AppRoutes定数クラス導入でルーティング品質を向上させる | ✅ 全AC達成（#67: 10AC / #75: 3AC / 全219件グリーン）Sprint Review指摘3件（①My Tasks担当者フィルタバグ→#76 / ②デザインweb SP版合わせ→#77 / ③GoRoute path引数の定数化漏れ→#78） | convention-reviewerがi18n漏れ・dynamic型・スキップコード値バグ（'2'→'9'）を検出・修正済み。モバイルAppLocalizationsインポートパスをpackage:flutter_genではなく相対パスに修正（flutter runビルドエラー）→developer.mdコミット前チェックリストに追記。担当者フィルタ・デザインSP版合わせがホーム画面に続き2回連続でSprint Review指摘→ACや仕様書の記載不足が根本原因のためPOと改善対応予定。reviewer Discord投稿が17スプリント連続成功。 |
 
 ---
 
@@ -106,6 +107,9 @@
 | Sprint 27  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー）で投稿成功（**16スプリント連続**）。定着確認                                   | 継続監視                                                    |
 | Sprint 27  | convention-reviewerのBash未使用時フォールバック手順追加           | ✅ convention-reviewer.mdのレビュー手順2に「⚠️ Bash が使えない場合はSMに変更ファイル一覧を要求する」を追記。Sprint 27でBash利用不可のブロッカー発生→手順明文化で再発防止 | convention-reviewer.md更新                                  |
 | Sprint 27  | mobile-conventionsにコード値enumルール追加                        | ✅ shopping_card.dartのマジックストリング'1'/'2'/'3'をPurchaseLocationType enumに抽出（りょこさん指摘）。backend Java enum / frontend as constと同じ命名・コード値で統一する原則をsection 3に追記 | mobile-conventions SKILL.md section 3追記                  |
+| Sprint 28  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 28  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（**17スプリント連続**）。定着確認                                    | 継続監視                                                    |
+| Sprint 28  | developer.mdにモバイルi18nインポートパスの確認項目を追加           | ✅ `package:flutter_gen/gen_l10n/` → `lib/l10n/` への相対パスを使う旨をコミット前チェックリストに追記。flutter runビルドエラーを受けて再発防止 | developer.md更新                                            |
 
 ---
 
@@ -167,6 +171,8 @@
 - 大規模CSS置換タスクでgrepのみに頼って全コンポーネントの動作確認を省くこと（Sprint 19 → OnboardingCardの漏れ発生 → bug Issue #53起票）
 - 既存ブランチへの追加改修時に `git diff main...branch` でreviewerに指示すること（Sprint 20 → 前スプリントのファイルも含まれスコープ外指摘が4件発生 → scrum-master-workflow③④でコミット範囲指定を必須化）
 - mybatisGenerator実行時に既存XMLを削除せずに実行すること（Sprint 21 → 全22 Mapper XMLに定義が重複してSpring Bootが起動不可になった → developer-workflowのコミット前チェックリストに追記）
+- モバイルでAppLocalizationsのインポートに `package:flutter_gen/gen_l10n/` を使うこと（Sprint 28 → flutter runビルドエラー → developer.mdコミット前チェックリストに追記）
+- 同じバグ（担当者フィルタ・デザインSP版合わせ）がSprint Reviewで2スプリント連続指摘されること（Sprint 26・28 → ACや仕様書の記載不足が根本原因 → POとAC改善で対応）
 
 ### Challenge（次に試すこと）
 
