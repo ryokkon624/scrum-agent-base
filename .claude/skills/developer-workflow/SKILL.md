@@ -46,9 +46,17 @@ Discord操作は `discord-operations` スキルを参照すること。
    - どのファイルを新規作成・編集するか
    - バックエンド / フロントエンドそれぞれの変更箇所
    - 懸念点・不明点はりょこさんへの確認事項としてまとめる
+   - **SMから「bugラベル」と通知されたIssueがある場合：**
+     - コードを調査してバグの根本原因を特定する
+     - 改修方針を整理する（修正箇所・アプローチ・他の選択肢とのトレードオフ）
+     - りょこさんへの提示内容に「原因」「改修方針」を含める
 5. **`memory/dev/short_term.md` に実装方針を記録する（りょこさんへの提示前）**
 6. **りょこさんに実装方針を提示し、承認を得る**
 7. **りょこさんの回答で方針に変更があれば `memory/dev/short_term.md` を update する**
+7a. **bugラベルのIssueがあり、りょこさんの承認を得たら：**
+   - `github-issues` スキルを使って該当IssueのBodyを取得する
+   - 既存のBody（概要・ユーザーストーリー・AC・備考など）を保持したまま、「原因」「改修方針」セクションのみを承認済みの内容で更新する
+   - 更新後のBodyを `github-issues` スキルで反映する（`update_issue` body更新）
 8. **`#20-sprint` の作業スレッドに承認済み実装方針を投稿する：**
 
    ```
@@ -60,6 +68,10 @@ Discord操作は `discord-operations` スキルを参照すること。
    - 新規: [ファイルパス]
    - 編集: [ファイルパス]
    **方針**: [実装方針の概要]
+
+   （bugラベルのIssueの場合のみ以下を追加）
+   **原因**: [バグの根本原因]
+   **改修方針**: [修正アプローチの概要]
 
    ## 作業順
    1. [Issue/タスク順]
@@ -107,6 +119,7 @@ Discord操作は `discord-operations` スキルを参照すること。
    - [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format` / `dart format .`）
    - [ ] 横断的リファクタリングの場合: `grep` で置き換え対象パターンの残存がないことを確認する（例: `grep -r "authentication.getName()" src/main/java`）
    - [ ] mybatisGenerator を使った場合: 実行前に `rm -rf src/main/resources/mapper/generated` を実行したことを確認する（省略すると全Mapper XMLに定義が重複してSpring Bootが起動不可になる）
+   - [ ] **モバイルのUIに関する視覚的AC（幅・配置・レイアウト）がある場合**: シミュレーターまたはウィジェットテストで実際の見た目を確認してからコミットする（Sprint 31でカード全幅表示ACを目視未確認のまま達成と報告した）
 2. **`backlog/sprint_XX/sprint_backlog.md` のACをすべて `[x]` に更新する**
 3. コミットする（`git` ルール参照）
 4. **`git push -u origin {ブランチ名}` でリモートにプッシュする**（SMのPR作成に必要）
@@ -132,16 +145,11 @@ Discord操作は `discord-operations` スキルを参照すること。
    ## 対応内容
    - #N: 〇〇 ✅
 
-   ## 原因
-   [バグの根本原因を簡潔に説明]
-
-   ## 改修方針
-   [どのように修正したかを説明]
-   [なぜその実装方針を選択したかの理由・他の選択肢との比較・トレードオフを含める]
-
    ## ブランチ
    fix/sprint{N}-xxx
    ```
+
+   > 原因・改修方針は計画フェーズでGitHub IssueのBodyに記録済みのため、ここでは省略する。
 
 5. `memory/dev/short_term.md` を更新する
 6. **SendMessageでSMに報告する：**
@@ -174,6 +182,18 @@ Discord操作は `discord-operations` スキルを参照すること。
    ```
    指摘対応完了しました。ブランチ: [ブランチ名]
    再レビューをお願いします。
+   ```
+
+### Sprint Review HTML生成（SMから起動）
+
+SMから `sprint-review-prep` スキルの実行を指示されたら：
+
+1. `sprint-review-prep` スキルを参照して、指定IssueのHTMLを生成する
+2. 出力先: `backlog/sprint_XX/review-#N.html`（スプリント番号・Issue番号はSMから通知される）
+3. **SendMessageでSMに報告する：**
+   ```
+   Sprint Review HTML生成完了。
+   ファイル: backlog/sprint_XX/review-#N.html
    ```
 
 ### やってはいけないこと

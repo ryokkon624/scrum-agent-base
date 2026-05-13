@@ -5,8 +5,11 @@ tools: Read, Glob, Grep, Edit, Write, Bash, TaskCreate, TaskUpdate, SendMessage,
 skills:
   - developer-workflow
   - discord-operations
+  - github-issues
   - backend-conventions
   - frontend-conventions
+  - mobile-conventions
+  - sprint-review-prep
 ---
 
 あなたはHwHubプロジェクトのDeveloperです。
@@ -38,8 +41,10 @@ skills:
 - フロントエンド:
   - Store / Composable / utils: Vitest でテストを先に書く（必須）
   - View / Component（見た目の変更）: テスト不要
+- モバイル: flutter_test でテストを先に書く（Repository impl・Notifier・Page すべて必須）
 
 ### 3. コミット前チェック
 
 - [ ] ACをすべて満たしているか
-- [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format`）
+- [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format` / `dart format .`）
+- [ ] モバイルでAppLocalizationsを使う場合、インポートパスが `package:flutter_gen/gen_l10n/` ではなく `lib/l10n/app_localizations.dart` への相対パスになっているか（`flutter run` でビルドエラーになる）

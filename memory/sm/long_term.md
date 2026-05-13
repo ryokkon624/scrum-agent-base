@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-04（Sprint 21 Retro後）
+**最終更新**: 2026-05-12（Sprint 27 Retro後）
 
 ---
 
@@ -33,6 +33,13 @@
 | Sprint 23  | フロントエンドのコード品質向上 — デッドコード削除・マジックストリングの定数化・アナウンスバナーの子ルート対応 | ✅ 全AC達成（#55: 4AC / #58: 4AC / #59: 4AC / #60: 4AC）Sprint Reviewりょこさん指摘なし | DEVが実装フェーズでPRを作成してしまった（禁止事項に記載あり「PRはりょこさんが行う」が古い表現だったため混乱と推定）→developer-workflowを「PRはSMが行う」に修正。convention-reviewerがSCOPE_TO_ROUTE_MAPの未使用定数（#60実装でデッドコード化）を検出・対応済み。reviewer Discord投稿が12スプリント連続成功。 |
 | Sprint 24  | アナウンスマスタメンテ画面を管理画面配下に追加し、システム管理者が開発者の手を借りずにアナウンスを管理できる機能を完成させる | ✅ 全AC達成（#57: 5AC）Sprint Review指摘4件（yupメッセージi18n未対応→#62 / タイトル200バイト超入力可→#63 / 重要度バッジDARKモード未対応→#64 / AnnouncementSummary不要マッピング→#65） | security-reviewerが権限保護済み管理者専用エンドポイントのエラーメッセージを5回のレビューで計3回指摘（いずれもりょこさん判断でスコープ外）→security-reviewer.mdに「指摘対象外の判断基準」セクションを追加。Planningで承認した設計（AnnouncementSummary再利用）が後からHwHub規約違反と判明→#65で次スプリント以降に対応。reviewer Discord投稿が13スプリント連続成功。 |
 | Sprint 25  | Sprint 24レビュー指摘4件（フロントエンドバグ3件・バックエンドリファクタリング1件）を解消し、アナウンス管理機能を完成品質に引き上げる | ✅ 全AC達成（#62/#63/#64/#65）Sprint Reviewりょこさん指摘なし | 既存ブランチへの追加コミット時に既存PRのbody PATCH更新でclosesを追加する手順がSkillsに未記載 → scrum-master-workflow⑥に追記。reviewer Discord投稿が14スプリント連続成功。コードレビュー3者全員一発「指摘なし」。 |
+| Sprint 26  | モバイルアプリのホーム画面を実装し、家事・買い物の状況が一目で確認できるダッシュボードを完成させる | ✅ 全AC達成（#66: 9AC / 190件全通過）Sprint Review指摘5件（①デザインwebSP版合わせ→#69 / ②My Tasks件数集計バグ→#70 / ③買い物リスト場所名称→#71 / ④グラフ積み上げ順序→#72 / ⑤縦軸目盛り→#73） | 初モバイルスプリント: mobile-conventions・3観点reviewerのモバイル対応が正常に機能した。レビュー4ラウンドを経て全員「指摘なし」。Mobileのspecで指定がない場合webのSP版を参照する原則をmobile-conventionsに追加（Sprint Reviewで指摘あり）。reviewer Discord投稿が15スプリント連続成功。 |
+| Sprint 27  | モバイルホーム画面のSprint 26 Review指摘5件を全件解消し、webのSP版と完全に統一されたUIを実現する | ✅ 全AC達成（#69/#70/#71/#72/#73）Sprint Reviewりょこさん指摘なし | Agent Teams messaging failure: dev/dev2がSendMessageに応答せずSMが直接計画フェーズを担当（Sonnet DEVでの実装は正常動作）。convention-reviewerがBashでgit diffを実行できずSMが手動でファイル一覧を送付→convention-reviewer.mdにBashフォールバック手順を追記。りょこさんからの規約指摘でshopping_card.dartのマジックストリング'1'/'2'/'3'をPurchaseLocationTypeEnum（core/models/）に抽出→mobile-conventionsにenumルールを追記。reviewer Discord投稿が16スプリント連続成功。 |
+| Sprint 28  | モバイルMy Tasks画面を実装してスワイプ操作で日々の家事管理を快適にし、AppRoutes定数クラス導入でルーティング品質を向上させる | ✅ 全AC達成（#67: 10AC / #75: 3AC / 全219件グリーン）Sprint Review指摘3件（①My Tasks担当者フィルタバグ→#76 / ②デザインweb SP版合わせ→#77 / ③GoRoute path引数の定数化漏れ→#78） | convention-reviewerがi18n漏れ・dynamic型・スキップコード値バグ（'2'→'9'）を検出・修正済み。モバイルAppLocalizationsインポートパスをpackage:flutter_genではなく相対パスに修正（flutter runビルドエラー）→developer.mdコミット前チェックリストに追記。担当者フィルタ・デザインSP版合わせがホーム画面に続き2回連続でSprint Review指摘→ACや仕様書の記載不足が根本原因のためPOと改善対応予定。reviewer Discord投稿が17スプリント連続成功。 |
+| Sprint 29  | Sprint 28 Review指摘対応 — My Tasks担当者フィルタバグ・デザインweb SP版合わせ・GoRoute定数化漏れを完了させる | ⚠️ 部分達成（#78全AC達成 / #76 AC1未達成・未割当タスク表示 / #77 カードレイアウト未対応）Sprint Review指摘2件（①未割当タスク表示→#79 / ②カードレイアウト→#80） | DEVが「未割当タスクは含める」と自己判断してAC1に反する実装をした（ACに明記されているのに）→ACが曖昧な場合はりょこさんに確認してから実装する原則を再確認。bugラベルIssueの計画フェーズでの原因・改修方針記録フローを初適用（GitHub Issue Bodyに記録）。convention-reviewerがapp_es.arb未作成・provider定義位置・HouseworkTaskDto配置・テストスタブ値不一致の4件を検出・全対応済み。reviewer Discordタイムアウト2回発生→即再起動で解決。reviewer Discord投稿が18スプリント連続成功。 |
+| Sprint 30  | ログイン済みユーザー情報をRiverpodのauthStateで一元管理し、home・My Tasks画面の冗長なAPI呼び出しを排除することでモバイルアプリのパフォーマンスを向上させる | ✅ 全AC達成（#81: 4AC / 221件全グリーン）Sprint Reviewりょこさん指摘なし | convention-reviewerがauth_notifier.dartのDio直接参照（アーキテクチャ違反）を検出・AuthRepository経由に修正済み。DEVの計画フェーズでAuthUserの移動先（core/auth/ → core/models/）をりょこさんが修正（core/models/が正しい）。Sprint Review HTMLのDEV生成（⑥b）を今スプリントから初適用→正常動作確認。mobile-conventionsに「Notifier内でDioを直接使用しない」ルールを追記。reviewer Discord投稿が19スプリント連続成功。 |
+| Sprint 31  | Sprint 29 Review指摘の残課題2件（My Tasksフィルタバグ・カードレイアウト）を解消し、モバイルMy Tasks画面を完成品質に引き上げる | ⚠️ 部分達成（#79全AC達成 / #80 AC2未達成・カード幅コンテンツ依存）Sprint Review指摘1件（#80 AC2未達成→#82起票） | #79のAC4原因分析（①コードスコープクリープ ②テスト期待値のAC違反 ③再発防止策）をOpus 4.7で重点実施・GitHub Issue Body更新。3観点レビュー一発指摘なし（20スプリント連続）。#80でswipeable_task_card.dartのmargin削除後にwidth: double.infinityを設定しなかったためカード幅がコンテンツ依存のままになりSprint Reviewで指摘→mobile-conventionsに全幅表示パターン・developer-workflowにUI視覚的AC確認チェックを追記。 |
+| Sprint 32  | My Tasks画面の家事カードを画面幅いっぱいに正しく表示する | ✅ 全AC達成（#82: 2AC）Sprint Reviewりょこさん指摘なし | Sprint 31 Retroのチャレンジ（ウィジェットテストでカード幅チェック）をAC2として実装・達成。TDD（RED→GREEN）でカード幅の不一致を数値で確認してから修正。3観点レビュー一発「指摘なし」（21スプリント連続）。計画フェーズDEVが既存ブランチ継続にもかかわらず `fix/82-xxx` の新規ブランチ名をDiscordに誤記→実装フェーズDEVが自己修正・実害なし→scrum-master-workflowのDEV起動指示に既存ブランチ名の明示を追加。 |
 
 ---
 
@@ -97,6 +104,30 @@
 | Sprint 25  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
 | Sprint 25  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回）で投稿成功（14スプリント連続）。コードレビュー一発クリア。定着確認                               | 継続監視                                                    |
 | Sprint 25  | 既存ブランチ継続時の既存PR body PATCH更新手順をSkillsに追記         | ✅ scrum-master-workflow⑥に「既存PRがある場合はbodyをPATCHで更新してclosesを追加する」手順を明記。Sprint 25で初めて既存PRへのclosesのみ追加対応が必要になり、手順未記載だった | 次スプリントで効果確認                                       |
+| Sprint 26  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 26  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（Round 1〜4 全投稿）で投稿成功（**15スプリント連続**）。定着確認                                       | 継続監視                                                    |
+| Sprint 26  | 初モバイルスプリント: mobile-conventions・reviewer3観点のモバイル対応確認 | ✅ fl_chart・HouseholdSwitcher等のモバイル固有実装にもreviewerが正常に対応。mobile-conventionsのデザイン参照方針がSprint Review指摘を受けて不足と判明→section 11追加 | mobile-conventions SKILL.md section 11追加                 |
+| Sprint 27  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 27  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・複数回再レビュー）で投稿成功（**16スプリント連続**）。定着確認                                   | 継続監視                                                    |
+| Sprint 27  | convention-reviewerのBash未使用時フォールバック手順追加           | ✅ convention-reviewer.mdのレビュー手順2に「⚠️ Bash が使えない場合はSMに変更ファイル一覧を要求する」を追記。Sprint 27でBash利用不可のブロッカー発生→手順明文化で再発防止 | convention-reviewer.md更新                                  |
+| Sprint 27  | mobile-conventionsにコード値enumルール追加                        | ✅ shopping_card.dartのマジックストリング'1'/'2'/'3'をPurchaseLocationType enumに抽出（りょこさん指摘）。backend Java enum / frontend as constと同じ命名・コード値で統一する原則をsection 3に追記 | mobile-conventions SKILL.md section 3追記                  |
+| Sprint 28  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 28  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（**17スプリント連続**）。定着確認                                    | 継続監視                                                    |
+| Sprint 28  | developer.mdにモバイルi18nインポートパスの確認項目を追加           | ✅ `package:flutter_gen/gen_l10n/` → `lib/l10n/` への相対パスを使う旨をコミット前チェックリストに追記。flutter runビルドエラーを受けて再発防止 | developer.md更新                                            |
+| Sprint 29  | bugラベルIssueの計画フェーズでのGitHub Issue Body更新フロー導入    | ✅ SMがPlanning①でLabels確認→DEV起動メッセージにbugラベル情報を含める→DEVが計画フェーズで原因・改修方針をIssue Bodyに記録する。初適用で正常動作確認 | developer-workflow / scrum-master-workflow / developer.md 更新 |
+| Sprint 29  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（複数ラウンド）で投稿成功（**18スプリント連続**）。タイムアウト2回発生→即再起動で解決               | 継続監視                                                    |
+| Sprint 30  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 30  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（**19スプリント連続**）。定着確認                                   | 継続監視                                                    |
+| Sprint 30  | Sprint Review HTMLのDEV生成（⑥b）を初適用                        | ✅ DEVがsprint-review-prepスキルを参照してHTMLを生成。backlog/sprint_30/review-#81.htmlを正常生成。りょこさんがMarkdownを読まずに確認できる体制が整った | 次スプリントから標準手順として継続                          |
+| Sprint 30  | mobile-conventionsにNotifier内Dio直接参照禁止ルールを追記         | ✅ auth_notifier.dartでDio直接参照が発生→convention-reviewerが検出・修正済み。mobile-conventions「依存方向ルール」に明記して再発防止 | mobile-conventions更新                                      |
+| Sprint 31  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 31  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回）で投稿成功（**20スプリント連続**）。定着確認                                                   | 継続監視                                                    |
+| Sprint 31  | mobile-conventionsに全幅表示ウィジェットパターンを追加             | ✅ section 3に「全幅表示が必要なウィジェット」サブセクションを追加。Sprint 31でカード幅がコンテンツ依存になったSprint Review指摘（#82）を受けて明文化 | mobile-conventions更新                                      |
+| Sprint 31  | developer-workflowにモバイルUI視覚的AC確認を追記                  | ✅ コミット前チェックリストに「モバイルのUIに関する視覚的AC（幅・配置）はシミュレーターまたはウィジェットテストで確認してからコミット」を追記。Sprint 31でカード全幅表示ACを目視未確認のまま達成と報告した反省 | developer-workflow更新                                      |
+| Sprint 32  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 32  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回）で投稿成功（**21スプリント連続**）。定着確認                                                   | 継続監視                                                    |
+| Sprint 32  | scrum-master-workflowのDEV起動指示に既存ブランチ名の明示を追加    | ✅ SendMessageのDEV指示に「既存ブランチ継続使用時はブランチ名を明示・新規ブランチを作成しないこと」の注記を追加。Sprint 32で計画フェーズDEVが誤ったブランチ名を誤記した実績を受けて明文化 | scrum-master-workflow②更新                                  |
+| Sprint 32  | ウィジェットテスト（tester.getSize()）でカード幅チェックをACとして組み込む（Sprint 31 Retroチャレンジ） | ✅ AC2として実装・達成。短タスク名（48.25px）vs 長タスク名（532.75px）の不一致をREDで確認してからGREEN。Sprint 31で提案した防止策が本番検証を通過 | 今後のモバイルUIの幅・配置系ACで継続適用                    |
 
 ---
 
@@ -124,6 +155,7 @@
 - 横断的リファクタリングのコミット前にgrepで置き換え対象パターンの残存を確認する（Sprint 17〜 → developer-workflow更新）
 - 大規模CSSリファクタリング時はスコープを絞り（主要レイアウト/ページコンテナ/モーダル）、残存箇所をgrepで集計して別Issue化する（Sprint 18〜）
 - デザイントークン系タスクでは事前にりょこさんから色定義をCSSファイルで確定してもらい、DEVに渡す（Sprint 18〜）
+- Sprint Review HTMLをDEVが生成してりょこさんに提出する（Sprint 30〜 初適用・正常動作確認）
 
 ### Stop（やめること）
 
@@ -158,8 +190,15 @@
 - 大規模CSS置換タスクでgrepのみに頼って全コンポーネントの動作確認を省くこと（Sprint 19 → OnboardingCardの漏れ発生 → bug Issue #53起票）
 - 既存ブランチへの追加改修時に `git diff main...branch` でreviewerに指示すること（Sprint 20 → 前スプリントのファイルも含まれスコープ外指摘が4件発生 → scrum-master-workflow③④でコミット範囲指定を必須化）
 - mybatisGenerator実行時に既存XMLを削除せずに実行すること（Sprint 21 → 全22 Mapper XMLに定義が重複してSpring Bootが起動不可になった → developer-workflowのコミット前チェックリストに追記）
+- モバイルでAppLocalizationsのインポートに `package:flutter_gen/gen_l10n/` を使うこと（Sprint 28 → flutter runビルドエラー → developer.mdコミット前チェックリストに追記）
+- 同じバグ（担当者フィルタ・デザインSP版合わせ）がSprint Reviewで2スプリント連続指摘されること（Sprint 26・28 → ACや仕様書の記載不足が根本原因 → POとAC改善で対応）
+- DEVがACに明記されていない動作を自己判断でスコープに含めること（Sprint 29 → 「未割当タスクは含める」と自己判断してAC1に反する実装 → ACが曖昧な場合はりょこさんに確認してから実装する）
+- Notifier内でDioを直接使用すること（Sprint 30 → auth_notifier.dartでDio直接参照が発生→convention-reviewerが検出・修正済み → mobile-conventionsの依存方向ルールに明記）
+- モバイルのUIに関する視覚的AC（幅・配置・レイアウト）をシミュレーター確認なしに達成とすること（Sprint 31 → swipeable_task_card.dartのカード全幅表示AC2未達成をSprint Reviewまで気づかなかった → developer-workflowのコミット前チェックリストに追記・mobile-conventionsに全幅表示パターンを追加）
 
 ### Challenge（次に試すこと）
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
-- reviewerのDiscord投稿継続監視（Sprint 13〜25で14スプリント連続成功。根本原因は未特定）
+- reviewerのDiscord投稿継続監視（Sprint 13〜31で20スプリント連続成功。根本原因は未特定）
+- Claudeモデルの最新バージョン確認（継続監視）
+- reviewerのDiscord投稿継続監視（21スプリント連続成功）

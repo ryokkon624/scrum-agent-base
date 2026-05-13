@@ -123,6 +123,80 @@
 
 ---
 
+## Sprint 25 サマリー（2026-05-06完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #62 | yup バリデーション i18n 化 | `announcementForm.validation.ts` を utils に切り出し、エラーメッセージをi18nキー化。`t(errors.xxx)` で各言語切替 |
+| #63 | タイトル200バイト上限 | `byteLength = new TextEncoder().encode(s).length` で計算し yup `test('byte-length')` で検証。ja/en/es 3言語タイトルに適用、ボタン disabled 連動 |
+| #64 | 重要度バッジダークモード対応 | `bg-{color}-50` 等を `bg-hwhub-palette-{color}-soft / border-hwhub-palette-{color} / text-hwhub-palette-{color}` に置換 |
+| #65 | AnnouncementSummary 削除 | Inner record を削除し Service から Domain Model（`AnnouncementModel`）を直接 Controller に返す形に変更。Spock テストの mock 戻り値も Model に置換 |
+
+### Sprint 25 で習得したこと
+- HwHub 規約の依存ルール表に従い、Domain Model と完全一致する Inner record は不要なボイラープレート。Service は Domain Model を直接返してよい
+- yup の `byte-length` テストはマルチバイト・絵文字を含む文字列にも安全（`TextEncoder`）
+- vee-validate の `errors` が空でない場合 `Object.keys(errors).length > 0` でボタン無効化制御を行うと AC「エラー時ボタン無効化」を防御的に満たせる
+
+---
+
+## Sprint 31 サマリー（2026-05-13完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #79 | [mobile] My Tasks画面に未割当のタスクが表示される | `MyTasksNotifier._load()` 42行目の `task.assigneeUserId != null &&` を削除し、`assigneeUserId == currentUserId` のみを past/future 振り分け対象に。Sprint 29でDEVが「親切のため未割当も表示」と自己判断したスコープクリープを是正。テスト期待値を `[1, 5]` → `[1]` に修正しACコメント追加。未割当(id=5)が past/future いずれにも含まれない検証を追加 |
+| #80 | [mobile] My Tasks画面のカードレイアウトをwebのSP版に合わせる | `PastTasksSection` / `FutureTasksSection` をセクションコンテナ化（`Container(borderRadius:12, border, color: surfaceCard, padding: md)`）、`SwipeableTaskCard` の margin を削除して外側で制御。BoxShadow は入れない方針（commit: 17a7268） |
+
+### Sprint 31 で習得したこと
+- AC違反の動作を既存テストが「正」として通過させていた場合、DEV・reviewer・SM誰も気づかない（#79のAC4分析で判明）。Sprint Review HTML生成時にACとコードを対応させる作業が再発防止の機能を果たす
+- セクションコンテナ化と「カードのmargin削除」だけでは `width: double.infinity` を別途指定しないとカード幅がタスク名長に依存してしまう（Sprint 31 Reviewで指摘 → #82 で対応）
+- `mobile-conventions.md` に「全幅表示が必要なウィジェット」セクションを追加し、`SizedBox(width: double.infinity)` / `Container(width: double.infinity)` / `Column(crossAxisAlignment: stretch)` の3パターンを明示
+
+---
+
+## Sprint 30 サマリー（2026-05-13完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #81 | [mobile] ログイン済みユーザー情報をRiverpodで保持し、各画面の冗長なAPI呼び出しを解消する | `AuthAuthenticated` に `AuthUser user` を追加、`AuthUser` を `core/models/` に移動。`AuthNotifier.build()` で token 復元時に `/api/users/me/profile` を呼んで `AuthAuthenticated(user)` を構築（失敗時は `AuthUnauthenticated`）。`saveTokens(user: ...)` シグネチャ化。`HomeNotifier` / `MyTasksNotifier` の `loadCurrentUserId()` 呼び出しを authState 参照に置換し、Repository から `loadCurrentUserId` を削除。テスト（auth_notifier_test / login_notifier_test / signup_notifier_test / home_notifier_test / my_tasks_notifier_test）を authState スタブに差し替え、`@GenerateMocks` 再生成 |
+
+### Sprint 30 で習得したこと
+- ログインユーザー情報のような「全画面共通の認証コンテキスト」は `AuthAuthenticated(user)` のように auth state 自体に持たせるのが最小コスト。各 Notifier に `loadCurrentUserId` を持たせるのは早期の重複の兆候
+- `AuthUser` のような共有ドメインモデルは `features/auth/data/models/` ではなく `lib/core/models/` 配下に置く（core→features 依存を作らないため）
+- `AuthNotifier.build()` で `/me` を呼ぶ場合、ネットワーク失敗時は `AuthUnauthenticated` にフォールバックし、router 側で `/login` リダイレクトに任せる方が UX が破綻しない
+- Riverpod テストで authState を差し替える際は `_FakeAuthNotifier extends AuthNotifier` を作って `build()` だけ override すれば十分（saveTokens 等は呼ばれないため）
+
+---
+
+## Sprint 29 サマリー（2026-05-12完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #76 | [mobile] My Tasks画面に自分の担当以外の家事タスクが表示される | `MyTasksRepository` に `loadCurrentUserId()` 追加、`MyTasksNotifier._load()` で `assigneeUserId == currentUserId`（および未割当）でフィルタしてから past/future に振り分け。仕様書 12_my_tasks.md にもフロント側フィルタを明記 |
+| #78 | [mobile] app_router.dartのGoRouteのpath引数がAppRoutes定数に未置換のまま残っている | `app_router.dart` の全 `GoRoute(path: ...)` を `AppRoutes` 定数に置換。ネストサブルートは `AppRoutes` 内に private const として相対パス用定数（`_xxxRelative`）を追加して参照 |
+| #77 | [mobile] My Tasks画面のデザインがwebのSP版と異なる | `SwipeableTaskCard` に variant プロパティ追加（past=rose系 / today=emerald系 / 通常）、`PastTasksSection` のヘッダーを横並びに変更し "すべて完了" を小型primaryボタンに、`FutureTasksSection` のフィルタをセグメントコントロール風に、日付ラベルを「今日／明日／M/D(曜日)」表記に、ページ最上部に `myTasksIntro` 追加。i18n（ja/en/es）も更新 |
+
+### Sprint 29 で習得したこと
+- モバイルで「ログインユーザー情報」が必要な場面では、`loadCurrentUserId()` の個別API呼び出しを各 Notifier が持つと冗長になる。Sprint 30 で authState に AuthUser を持たせる方向に統合する（#81）
+- web SP版とモバイルでデザインが異なるとSprint Reviewで指摘されやすい。`SwipeableTaskCard` のように variant 切替で複数スタイルに対応する設計が将来再利用しやすい
+- `AppRoutes` 定数化は「ナビゲーション引数」と「GoRoute path 定義」を別Issueで分けてもよいが、ネストサブルートの相対パス（`'sent'` / `':id'`）は親パスから切り出して private const にする方が明示的・grep可能
+
+---
+
+## Sprint 28 サマリー（2026-05-11完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #75 | 画面遷移時に指定するpathを定数に置き換えたい | `app_router.dart` 末尾に `AppRoutes` クラス追加。`context.go('/xxx')` を全て `AppRoutes.xxx` に置換 |
+| #67 | [mobile] My Tasks画面を実装する | `features/tasks/` 配下に Repository / Notifier / State / Page / Widget一式新規。`Dismissible` を使ったスワイプUIで完了・スキップ・bulk-status を実装。AC10カバレッジ95%以上 |
+
+### Sprint 28 で習得したこと（モバイル）
+- Flutter標準の `Dismissible` でスワイプUIを実装：`dismissThresholds` で30%しきい値、`background`/`secondaryBackground` で方向別の色・アイコンを表示、`confirmDismiss` でAPI呼び出し
+- `AsyncNotifier.build()` で `ref.watch(householdNotifierProvider.future)` を await することで世帯切り替えに自動追従（AutoDispose + invalidate不要）
+- `AppRoutes` 定数化は `context.go()` 引数の置換から先行すると影響範囲が把握しやすい。`GoRoute(path: ...)` 側の置換は別Issueで分離した方が安全（→ Sprint 29 #78 で対応）
+- モバイルの My Tasks では `assigneeUserId == currentUserId` フィルタを忘れがち（web SP版を参照しつつもバックエンドが全世帯員分を返す前提を見落とす）→ Sprint 28 Review で指摘（#76）
+
+---
+
 ## Sprint 24 サマリー（2026-05-06完了）
 
 | Issue | 内容 | 成果 |

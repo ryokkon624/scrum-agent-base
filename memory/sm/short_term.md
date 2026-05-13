@@ -1,16 +1,18 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 25
-**最終更新**: 2026-05-06
+**スプリント**: Sprint 33（未開始）
+**最終更新**: 2026-05-13
 
 ---
 
 ## 現在の状態
 
-Sprint 25 Retro完了。次スプリントのPlanning待ち。
+Sprint 32 Retro完了。Sprint 33 Planning待ち。
 
 ## 引き継ぎ事項
 
-- reviewerのDiscord投稿: Sprint 13〜25で14スプリント連続成功。継続監視
+- HomeAppBarの通知・アカウントアイコンは未実装（SnackBar表示）。**#15対応時に必ず実装すること**
+- reviewerのDiscord投稿: Sprint 13〜32で21スプリント連続成功
 - Claudeモデル: 現在 Sonnet 4.6（実装）/ Opus 4.7（計画）が最新。変更なし
-- scrum-master-workflow⑥更新: 既存ブランチ継続時に既存PRのbodyをPATCH更新してclosesを追加する手順を追記（Sprint 25 Retro）
+- Agent Teams messaging failureの既知問題: dev/dev2がSendMessageに無応答になる場合がある。発生時はSM自身で計画フェーズを担当してSonnet DEVを直接起動する
+- hw-hub-mobile `feature/67-mobile-my-tasks` ブランチはPR #12でオープン中（#67・#75・#76・#77・#78・#81・#79・#80・#82のclosesを含む）。りょこさんがマージ予定

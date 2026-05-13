@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 31 Review — #80 My Tasks画面のカードレイアウトをwebのSP版に合わせる</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* モバイル風カードUIモック */
+  .mock-phone { background: #f8f7f5; border-radius: 10px; overflow: hidden; border: 1px solid #e5e5e5; }
+  .mock-phone-header { background: #1a2e1a; color: white; font-size: 11px; font-weight: 700; padding: 7px 10px; letter-spacing: 0.04em; }
+  .mock-page { padding: 8px; }
+
+  /* 修正前：フラット配置 */
+  .mock-flat-card { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px 10px; margin-bottom: 5px; font-size: 12px; width: fit-content; }
+  .mock-flat-card.rose { background: #fef2f2; border-color: #fca5a5; }
+  .mock-date-label { font-size: 10px; font-weight: 700; color: #6b7280; margin: 4px 0 2px; padding-left: 2px; }
+  .mock-note { font-size: 10px; color: #b91c1c; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .mock-note-good { font-size: 10px; color: #166534; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+  /* 修正後：コンテナ階層 */
+  .mock-section-container { background: white; border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+  .mock-section-header { background: #fef2f2; border-bottom: 1px solid #fca5a5; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .mock-section-header-future { background: white; border-bottom: 1px solid #e5e5e5; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .mock-section-title { font-size: 11px; font-weight: 700; color: #9f1239; }
+  .mock-section-title-future { font-size: 11px; font-weight: 700; color: #1a1a1a; }
+  .mock-btn { background: #166534; color: white; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .mock-segment { background: #f1f5f9; border-radius: 99px; display: flex; gap: 0; padding: 2px; }
+  .mock-seg-item { font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 99px; color: #6b7280; }
+  .mock-seg-item.active { background: white; color: #1a1a1a; }
+  .mock-section-body { padding: 6px 8px; }
+  .mock-date-group-label { font-size: 10px; font-weight: 700; color: #6b7280; margin: 4px 0 3px; }
+  .mock-task-row { background: white; border: 1px solid #e5e5e5; border-radius: 5px; padding: 6px 8px; margin-bottom: 4px; font-size: 11px; font-weight: 600; width: 100%; }
+  .mock-task-row.rose { background: #fef2f2; border-color: #fca5a5; color: #9f1239; }
+  .mock-task-row.emerald { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* アーキテクチャ比較 */
+  .arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .arch-box { border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+  .arch-box-header { font-size: 11px; font-weight: 700; padding: 7px 12px; letter-spacing: 0.04em; }
+  .arch-box-header.bad { background: #fef2f2; color: #b91c1c; }
+  .arch-box-header.good { background: #f0fdf4; color: #166534; }
+  .arch-body { padding: 10px 12px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: #374151; line-height: 1.8; }
+  .arch-indent { padding-left: 14px; color: #6b7280; }
+  .arch-indent2 { padding-left: 28px; color: #9ca3af; }
+  .arch-highlight { color: #b91c1c; font-weight: 700; }
+  .arch-highlight-good { color: #166534; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+  .ac-body code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 31 Review · Bug Fix</div>
+  <h1>#80 — My Tasks画面のカードレイアウトが<br>webのSP版と異なっている</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 31</span>
+    <span class="badge badge-issue">#80</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-phone">
+          <div class="mock-phone-header">My Tasks</div>
+          <div class="mock-page">
+            <div class="mock-date-label">過去の家事</div>
+            <div class="mock-flat-card rose">風呂掃除</div>
+            <div class="mock-date-label">これからの家事</div>
+            <div class="mock-flat-card">今日</div>
+            <div class="mock-flat-card">洗濯</div>
+            <div class="mock-flat-card">買い物</div>
+          </div>
+        </div>
+        <p class="mock-note">&#9888; カードがフラット配置・横幅が内容依存で左寄せ</p>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-phone">
+          <div class="mock-phone-header">My Tasks</div>
+          <div class="mock-page">
+            <div class="mock-section-container">
+              <div class="mock-section-header">
+                <span class="mock-section-title">&#9888; 過去の家事</span>
+                <span class="mock-btn">すべて完了</span>
+              </div>
+              <div class="mock-section-body">
+                <div class="mock-date-group-label">4/30 (水)</div>
+                <div class="mock-task-row rose">風呂掃除</div>
+              </div>
+            </div>
+            <div class="mock-section-container" style="margin-top:6px;">
+              <div class="mock-section-header-future">
+                <span class="mock-section-title-future">これからの家事</span>
+                <div class="mock-segment">
+                  <span class="mock-seg-item active">すべて</span>
+                  <span class="mock-seg-item">今日</span>
+                  <span class="mock-seg-item">今週</span>
+                </div>
+              </div>
+              <div class="mock-section-body">
+                <div class="mock-date-group-label" style="color:#10b981;">今日</div>
+                <div class="mock-task-row emerald">洗濯</div>
+                <div class="mock-task-row">買い物</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mock-note-good">&#10003; セクションコンテナで階層化・カードが全幅に広がる</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">セクション全体を包むコンテナが存在せず、カードがフラット配置になっていた</span>
+      </div>
+      <div class="cause-body">
+        <p>修正前は「過去の家事」「これからの家事」それぞれのセクション内で、ヘッダーとカードが <code>Column</code> の直接の子として並んでいた。webのSP版が実現している「セクション全体をコンテナで囲む → ヘッダー → 日付グループ → カード」という階層構造がなく、2つの症状が同じ原因から生じていた。</p>
+        <div class="arch-grid">
+          <div class="arch-box">
+            <div class="arch-box-header bad">修正前のウィジェットツリー（問題あり）</div>
+            <div class="arch-body">
+              Column<br>
+              <span class="arch-indent">Container (ヘッダーのみ)</span><br>
+              <span class="arch-indent arch-highlight">← 外側コンテナなし</span><br>
+              <span class="arch-indent">Padding (日付ラベル)</span><br>
+              <span class="arch-indent arch-highlight">SwipeableTaskCard</span><br>
+              <span class="arch-indent2">← margin付きで幅が縮む</span>
+            </div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-header good">修正後のウィジェットツリー（正常）</div>
+            <div class="arch-body">
+              <span class="arch-highlight-good">Container (セクション全体)</span><br>
+              <span class="arch-indent">Column</span><br>
+              <span class="arch-indent2">Container (ヘッダー)</span><br>
+              <span class="arch-indent2">Padding (日付ラベル)</span><br>
+              <span class="arch-indent2">Padding</span><br>
+              <span class="arch-indent2 arch-highlight-good">  SwipeableTaskCard</span><br>
+              <span class="arch-indent2">  ← margin削除・全幅表示</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <!-- past_tasks_section.dart -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/tasks/presentation/widgets/past_tasks_section.dart</span>
+        <span class="diff-stat">+72 / -50</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">27</span><span class="line-prefix"> </span><span>    // 修正前: Column(...) が最外ウィジェット</span></div>
+        <div class="code-line line-del"><span class="line-num">28</span><span class="line-prefix">-</span><span>    return Column(</span></div>
+        <div class="code-line line-del"><span class="line-num">29</span><span class="line-prefix">-</span><span>      crossAxisAlignment: CrossAxisAlignment.start,</span></div>
+        <div class="code-line line-del"><span class="line-num">30</span><span class="line-prefix">-</span><span>      children: [</span></div>
+        <div class="code-line line-del"><span class="line-num">31</span><span class="line-prefix">-</span><span>        Container( // ← ヘッダーのみをコンテナ化、外側は Column 直下</span></div>
+        <div class="code-line line-del"><span class="line-num">32</span><span class="line-prefix">-</span><span>          margin: EdgeInsets.fromLTRB(...),</span></div>
+        <div class="code-line line-del"><span class="line-num">33</span><span class="line-prefix">-</span><span>          padding: EdgeInsets.all(AppSpacing.md),</span></div>
+        <div class="code-line line-del"><span class="line-num">34</span><span class="line-prefix">-</span><span>          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), ...),</span></div>
+        <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>    // 修正後: Container がセクション全体を包む外側コンテナ</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>    return Container(</span></div>
+        <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>      margin: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),</span></div>
+        <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>      decoration: BoxDecoration(</span></div>
+        <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>        color: colors.surfaceCard,</span></div>
+        <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>        border: Border.all(color: colors.border),</span></div>
+        <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>        borderRadius: BorderRadius.circular(12),</span></div>
+        <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>      ),</span></div>
+        <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>      child: Column( // ← Column は Container の子として内部構造を管理</span></div>
+        <div class="code-line line-ctx"><span class="line-num">39</span><span class="line-prefix"> </span><span>        children: [</span></div>
+        <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>          Container( // ← ヘッダー部分のみ rose 色・下ボーダー付きコンテナ</span></div>
+        <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>            decoration: BoxDecoration(</span></div>
+        <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>              color: colors.paletteRoseSoft,</span></div>
+        <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>              border: Border(bottom: BorderSide(color: colors.paletteRoseBorder)),</span></div>
+        <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),</span></div>
+        <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>            ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>            ...（タイトル・すべて完了ボタン）</span></div>
+        <div class="code-line line-ctx"><span class="line-num">149</span><span class="line-prefix"> </span><span>          for (final task in entry.value)</span></div>
+        <div class="code-line line-add"><span class="line-num">150</span><span class="line-prefix">+</span><span>            Padding( // ← Padding でカードを内包（横幅がコンテナ幅いっぱいに）</span></div>
+        <div class="code-line line-add"><span class="line-num">151</span><span class="line-prefix">+</span><span>              padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.xs),</span></div>
+        <div class="code-line line-add"><span class="line-num">152</span><span class="line-prefix">+</span><span>              child: SwipeableTaskCard(...),</span></div>
+        <div class="code-line line-add"><span class="line-num">153</span><span class="line-prefix">+</span><span>            ),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>最外ウィジェットを <code>Column</code> から <code>Container</code>（borderRadius:12・border付き）に変更することでセクション全体がカード状のコンテナとして表示される。ヘッダーは内側の <code>Container</code> で rose 色を適用し、下部ボーダーで仕切る構造にした。</span>
+      </div>
+    </div>
+
+    <!-- future_tasks_section.dart -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/tasks/presentation/widgets/future_tasks_section.dart</span>
+        <span class="diff-stat">+67 / -49</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-del"><span class="line-num">27</span><span class="line-prefix">-</span><span>    return Column( // ← 修正前: Column が最外ウィジェット</span></div>
+        <div class="code-line line-del"><span class="line-num">28</span><span class="line-prefix">-</span><span>      crossAxisAlignment: CrossAxisAlignment.start,</span></div>
+        <div class="code-line line-del"><span class="line-num">29</span><span class="line-prefix">-</span><span>      children: [</span></div>
+        <div class="code-line line-del"><span class="line-num">30</span><span class="line-prefix">-</span><span>        Container( // ← ヘッダーのみコンテナ</span></div>
+        <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>    return Container( // ← 修正後: Container がセクション全体を包む</span></div>
+        <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>      margin: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),</span></div>
+        <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>      decoration: BoxDecoration(</span></div>
+        <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>        color: colors.surfaceCard,</span></div>
+        <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>        border: Border.all(color: colors.border),</span></div>
+        <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>        borderRadius: BorderRadius.circular(12),</span></div>
+        <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>      ),</span></div>
+        <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>      child: Column(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>        ...（ヘッダー・フィルタ・日付グループ）</span></div>
+        <div class="code-line line-ctx"><span class="line-num">160</span><span class="line-prefix"> </span><span>            for (final task in entry.value)</span></div>
+        <div class="code-line line-add"><span class="line-num">161</span><span class="line-prefix">+</span><span>              Padding(</span></div>
+        <div class="code-line line-add"><span class="line-num">162</span><span class="line-prefix">+</span><span>                padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.xs),</span></div>
+        <div class="code-line line-add"><span class="line-num">163</span><span class="line-prefix">+</span><span>                child: SwipeableTaskCard(...),</span></div>
+        <div class="code-line line-add"><span class="line-num">164</span><span class="line-prefix">+</span><span>              ),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span><code>FutureTasksSection</code> も同じ構造変更を適用。ヘッダーは白背景・下ボーダーのみ（rose 色は使わない）で、フィルタセグメントコントロールはヘッダー右側に配置されている。</span>
+      </div>
+    </div>
+
+    <!-- swipeable_task_card.dart -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/tasks/presentation/widgets/swipeable_task_card.dart</span>
+        <span class="diff-stat">+0 / -4</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">77</span><span class="line-prefix"> </span><span>      child: Container(</span></div>
+        <div class="code-line line-del"><span class="line-num">78</span><span class="line-prefix">-</span><span>        margin: const EdgeInsets.symmetric(</span></div>
+        <div class="code-line line-del"><span class="line-num">79</span><span class="line-prefix">-</span><span>          horizontal: AppSpacing.md,</span></div>
+        <div class="code-line line-del"><span class="line-num">80</span><span class="line-prefix">-</span><span>          vertical: AppSpacing.xs,</span></div>
+        <div class="code-line line-del"><span class="line-num">81</span><span class="line-prefix">-</span><span>        ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">78</span><span class="line-prefix"> </span><span>        decoration: BoxDecoration(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">79</span><span class="line-prefix"> </span><span>          color: cardBg,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">80</span><span class="line-prefix"> </span><span>          border: Border.all(color: cardBorder),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span><code>SwipeableTaskCard</code> 自身の <code>margin</code> を削除。余白は外側の <code>Padding</code> ウィジェット（セクション内の <code>AppSpacing.sm</code>）で管理する。これによりカードは親 <code>Padding</code> の幅いっぱいに広がり、AC2「画面横幅いっぱいに表示される」を実現する。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">「過去の家事」「これからの家事」各セクション内で、日付ラベル・タスク数の下に家事カードがインデントして配置されている（webのSP版の階層構造と一致）</div>
+      </div>
+      <div class="ac-body">
+        セクション全体を <code>Container（borderRadius:12）</code> で囲み、内部に「ヘッダーContainer → 日付Padding → カードPadding」の階層構造を実現した。日付ラベルが上、カードが下にインデントして表示される構造はwebのSP版（<code>MyTasksPage.vue</code>）のレイアウトと目視で一致している。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">家事カードが画面横幅いっぱいに表示され、カード幅がコンテンツ長に依存しない</div>
+      </div>
+      <div class="ac-body">
+        <code>SwipeableTaskCard</code> の <code>margin: EdgeInsets.symmetric(horizontal: AppSpacing.md)</code> を削除し、外側の <code>Padding（AppSpacing.sm）</code> で余白を管理するように変更。カードはセクションコンテナの幅を継承して全幅に広がる。カード内の家事名が短くても幅は変わらない。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">hw-hub-frontend/src/views/housework/tasks/MyTasksPage.vue のSP版レイアウトと目視で一致している</div>
+      </div>
+      <div class="ac-body">
+        webのSP版（<code>MyTasksPage.vue</code>）の「セクション全体コンテナ → ヘッダー → 日付グループ → カード」構造をモバイルでも再現した。過去の家事セクションはrose系ヘッダー、これからの家事はフィルタセグメント付きのヘッダーとし、web SP版との視覚的一致を実現している。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>「過去の家事」セクションが枠（ボーダー）付きのカード形式で表示されていること</strong>
+          <span>過去のタスクがある状態でMy Tasks画面を開き、「過去の家事」全体がひとつの枠の中にまとまって表示されているか確認。rosé（薄ピンク）のヘッダーと白背景の枠が一体になっているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「これからの家事」セクションも枠付きのカード形式で表示されていること</strong>
+          <span>「これからの家事」全体がひとつの枠の中にまとまって表示されているか確認。ヘッダー部分にフィルタ（すべて・今日・今週）のセグメントコントロールが表示されているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>家事カードの横幅が画面幅いっぱいに広がっていること</strong>
+          <span>家事名が短いタスク（1文字・2文字など）のカードも、セクション幅いっぱいに広がって左寄せにならないか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>日付ラベルの下に家事カードが階層表示されていること</strong>
+          <span>同じ日のタスクが「今日」「5/14(水)」などの日付ラベルの下にインデントして並んでいるか確認（フラットな1列表示になっていないか）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>スワイプ（左右）が正常に動作すること</strong>
+          <span>カード横幅が正しくなったことでスワイプ操作が快適になっているか確認。右スワイプで「完了」・左スワイプで「スキップ」が引き続き動作するか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>今回の根本原因は「webのSP版の階層構造を参照せずにモバイル独自のフラット実装をしてしまった」こと。mobile-conventions スキルに「Mobileのspecで指定がない場合はhw-hub-frontendのホーム画面SP版を参照する」ルールが定義されており、今後は実装前にwebのSP版との整合を必ず確認する。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/tasks/presentation/my_tasks_page_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">PastTasksSection・FutureTasksSectionがセクションコンテナ内に存在することを確認するウィジェットテストが既存として存在しており、構造変更後も引き続きグリーン</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

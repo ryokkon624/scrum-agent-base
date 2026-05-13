@@ -28,6 +28,7 @@ core/network/ (Dio・例外・インターセプター)
 
 - Page は Notifier を呼ぶ。Repository を直接呼ばない
 - Notifier は Repository interface に依存する。実装クラスには依存しない
+- **Notifier 内で `Dio` を直接使用してはならない**。必ず `Repository` 経由で API を呼ぶこと（`Notifier → Repository → Api` の依存方向を守ること）
 - `core/` 配下は全機能から参照できる共通基盤
 
 ---
@@ -79,6 +80,85 @@ lib/
 ```
 
 - `const` コンストラクタを積極的に使い、不要な再ビルドを避ける
+- コード値（APIから返される文字列/数値の区分値）はマジックストリングで直接比較せず、`core/models/` 配下の enum を使う
+
+### m_code で管理されている区分値（自動生成）
+
+`lib/core/models/` には `hw-hub-database` の `./gradlew generateEnums` で生成した enum が配置済み。  
+`PurchaseLocationType`, `TaskStatus`, `Category` など m_code に登録されている区分値はすべてここにある。  
+**新しく作らず、生成済みのファイルを import して使うこと。**
+
+```dart
+// 生成済みの enum を import して使う例
+import 'package:hw_hub_mobile/core/models/purchase_location_type.dart';
+
+// コード値との比較
+if (item.storeType == PurchaseLocationType.supermarket.code) { ... }
+
+// コード値から enum に変換
+final type = PurchaseLocationType.fromCode(item.storeType); // 不正値は null
+```
+
+生成済み enum はすべて以下の形式になっている。
+
+```dart
+enum PurchaseLocationType {
+  supermarket('1'),
+  online('2'),
+  drugstore('3');
+
+  const PurchaseLocationType(this.code);
+  final String code;
+
+  static PurchaseLocationType? fromCode(String? code) {
+    for (final v in values) {
+      if (v.code == code) return v;
+    }
+    return null;
+  }
+}
+```
+
+m_code が更新された場合は `./gradlew generateEnums`（hw-hub-database）を実行し、生成ファイルを `lib/core/models/` に上書きコピーしてコミットする。
+
+### m_code で管理されていない区分値（カスタム定義）
+
+画面固有の状態や API の仕様に由来するが m_code に登録されていない区分値は、`core/models/` に手動で作成する。
+
+```dart
+// lib/core/models/password_reset_result.dart の例（m_codeに無いカスタム enum）
+enum PasswordResetResult { success, expired, invalid }
+```
+
+- カスタム enum はコード値を持たない（画面状態の分岐にのみ使う）ことが多い
+- API レスポンスのフラグなど文字列/数値のマッピングが必要な場合は生成済み enum と同じ形式（`fromCode` + null 安全）で作る
+
+### 全幅表示が必要なウィジェット
+
+カードや一覧アイテムを親コンテナ幅いっぱいに広げる場合は、以下のいずれかを明示的に指定すること。
+Flutter の `Container` はデフォルトでコンテンツサイズになるため、指定がないとタスク名の長さによって幅がバラバラになる。
+
+```dart
+// パターン1: SizedBox で全幅指定
+SizedBox(
+  width: double.infinity,
+  child: MyCard(...),
+)
+
+// パターン2: Container に width を指定
+Container(
+  width: double.infinity,
+  child: MyCard(...),
+)
+
+// パターン3: Column の crossAxisAlignment で子を伸ばす
+Column(
+  crossAxisAlignment: CrossAxisAlignment.stretch,
+  children: [MyCard(...)],
+)
+```
+
+> **背景（Sprint 31 Retro）**: `swipeable_task_card.dart` のmarginを削除したが `width: double.infinity` を設定しなかったため、カード幅がタスク名に依存したままになりSprint Reviewで指摘された。
 
 ---
 
@@ -334,3 +414,13 @@ flutter test
 ```
 
 フォーマット未適用・解析エラーありの状態でコミットしない。
+
+---
+
+## 11. デザイン参照方針
+
+- **Mobileのspecで指定がない場合は `hw-hub-frontend` のホーム画面SP版を参照する**
+- 色・レイアウト・表示順序・グラフ仕様など、specに明記されていない要素はwebのSP版に揃えること
+- webのSP版と異なる実装が必要な場合は、specに明示的に記載する
+
+> **背景（Sprint 26 Retro）**: 積み上げ棒グラフの未割当の表示順序など、specに記載がなかった要素がwebと異なっていたことがSprint Reviewで指摘された。
