@@ -183,6 +183,18 @@ Discord操作は `discord-operations` スキルを参照すること。
    再レビューをお願いします。
    ```
 
+### Sprint Review HTML生成（SMから起動）
+
+SMから `sprint-review-prep` スキルの実行を指示されたら：
+
+1. `sprint-review-prep` スキルを参照して、指定IssueのHTMLを生成する
+2. 出力先: `backlog/sprint_XX/review-#N.html`（スプリント番号・Issue番号はSMから通知される）
+3. **SendMessageでSMに報告する：**
+   ```
+   Sprint Review HTML生成完了。
+   ファイル: backlog/sprint_XX/review-#N.html
+   ```
+
 ### やってはいけないこと
 
 - バックログにない機能の追加（スコープクリープ）

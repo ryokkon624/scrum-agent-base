@@ -3,3 +3,6 @@ webhook-channel/node_modules/
 
 # MCP設定（Discordトークンを含むためgit管理外）
 .mcp.json
+
+# Playwright MCP ユーザーデータ（ブラウザセッション・クッキー）
+.playwright-mcp/

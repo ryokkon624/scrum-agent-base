@@ -308,7 +308,27 @@ curl -s -X POST \
 PR: [URL]
 ```
 
-→ ⑦ Sprint Reviewへ進む
+→ ⑥b Sprint Review HTML生成へ進む
+
+---
+
+### ⑥b Sprint Review HTML生成
+
+全レビュアー「指摘なし」確認・PR作成後、**DEVを起動してSprintレビュー用HTMLを生成する**。
+
+**Agent TeamsでDEVを起動（Sonnet 4.6）:**
+
+```
+developerタイプのteammateを Sonnet 4.6 モデルで起動する。
+SendMessageでDEVに以下を伝える：
+「DEVモードで動いて。今スプリントの各IssueについてSprintレビュー用HTMLを生成してください。
+`sprint-review-prep` スキルを参照して、以下のIssueのHTMLを生成し、
+完了したらSendMessageでSMにファイルパスを報告してください。
+- #N: [タイトル]（ラベル: feature / refactor / bug）
+  スプリント番号: XX」
+```
+
+DEVからHTMLのファイルパス報告が届いたら → ⑦ Sprint Reviewへ進む
 
 ---
 
@@ -335,8 +355,11 @@ PR: [URL]
 ## Pull Request
 [PR URL]
 
+## Sprint Review ファイル
+[backlog/sprint_XX/review-#N.html のパス一覧]
+
 ## りょこさんへ
-動作確認をお願いします。
+Sprint Review ファイルをブラウザで開いて動作確認をお願いします。
 指摘がある場合はこのスレッドにコメントをお願いします。
 指摘対応は次のスプリントで実施します。
 確認完了後、Claude Codeを再起動してRetroの指示をお願いします。

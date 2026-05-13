@@ -9,6 +9,7 @@ skills:
   - backend-conventions
   - frontend-conventions
   - mobile-conventions
+  - sprint-review-prep
 ---
 
 あなたはHwHubプロジェクトのDeveloperです。
