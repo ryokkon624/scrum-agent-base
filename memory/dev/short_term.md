@@ -1,114 +1,128 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 29
-**最終更新**: 2026-05-12
+**スプリント**: Sprint 30
+**最終更新**: 2026-05-13
 
 ---
 
 ## スプリントゴール
 
-Sprint 28 Review指摘対応 — My Tasks担当者フィルタバグ・デザインweb SP版合わせ・GoRoute定数化漏れを完了させる
+ログイン済みユーザー情報をRiverpodのauthStateで一元管理し、home・My Tasks画面の冗長なAPI呼び出しを排除することでモバイルアプリのパフォーマンスを向上させる
 
 ---
 
-## 対象Issue（全てbugラベル）
+## 対象Issue（refactorラベル）
 
 | Issue | 内容 | ブランチ |
 |-------|------|---------|
-| #76 | [mobile] My Tasks画面に自分の担当以外の家事タスクが表示される | `feature/67-mobile-my-tasks` |
-| #77 | [mobile] My Tasks画面のデザインがwebのSP版と異なる | `feature/67-mobile-my-tasks` |
-| #78 | [mobile] app_router.dartのGoRouteのpath引数がAppRoutes定数に未置換のまま残っている | `feature/67-mobile-my-tasks` |
+| #81 | [mobile] ログイン済みユーザー情報をRiverpodで保持し、各画面の冗長なAPI呼び出しを解消する | `feature/67-mobile-my-tasks`（既存ブランチに継続コミット） |
 
 リポジトリパス: `C:\work\hw-hub\hw-hub-mobile`
-コミット番号: `(ryokkon624/hw-hub-manage#76)` / `#77` / `#78`
+コミット番号: `(ryokkon624/hw-hub-manage#81)`
+PR: hw-hub-mobile PR #12（既存PR bodyをPATCHで更新）
 
 ---
 
 ## 承認済み実装方針
 
 ### 全体方針
-- 同一ブランチ `feature/67-mobile-my-tasks` で #76 → #78 → #77 の順に実施
-  - #76: ロジック改修・テストが固まりやすい
-  - #78: 機械的なGoRoute path定数置換（低リスク）
-  - #77: web SP版と照合してデザイン調整（最後にまとめてUI確認）
-- 各IssueごとにコミットメッセージにIssue番号を付与する
+- 単一Issue #81 を1コミットで完了させる
+- ラベルは refactor なので「機能・振る舞いは不変、構造のみ改善」を厳守する（API呼び出し回数の削減は副次効果）
+- 既存ブランチ `feature/67-mobile-my-tasks` に継続コミット（PRは既存 #12 を更新）
 
 ---
 
-### #76 My Tasks 担当者フィルタ追加
+### #81 ログイン済みユーザー情報をRiverpodで保持
 
-**原因**:
-`MyTasksNotifier._load()` 内で `repo.fetchOpenTasks(householdId: ...)` の戻り値をそのまま past/future に振り分けている。`assigneeUserId == currentUserId` のフィルタが入っていないため、世帯全体のタスクが表示される。  
-ホーム画面（`home_notifier.dart`）では `loadCurrentUserId()` を呼び出して `assigneeUserId == currentUserId` で絞り込んでいるが、My Tasks 側は同じ処理が未実装。
+**改修方針（4ステップ）**:
 
-**改修方針**:
-1. `MyTasksRepository` に `loadCurrentUserId()` を追加（`GET /api/users/me/profile` で `userId` を返す。HomeRepository と同一実装をコピーする方が依存をシンプルに保てる）
-2. `MyTasksNotifier._load()` を `Future.wait` で `fetchOpenTasks` と `loadCurrentUserId` を並行取得し、 `tasks.where((t) => t.assigneeUserId == currentUserId)` で絞ってから past/future に振り分ける
-3. 仕様書 `hw-hub-mobile/docs/mobile-spec/12_my_tasks.md` の「4. API」セクションの GET 行に「フロント側で `assigneeUserId == currentUserId` フィルタを実施」を明記
-4. Notifier テスト追加（TDD）:
-   - 「自分以外の assigneeUserId のタスクが past/future に含まれないこと」
-   - 既存のテストは `assigneeUserId: 10` 固定だったため、`loadCurrentUserId` のモックを返すよう `setUp` を修正
+#### Step 1: `AuthAuthenticated` に AuthUser を持たせる
+- `lib/core/auth/auth_state.dart`
+  - `AuthAuthenticated` に `final AuthUser user;` を追加（constコンストラクタ + 等価性のために `==` / `hashCode` を override しない方針：Riverpodの状態更新は識別子比較に依存しない `AsyncData` ラップで通知される）
+  - `AuthUser` を `lib/features/auth/data/models/auth_user.dart` から **`lib/core/models/auth_user.dart`** に移動して core→features 依存を解消する（共有ドメインモデルの置き場所として `core/models/` が妥当）
+  - 既存の import パスを一括置換
 
-**変更ファイル**:
-- 編集: `lib/features/tasks/data/my_tasks_repository.dart`（interface + impl に `loadCurrentUserId` 追加）
-- 編集: `lib/features/tasks/presentation/my_tasks_notifier.dart`（_load を改修）
-- 編集: `test/features/tasks/presentation/my_tasks_notifier_test.dart`（フィルタテスト追加・既存テストの mockRepo に `loadCurrentUserId` のスタブ追加）
-- 編集: `test/features/tasks/data/my_tasks_repository_test.dart`（`loadCurrentUserId` の成功・例外ケース追加）
-- 編集: `test/features/tasks/tasks_mocks.dart`（必要に応じて `@GenerateMocks` 更新 → build_runner 実行）
-- 編集: `hw-hub-mobile/docs/mobile-spec/12_my_tasks.md`
+#### Step 2: `AuthNotifier` の改修
+- `lib/core/auth/auth_notifier.dart`
+  - `build()` 内のtoken復元時：tokenがあれば `dio.get('/api/users/me/profile')` を呼んで AuthUser を構築し、`AuthAuthenticated(user)` を返す
+    - 失敗時（ネットワークエラー / 401）は `AuthUnauthenticated()` を返す（再ログインを促す）
+    - dio は `ref.read(dioProvider)` で取得
+  - `saveTokens` に `required AuthUser user` 引数を追加。保存後 `state = AsyncData(AuthAuthenticated(user))`
+  - logout は変更不要
 
----
+#### Step 3: 呼び出し元の修正
+- `lib/features/auth/presentation/login/login_notifier.dart`
+  - `saveTokens(accessToken: ..., refreshToken: ..., user: resp.user)` に変更
+- `lib/features/auth/presentation/signup/signup_notifier.dart`
+  - 同様に `user: resp.user` を渡す
+- `lib/features/home/presentation/home_notifier.dart`
+  - `repo.loadCurrentUserId()` 呼び出しを削除
+  - `_load` の冒頭で `final auth = ref.read(authNotifierProvider).valueOrNull;` を取得し、`auth is AuthAuthenticated` なら `auth.user.userId` を使用
+  - 未認証ケースは home_router の redirect で既に弾かれているが、念のため未取得時はエラーを投げる
+- `lib/features/tasks/presentation/my_tasks_notifier.dart`
+  - 同様に `repo.loadCurrentUserId()` 呼び出しを削除し authState から取得
 
-### #78 GoRoute path 引数の AppRoutes 定数化
-
-**原因**:
-Sprint 28 #75 で `context.go()` 引数のみ `AppRoutes` 定数に置換し、`GoRoute(path: ...)` 側はリテラルのまま残った（対応漏れ）。
-
-**改修方針**:
-1. `app_router.dart` の `_routes` 配列内の全 `GoRoute(path: 'XXX')` を `AppRoutes.xxx` 参照に置換
-2. ネストされたサブルートの相対パス（例: `path: 'sent'`, `path: 'new'`, `path: ':id'`, `path: 'account'` 等）も `AppRoutes` クラスに追加（`forgotPasswordSentRelative`, `shoppingNewRelative` などの "相対パス用定数" を新設するか、サブルート専用の private const を追加）
-   - 案A（採用候補）: `AppRoutes` 内に `static const _xxxRelative = 'xxx';` の private const を追加して GoRoute 側で参照。トップレベル定数（`/forgot-password/sent` など絶対パス）はそのまま保持してナビゲーション側との互換を維持
-   - 案B: `AppRoutes` 内の絶対パス定数から `split('/')` 等でサブパスを切り出す → 動的処理が増えるので不採用
-   - **採用: 案A**（明示的・grep可能・型安全）
-3. `_publicPrefixes` はAC1で対象外なのでリテラルのまま残す
-4. `flutter analyze` が警告ゼロであることを確認
-
-**変更ファイル**:
-- 編集: `lib/app_router.dart`（GoRoute 全置換・必要な相対パス定数追加）
+#### Step 4: Repository から `loadCurrentUserId` を削除
+- `lib/features/home/data/home_repository.dart`：interface / impl から削除
+- `lib/features/tasks/data/my_tasks_repository.dart`：同上
+- 既存テスト（`home_notifier_test.dart` / `my_tasks_notifier_test.dart` / `my_tasks_repository_test.dart`）を authState スタブに差し替える
+- `home_mocks.dart` / `tasks_mocks.dart` の `@GenerateMocks` も再生成（`dart run build_runner build --delete-conflicting-outputs`）
 
 ---
 
-### #77 My Tasks 画面 デザイン web SP 版合わせ
+### テスト方針（TDD: RED → GREEN → REFACTOR）
 
-**原因**:
-モバイル実装時に web の MyTasksPage.vue SP版を細かく参照せず、独自のレイアウト・配色になっている。
-具体的な差分:
-1. **過去セクションのレイアウト**: web は「説明文の右側に "すべて完了" ボタンを配置（横並び）」だが、モバイルは縦並びでOutlinedButton幅100%。
-2. **過去タスクカードの色**: web は `bg-hwhub-palette-rose-soft` + `border-hwhub-palette-rose` + タイトル色 `text-hwhub-palette-rose`。モバイルは標準 Card（surfaceCard）のままで rose 色が反映されていない。
-3. **今日のタスクカードの色**: web は `bg-hwhub-palette-emerald-soft` + `border-hwhub-palette-emerald`。モバイルは標準 Card のまま。
-4. **これからのセクションのヘッダー**: web は「タイトル + 未対応件数」がヘッダー右端、フィルタはその下にセグメントコントロール風（白背景の選択中）。モバイルはタイトル右に件数・フィルタはチップ風で primary 色塗りつぶし。
-5. **日付ラベル**: web は「今日」「明日」「M/D(曜日)」と曜日のみ。モバイルは「M月D日(曜日) N件」。
-6. **過去セクションの "すべて完了" ボタン**: web は primary 色塗りつぶしの小さい pill ボタン。モバイルは rose 色の OutlinedButton で目立ちすぎる。
-7. **介入文（intro）**: web には `myTasks.intro` の説明テキストがリスト最上部にあるが、モバイルにはない。
+| 対象 | テスト |
+|------|--------|
+| `AuthNotifier.build()` token 復元時 `/me` 呼び出し成功 → `AuthAuthenticated(user)` を返す | 新規追加（必須） |
+| `AuthNotifier.build()` token 復元時 `/me` 呼び出し失敗 → `AuthUnauthenticated()` を返す | 新規追加（必須） |
+| `AuthNotifier.saveTokens(user: ...)` → state が `AuthAuthenticated(user)` になる | 既存テストを更新 |
+| `LoginNotifier.submit` 成功時 `saveTokens` に `resp.user` が渡る | 既存テストを更新 |
+| `SignupNotifier.submit` 即ログイン成功時 `saveTokens` に `resp.user` が渡る | 既存テストを更新 |
+| `HomeNotifier._load` が `authNotifierProvider` から userId を取得して使う | 既存テスト更新（authState を AuthAuthenticated(user) で override） |
+| `MyTasksNotifier._load` 同上 | 既存テスト更新 |
+| `HomeRepository.loadCurrentUserId` テスト削除 | テストファイル更新 |
+| `MyTasksRepository.loadCurrentUserId` テスト削除 | テストファイル更新 |
 
-**改修方針**:
-1. `SwipeableTaskCard` を「過去用（rose系）／今日用（emerald系）／通常」3スタイルに切り替えできるよう `variant` または `isPast` / `isToday` プロパティを追加
-   - カードのborder色・背景色を切り替え
-   - 過去タスクのタイトル色は paletteRoseText を適用
-2. `PastTasksSection` のヘッダーを横並び（タイトル左・"すべて完了" ボタン右）に変更。ボタンは小型のElevatedButton（primary背景）に変更
-3. `FutureTasksSection` のヘッダー: タイトル + 説明文（左）／フィルタ + 件数（右下）の2列レイアウト。フィルタは選択中=白背景＋影、非選択=透明背景のセグメントコントロール風に変更（primary塗りつぶしは不採用）
-4. 日付ラベルを「今日」「明日」「M/D(曜日)」表記に変更。曜日名は既存i18nキー `myTasksWeekdayXxx` を流用
-5. ページ最上部に `myTasksIntro` テキストを追加（i18n キー新規追加）
-6. 関連i18nキー（intro・"今日"・"明日" など）を `app_ja.arb` / `app_en.arb` / `app_es.arb` に追加 → `flutter gen-l10n`
-7. ウィジェットテスト（`my_tasks_page_test.dart`）は今回は **テスト不要**（規約: View / Component の見た目の変更はテスト対象外）。ただし `isPast` / `isToday` のような表示分岐を `SwipeableTaskCard` に追加する場合のみ最低限のウィジェットテストを追加する（カードのDecoration色を `find.byType(Container)` + 色比較で確認）
+---
 
-**変更ファイル**:
-- 編集: `lib/features/tasks/presentation/widgets/swipeable_task_card.dart`（variant追加）
-- 編集: `lib/features/tasks/presentation/widgets/past_tasks_section.dart`（ヘッダー横並び・ボタン小型化・カードvariant指定）
-- 編集: `lib/features/tasks/presentation/widgets/future_tasks_section.dart`（ヘッダー2列・フィルタチップのスタイル変更・日付ラベル変更・カードvariant指定）
-- 編集: `lib/features/tasks/presentation/my_tasks_page.dart`（intro 追加）
-- 編集: `lib/l10n/app_ja.arb` / `app_en.arb` / `app_es.arb`
-- 編集（自動生成）: `lib/l10n/app_localizations*.dart`（flutter gen-l10n）
+### 変更ファイル一覧
+
+**新規/移動**:
+- 移動: `lib/features/auth/data/models/auth_user.dart` → `lib/core/models/auth_user.dart`
+
+**編集**:
+- `lib/core/auth/auth_state.dart`（AuthAuthenticated に user 追加）
+- `lib/core/auth/auth_notifier.dart`（build時 `/me` 呼び出し・saveTokens シグネチャ変更）
+- `lib/features/auth/data/models/login_response.dart`（import path変更）
+- `lib/features/auth/data/models/register_response.dart`（import path変更）
+- `lib/features/auth/presentation/login/login_notifier.dart`（saveTokens に user 渡す）
+- `lib/features/auth/presentation/signup/signup_notifier.dart`（同上）
+- `lib/features/home/data/home_repository.dart`（loadCurrentUserId 削除）
+- `lib/features/home/presentation/home_notifier.dart`（authState から userId 取得）
+- `lib/features/tasks/data/my_tasks_repository.dart`（loadCurrentUserId 削除）
+- `lib/features/tasks/presentation/my_tasks_notifier.dart`（authState から userId 取得）
+
+**自動生成（再ビルド）**:
+- `test/features/home/home_mocks.mocks.dart`
+- `test/features/tasks/tasks_mocks.mocks.dart`
+
+**テスト編集**:
+- `test/core/auth/auth_notifier_test.dart`（build時 `/me` 呼び出しテスト追加）
+- `test/features/auth/presentation/login/login_notifier_test.dart`（user引数検証）
+- `test/features/auth/presentation/signup/signup_notifier_test.dart`（user引数検証）
+- `test/features/home/presentation/home_notifier_test.dart`（authState スタブ）
+- `test/features/tasks/presentation/my_tasks_notifier_test.dart`（authState スタブ）
+- `test/features/home/data/home_repository_test.dart`（loadCurrentUserId テスト削除）
+- `test/features/tasks/data/my_tasks_repository_test.dart`（同上）
+
+---
+
+## 懸念点・確認事項（承認済み）
+
+- AuthUser を `core/models/` に移動することで core→features 依存を避ける（採用：`core/auth/` ではなく `core/models/` が共有ドメインモデルの正規置き場）
+- `/me` 呼び出し失敗時は AuthUnauthenticated にフォールバック（採用）
+- AC4 で `my_tasks_notifier.dart` の `loadCurrentUserId()` を削除する範囲は Repository から関数自体を削除するところまで（Sprint 29で追加したばかりだが、refactor の本旨に従って削除）
 
 ---
 
@@ -118,14 +132,15 @@ Sprint 28 #75 で `context.go()` 引数のみ `AppRoutes` 定数に置換し、`
 - [ ] `flutter analyze`（警告ゼロ）
 - [ ] `flutter test`（全グリーン）
 - [ ] `git push -u origin feature/67-mobile-my-tasks`
+- [ ] PR #12 body 更新（SMが実施）
 
 ---
 
 ## 作業ルール
 
-- コミットメッセージ形式: `fix: [内容] (ryokkon624/hw-hub-manage#76)` 等
+- コミットメッセージ形式: `refactor: ログイン済みユーザー情報をauthStateで保持 (ryokkon624/hw-hub-manage#81)`
 - [DEV] プレフィックスをDiscord投稿に必ずつける
-- 作業スレッドID: `1503674278481104940`
+- 作業スレッドID: `1503967750387666944`
 - PRはSMが行う。DEVはpushまでが担当
 
 ---
@@ -134,13 +149,7 @@ Sprint 28 #75 で `context.go()` 引数のみ `AppRoutes` 定数に置換し、`
 
 | Issue | 状態 |
 |-------|------|
-| #76 担当者フィルタ追加 | 完了 ✅ |
-| #78 GoRoute path定数化 | 完了 ✅ |
-| #77 デザインweb SP版合わせ | 完了 ✅ |
-
-**ブランチ**: `feature/67-mobile-my-tasks`  
-**プッシュ済み**: 2026-05-12  
-**コミット**: 3件（#76 / #78 / #77 各1コミット）
+| #81 ログイン済みユーザー情報をauthStateで保持 | 完了 ✅ |
 
 ---
 

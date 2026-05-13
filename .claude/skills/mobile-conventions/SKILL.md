@@ -28,6 +28,7 @@ core/network/ (Dio・例外・インターセプター)
 
 - Page は Notifier を呼ぶ。Repository を直接呼ばない
 - Notifier は Repository interface に依存する。実装クラスには依存しない
+- **Notifier 内で `Dio` を直接使用してはならない**。必ず `Repository` 経由で API を呼ぶこと（`Notifier → Repository → Api` の依存方向を守ること）
 - `core/` 配下は全機能から参照できる共通基盤
 
 ---

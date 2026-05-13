@@ -1,19 +1,19 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 30（未開始）
-**最終更新**: 2026-05-12
+**スプリント**: Sprint 31（未開始）
+**最終更新**: 2026-05-13
 
 ---
 
 ## 現在の状態
 
-Sprint 29 Retro完了。Sprint 30 Planning待ち。
+Sprint 30 Retro完了。Sprint 31 Planning待ち。
 
 ## 引き継ぎ事項
 
 - HomeAppBarの通知・アカウントアイコンは未実装（SnackBar表示）。**#15対応時に必ず実装すること**
-- reviewerのDiscord投稿: Sprint 13〜29で18スプリント連続成功
+- reviewerのDiscord投稿: Sprint 13〜30で19スプリント連続成功
 - Claudeモデル: 現在 Sonnet 4.6（実装）/ Opus 4.7（計画）が最新。変更なし
 - Agent Teams messaging failureの既知問題: dev/dev2がSendMessageに無応答になる場合がある。発生時はSM自身で計画フェーズを担当してSonnet DEVを直接起動する
-- hw-hub-mobile `feature/67-mobile-my-tasks` ブランチはPR #12でオープン中（#67・#75・#76・#77・#78のclosesを含む）
+- hw-hub-mobile `feature/67-mobile-my-tasks` ブランチはPR #12でオープン中（#67・#75・#76・#77・#78・#81のclosesを含む）
 - Sprint 29 Review指摘2件 → Issue #79（未割当タスク表示・重大）/ #80（カードレイアウト）を起票済み。次スプリントで対応予定

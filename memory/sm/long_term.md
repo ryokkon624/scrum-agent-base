@@ -37,6 +37,7 @@
 | Sprint 27  | モバイルホーム画面のSprint 26 Review指摘5件を全件解消し、webのSP版と完全に統一されたUIを実現する | ✅ 全AC達成（#69/#70/#71/#72/#73）Sprint Reviewりょこさん指摘なし | Agent Teams messaging failure: dev/dev2がSendMessageに応答せずSMが直接計画フェーズを担当（Sonnet DEVでの実装は正常動作）。convention-reviewerがBashでgit diffを実行できずSMが手動でファイル一覧を送付→convention-reviewer.mdにBashフォールバック手順を追記。りょこさんからの規約指摘でshopping_card.dartのマジックストリング'1'/'2'/'3'をPurchaseLocationTypeEnum（core/models/）に抽出→mobile-conventionsにenumルールを追記。reviewer Discord投稿が16スプリント連続成功。 |
 | Sprint 28  | モバイルMy Tasks画面を実装してスワイプ操作で日々の家事管理を快適にし、AppRoutes定数クラス導入でルーティング品質を向上させる | ✅ 全AC達成（#67: 10AC / #75: 3AC / 全219件グリーン）Sprint Review指摘3件（①My Tasks担当者フィルタバグ→#76 / ②デザインweb SP版合わせ→#77 / ③GoRoute path引数の定数化漏れ→#78） | convention-reviewerがi18n漏れ・dynamic型・スキップコード値バグ（'2'→'9'）を検出・修正済み。モバイルAppLocalizationsインポートパスをpackage:flutter_genではなく相対パスに修正（flutter runビルドエラー）→developer.mdコミット前チェックリストに追記。担当者フィルタ・デザインSP版合わせがホーム画面に続き2回連続でSprint Review指摘→ACや仕様書の記載不足が根本原因のためPOと改善対応予定。reviewer Discord投稿が17スプリント連続成功。 |
 | Sprint 29  | Sprint 28 Review指摘対応 — My Tasks担当者フィルタバグ・デザインweb SP版合わせ・GoRoute定数化漏れを完了させる | ⚠️ 部分達成（#78全AC達成 / #76 AC1未達成・未割当タスク表示 / #77 カードレイアウト未対応）Sprint Review指摘2件（①未割当タスク表示→#79 / ②カードレイアウト→#80） | DEVが「未割当タスクは含める」と自己判断してAC1に反する実装をした（ACに明記されているのに）→ACが曖昧な場合はりょこさんに確認してから実装する原則を再確認。bugラベルIssueの計画フェーズでの原因・改修方針記録フローを初適用（GitHub Issue Bodyに記録）。convention-reviewerがapp_es.arb未作成・provider定義位置・HouseworkTaskDto配置・テストスタブ値不一致の4件を検出・全対応済み。reviewer Discordタイムアウト2回発生→即再起動で解決。reviewer Discord投稿が18スプリント連続成功。 |
+| Sprint 30  | ログイン済みユーザー情報をRiverpodのauthStateで一元管理し、home・My Tasks画面の冗長なAPI呼び出しを排除することでモバイルアプリのパフォーマンスを向上させる | ✅ 全AC達成（#81: 4AC / 221件全グリーン）Sprint Reviewりょこさん指摘なし | convention-reviewerがauth_notifier.dartのDio直接参照（アーキテクチャ違反）を検出・AuthRepository経由に修正済み。DEVの計画フェーズでAuthUserの移動先（core/auth/ → core/models/）をりょこさんが修正（core/models/が正しい）。Sprint Review HTMLのDEV生成（⑥b）を今スプリントから初適用→正常動作確認。mobile-conventionsに「Notifier内でDioを直接使用しない」ルールを追記。reviewer Discord投稿が19スプリント連続成功。 |
 
 ---
 
@@ -113,6 +114,10 @@
 | Sprint 28  | developer.mdにモバイルi18nインポートパスの確認項目を追加           | ✅ `package:flutter_gen/gen_l10n/` → `lib/l10n/` への相対パスを使う旨をコミット前チェックリストに追記。flutter runビルドエラーを受けて再発防止 | developer.md更新                                            |
 | Sprint 29  | bugラベルIssueの計画フェーズでのGitHub Issue Body更新フロー導入    | ✅ SMがPlanning①でLabels確認→DEV起動メッセージにbugラベル情報を含める→DEVが計画フェーズで原因・改修方針をIssue Bodyに記録する。初適用で正常動作確認 | developer-workflow / scrum-master-workflow / developer.md 更新 |
 | Sprint 29  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（複数ラウンド）で投稿成功（**18スプリント連続**）。タイムアウト2回発生→即再起動で解決               | 継続監視                                                    |
+| Sprint 30  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 30  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（**19スプリント連続**）。定着確認                                   | 継続監視                                                    |
+| Sprint 30  | Sprint Review HTMLのDEV生成（⑥b）を初適用                        | ✅ DEVがsprint-review-prepスキルを参照してHTMLを生成。backlog/sprint_30/review-#81.htmlを正常生成。りょこさんがMarkdownを読まずに確認できる体制が整った | 次スプリントから標準手順として継続                          |
+| Sprint 30  | mobile-conventionsにNotifier内Dio直接参照禁止ルールを追記         | ✅ auth_notifier.dartでDio直接参照が発生→convention-reviewerが検出・修正済み。mobile-conventions「依存方向ルール」に明記して再発防止 | mobile-conventions更新                                      |
 
 ---
 
@@ -140,6 +145,7 @@
 - 横断的リファクタリングのコミット前にgrepで置き換え対象パターンの残存を確認する（Sprint 17〜 → developer-workflow更新）
 - 大規模CSSリファクタリング時はスコープを絞り（主要レイアウト/ページコンテナ/モーダル）、残存箇所をgrepで集計して別Issue化する（Sprint 18〜）
 - デザイントークン系タスクでは事前にりょこさんから色定義をCSSファイルで確定してもらい、DEVに渡す（Sprint 18〜）
+- Sprint Review HTMLをDEVが生成してりょこさんに提出する（Sprint 30〜 初適用・正常動作確認）
 
 ### Stop（やめること）
 
@@ -177,8 +183,9 @@
 - モバイルでAppLocalizationsのインポートに `package:flutter_gen/gen_l10n/` を使うこと（Sprint 28 → flutter runビルドエラー → developer.mdコミット前チェックリストに追記）
 - 同じバグ（担当者フィルタ・デザインSP版合わせ）がSprint Reviewで2スプリント連続指摘されること（Sprint 26・28 → ACや仕様書の記載不足が根本原因 → POとAC改善で対応）
 - DEVがACに明記されていない動作を自己判断でスコープに含めること（Sprint 29 → 「未割当タスクは含める」と自己判断してAC1に反する実装 → ACが曖昧な場合はりょこさんに確認してから実装する）
+- Notifier内でDioを直接使用すること（Sprint 30 → auth_notifier.dartでDio直接参照が発生→convention-reviewerが検出・修正済み → mobile-conventionsの依存方向ルールに明記）
 
 ### Challenge（次に試すこと）
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
-- reviewerのDiscord投稿継続監視（Sprint 13〜26で15スプリント連続成功。根本原因は未特定）
+- reviewerのDiscord投稿継続監視（Sprint 13〜30で19スプリント連続成功。根本原因は未特定）

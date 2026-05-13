@@ -139,6 +139,21 @@
 
 ---
 
+## Sprint 29 サマリー（2026-05-12完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #76 | [mobile] My Tasks画面に自分の担当以外の家事タスクが表示される | `MyTasksRepository` に `loadCurrentUserId()` 追加、`MyTasksNotifier._load()` で `assigneeUserId == currentUserId`（および未割当）でフィルタしてから past/future に振り分け。仕様書 12_my_tasks.md にもフロント側フィルタを明記 |
+| #78 | [mobile] app_router.dartのGoRouteのpath引数がAppRoutes定数に未置換のまま残っている | `app_router.dart` の全 `GoRoute(path: ...)` を `AppRoutes` 定数に置換。ネストサブルートは `AppRoutes` 内に private const として相対パス用定数（`_xxxRelative`）を追加して参照 |
+| #77 | [mobile] My Tasks画面のデザインがwebのSP版と異なる | `SwipeableTaskCard` に variant プロパティ追加（past=rose系 / today=emerald系 / 通常）、`PastTasksSection` のヘッダーを横並びに変更し "すべて完了" を小型primaryボタンに、`FutureTasksSection` のフィルタをセグメントコントロール風に、日付ラベルを「今日／明日／M/D(曜日)」表記に、ページ最上部に `myTasksIntro` 追加。i18n（ja/en/es）も更新 |
+
+### Sprint 29 で習得したこと
+- モバイルで「ログインユーザー情報」が必要な場面では、`loadCurrentUserId()` の個別API呼び出しを各 Notifier が持つと冗長になる。Sprint 30 で authState に AuthUser を持たせる方向に統合する（#81）
+- web SP版とモバイルでデザインが異なるとSprint Reviewで指摘されやすい。`SwipeableTaskCard` のように variant 切替で複数スタイルに対応する設計が将来再利用しやすい
+- `AppRoutes` 定数化は「ナビゲーション引数」と「GoRoute path 定義」を別Issueで分けてもよいが、ネストサブルートの相対パス（`'sent'` / `':id'`）は親パスから切り出して private const にする方が明示的・grep可能
+
+---
+
 ## Sprint 28 サマリー（2026-05-11完了）
 
 | Issue | 内容 | 成果 |
