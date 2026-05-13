@@ -119,6 +119,7 @@ Discord操作は `discord-operations` スキルを参照すること。
    - [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format` / `dart format .`）
    - [ ] 横断的リファクタリングの場合: `grep` で置き換え対象パターンの残存がないことを確認する（例: `grep -r "authentication.getName()" src/main/java`）
    - [ ] mybatisGenerator を使った場合: 実行前に `rm -rf src/main/resources/mapper/generated` を実行したことを確認する（省略すると全Mapper XMLに定義が重複してSpring Bootが起動不可になる）
+   - [ ] **モバイルのUIに関する視覚的AC（幅・配置・レイアウト）がある場合**: シミュレーターまたはウィジェットテストで実際の見た目を確認してからコミットする（Sprint 31でカード全幅表示ACを目視未確認のまま達成と報告した）
 2. **`backlog/sprint_XX/sprint_backlog.md` のACをすべて `[x]` に更新する**
 3. コミットする（`git` ルール参照）
 4. **`git push -u origin {ブランチ名}` でリモートにプッシュする**（SMのPR作成に必要）

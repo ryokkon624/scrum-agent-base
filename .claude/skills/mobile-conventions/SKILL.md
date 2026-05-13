@@ -133,6 +133,33 @@ enum PasswordResetResult { success, expired, invalid }
 - カスタム enum はコード値を持たない（画面状態の分岐にのみ使う）ことが多い
 - API レスポンスのフラグなど文字列/数値のマッピングが必要な場合は生成済み enum と同じ形式（`fromCode` + null 安全）で作る
 
+### 全幅表示が必要なウィジェット
+
+カードや一覧アイテムを親コンテナ幅いっぱいに広げる場合は、以下のいずれかを明示的に指定すること。
+Flutter の `Container` はデフォルトでコンテンツサイズになるため、指定がないとタスク名の長さによって幅がバラバラになる。
+
+```dart
+// パターン1: SizedBox で全幅指定
+SizedBox(
+  width: double.infinity,
+  child: MyCard(...),
+)
+
+// パターン2: Container に width を指定
+Container(
+  width: double.infinity,
+  child: MyCard(...),
+)
+
+// パターン3: Column の crossAxisAlignment で子を伸ばす
+Column(
+  crossAxisAlignment: CrossAxisAlignment.stretch,
+  children: [MyCard(...)],
+)
+```
+
+> **背景（Sprint 31 Retro）**: `swipeable_task_card.dart` のmarginを削除したが `width: double.infinity` を設定しなかったため、カード幅がタスク名に依存したままになりSprint Reviewで指摘された。
+
 ---
 
 ## 4. 状態管理（Riverpod）

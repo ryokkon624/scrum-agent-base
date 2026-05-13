@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 31 Review — #79 My Tasks画面に未割当のタスクが表示される</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* モバイル風カードUI */
+  .mock-phone { background: #f1f5f9; border-radius: 12px; overflow: hidden; }
+  .mock-phone-header { background: #1a2e1a; color: white; font-size: 12px; font-weight: 700; padding: 8px 12px; letter-spacing: 0.04em; }
+  .mock-section { padding: 10px 10px 4px; }
+  .mock-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin-bottom: 6px; }
+  .mock-task-card { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px 10px; margin-bottom: 5px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .mock-task-card.bad-card { background: #fef2f2; border-color: #fca5a5; }
+  .mock-task-card.good-gone { opacity: 0.4; text-decoration: line-through; }
+  .mock-task-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-mine { background: #10b981; }
+  .dot-unassigned { background: #f59e0b; }
+  .badge-unassigned { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: auto; }
+  .badge-mine { background: #d1fae5; color: #065f46; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: auto; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .cause-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: #fef2f2; color: #b91c1c; border-radius: 50%; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .cause-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+  .cause-row-text { font-size: 13px; color: #374151; flex: 1; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+  .annotation-info { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #1e40af; display: flex; gap: 8px; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+  .ac-body code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 31 Review · Bug Fix</div>
+  <h1>#79 — My Tasks画面に未割当のタスクが<br>表示されている</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 31</span>
+    <span class="badge badge-issue">#79</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-phone">
+          <div class="mock-phone-header">My Tasks</div>
+          <div class="mock-section">
+            <div class="mock-section-label">これからの家事</div>
+            <div class="mock-task-card">
+              <div class="mock-task-dot dot-mine"></div>
+              <span>風呂掃除</span>
+              <span class="badge-mine">自分</span>
+            </div>
+            <div class="mock-task-card bad-card">
+              <div class="mock-task-dot dot-unassigned"></div>
+              <span>洗濯</span>
+              <span class="badge-unassigned">未割当</span>
+            </div>
+            <div class="mock-task-card bad-card">
+              <div class="mock-task-dot dot-unassigned"></div>
+              <span>買い物</span>
+              <span class="badge-unassigned">未割当</span>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:10px;font-size:12px;color:#b91c1c;">担当者なし（未割当）のタスクも表示されてしまっている</p>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-phone">
+          <div class="mock-phone-header">My Tasks</div>
+          <div class="mock-section">
+            <div class="mock-section-label">これからの家事</div>
+            <div class="mock-task-card">
+              <div class="mock-task-dot dot-mine"></div>
+              <span>風呂掃除</span>
+              <span class="badge-mine">自分</span>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:10px;font-size:12px;color:#166534;">自分が担当するタスクのみ表示される</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">スコープクリープ実装とテストの期待値ミスマッチが重なった</span>
+      </div>
+      <div class="cause-body">
+        <div class="cause-row">
+          <span class="cause-num">1</span>
+          <span class="cause-row-text"><strong>コードレベルの根本原因</strong>: Sprint 29実装時、DEVが「未割当タスクは親切のため表示しておく」と自己判断し <code>task.assigneeUserId != null &&</code> という前置き条件を追加した。ACには「<code>assigneeUserId == currentUserId</code> のもののみ」と明示されていたにも関わらず、スコープを広げる方向に逸脱した。</span>
+        </div>
+        <div class="cause-row">
+          <span class="cause-num">2</span>
+          <span class="cause-row-text"><strong>なぜレビューを通過したか</strong>: テスト <code>my_tasks_notifier_test.dart</code> の期待値が「未割当(id=5)が future に含まれる」を <em>正として</em> 検証していた（<code>containsAll([1, 5])</code>）。ACに反する動作をテストが正として通過させており、DEV・reviewer・SM誰もIssue文言とテスト期待値の乖離に気づかなかった。</span>
+        </div>
+        <div class="cause-row">
+          <span class="cause-num">3</span>
+          <span class="cause-row-text"><strong>再発防止策</strong>: Sprint 30以降、Sprint Review HTML生成時にACとコードの対応を明示する工程が導入済み。ACを1つずつ拾い対応するdiff・解説を貼ることで、AC違反のコードは「対応diffが存在しない」「テストがAC文言と乖離している」ことで露見する。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/tasks/presentation/my_tasks_notifier.dart</span>
+        <span class="diff-stat">+2 / -2</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">40</span><span class="line-prefix"> </span><span>    for (final task in tasks) {</span></div>
+        <div class="code-line line-del"><span class="line-num">41</span><span class="line-prefix">-</span><span>      // 自分以外の担当者のタスクはスキップ（未割当タスクは含める）</span></div>
+        <div class="code-line line-del"><span class="line-num">42</span><span class="line-prefix">-</span><span>      if (task.assigneeUserId != null &amp;&amp; task.assigneeUserId != currentUserId) {</span></div>
+        <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>      // AC3: assigneeUserId が currentUserId と一致しないタスク（他人・未割当）はスキップ</span></div>
+        <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>      if (task.assigneeUserId != currentUserId) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">43</span><span class="line-prefix"> </span><span>        continue;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">44</span><span class="line-prefix"> </span><span>      }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span><code>task.assigneeUserId != null &amp;&amp;</code> の前置きを削除することで、null（未割当）の場合も <code>!=currentUserId</code> として評価されてスキップされる。<code>null != 10</code> は Dart では <code>true</code>。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>test/features/tasks/presentation/my_tasks_notifier_test.dart</span>
+        <span class="diff-stat">+49 / -10</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">83</span><span class="line-prefix"> </span><span>  group('MyTasksNotifier 担当者フィルタ', () {</span></div>
+        <div class="code-line line-add"><span class="line-num">84</span><span class="line-prefix">+</span><span>    // AC1: assigneeUserId が currentUserId と一致し、targetDate が今日以降のタスクのみ futureTasks に表示する</span></div>
+        <div class="code-line line-add"><span class="line-num">85</span><span class="line-prefix">+</span><span>    // AC2: assigneeUserId が currentUserId と一致し、targetDate が今日より前のタスクのみ pastTasks に表示する</span></div>
+        <div class="code-line line-add"><span class="line-num">86</span><span class="line-prefix">+</span><span>    // AC3: assigneeUserId が currentUserId と一致しないタスク（他人・未割当）は past/future いずれにも表示しない</span></div>
+        <div class="code-line line-ctx"><span class="line-num">87</span><span class="line-prefix"> </span><span>    test('自分以外の assigneeUserId のタスクは past/future に含まれない', () async {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>      ...</span></div>
+        <div class="code-line line-del"><span class="line-num">116</span><span class="line-prefix">-</span><span>      // 自分（id=1）と未割当（id=5）のみ future に含まれる</span></div>
+        <div class="code-line line-del"><span class="line-num">117</span><span class="line-prefix">-</span><span>      expect(state.futureTasks, hasLength(2));</span></div>
+        <div class="code-line line-del"><span class="line-num">118</span><span class="line-prefix">-</span><span>      expect(state.futureTasks.map((t) =&gt; t.houseworkTaskId), containsAll([1, 5]));</span></div>
+        <div class="code-line line-add"><span class="line-num">116</span><span class="line-prefix">+</span><span>      // AC1: 自分（id=1）のみ future に含まれる（未割当id=5は含まれない）</span></div>
+        <div class="code-line line-add"><span class="line-num">117</span><span class="line-prefix">+</span><span>      expect(state.futureTasks, hasLength(1));</span></div>
+        <div class="code-line line-add"><span class="line-num">118</span><span class="line-prefix">+</span><span>      expect(state.futureTasks.first.houseworkTaskId, 1);</span></div>
+        <div class="code-line line-add"><span class="line-num">119</span><span class="line-prefix">+</span><span>      // 他人（id=2）は含まれない</span></div>
+        <div class="code-line line-add"><span class="line-num">120</span><span class="line-prefix">+</span><span>      expect(state.futureTasks.any((t) =&gt; t.houseworkTaskId == 2), isFalse);</span></div>
+        <div class="code-line line-add"><span class="line-num">121</span><span class="line-prefix">+</span><span>      // AC3: 未割当（id=5）は含まれない</span></div>
+        <div class="code-line line-add"><span class="line-num">122</span><span class="line-prefix">+</span><span>      expect(state.futureTasks.any((t) =&gt; t.houseworkTaskId == 5), isFalse);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>      ...</span></div>
+        <div class="code-line line-add"><span class="line-num">131</span><span class="line-prefix">+</span><span>    // AC3 明示的検証: 未割当タスクが past/future いずれにも含まれないこと</span></div>
+        <div class="code-line line-add"><span class="line-num">132</span><span class="line-prefix">+</span><span>    test('未割当タスク（assigneeUserId=null）は past にも future にも含まれない', () async {</span></div>
+        <div class="code-line line-add"><span class="line-num">...</span><span class="line-prefix">+</span><span>      // 未割当タスクは future に含まれない</span></div>
+        <div class="code-line line-add"><span class="line-num">...</span><span class="line-prefix">+</span><span>      expect(state.futureTasks.any((t) =&gt; t.houseworkTaskId == 5), isFalse);</span></div>
+        <div class="code-line line-add"><span class="line-num">...</span><span class="line-prefix">+</span><span>      // 未割当タスクは past にも含まれない</span></div>
+        <div class="code-line line-add"><span class="line-num">...</span><span class="line-prefix">+</span><span>      expect(state.pastTasks.any((t) =&gt; t.houseworkTaskId == 6), isFalse);</span></div>
+        <div class="code-line line-add"><span class="line-num">...</span><span class="line-prefix">+</span><span>    });</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>ACコメントをgroupブロック先頭に追記し、テストの期待値がACと対応していることを明示。未割当タスクが past/future いずれにも含まれないことを検証する専用テストケースを新規追加した。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">My Tasks画面に表示されるタスクはすべてログインユーザーが担当（assigneeUserId == currentUserId）のものだけである</div>
+      </div>
+      <div class="ac-body"><code>task.assigneeUserId != null &amp;&amp;</code> を削除し <code>task.assigneeUserId != currentUserId</code> のみで判定することで、自分以外のタスクを一律除外。テスト（87行目）で id=1（自分）のみ future に含まれることを確認。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">未割当のタスク（assigneeUserId == null）は表示されない</div>
+      </div>
+      <div class="ac-body"><code>null != currentUserId</code> は Dart で <code>true</code> と評価されるため、未割当タスクは <code>continue</code> でスキップされる。テスト（122行目）で id=5（未割当）が futureTasks に含まれないことを明示的に検証。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">テストで「assigneeUserId が null のタスクが表示されないこと」がNotifierテストで検証されている</div>
+      </div>
+      <div class="ac-body">「未割当タスク（assigneeUserId=null）は past にも future にも含まれない」テストケース（132行目）を新規追加。id=5（today・未割当）が futureTasks に、id=6（past・未割当）が pastTasks にも含まれないことを2行で明示的に検証している。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">計画フェーズでDEVが根本原因・レビュー通過理由・再発防止策を分析しIssueのBodyに記録している</div>
+      </div>
+      <div class="ac-body">GitHub Issue #79 の「原因」「改修方針」セクションにDEVの分析（3点）を記録済み。りょこさんの承認後にIssue Bodyを更新して反映した。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>My Tasks画面を開いたとき、担当者なしのタスクが表示されていないこと</strong>
+          <span>世帯の家事一覧に「担当者なし」の家事がある状態でMy Tasks画面を開き、そのタスクが「これからの家事」「過去の家事」いずれにも出ていないか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>自分が担当するタスクは引き続き正しく表示されていること</strong>
+          <span>自分（ログインユーザー）が担当者として割り当てられているタスクが「これからの家事」「過去の家事」に正しく表示されているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>他のメンバーが担当するタスクが表示されていないこと</strong>
+          <span>別のメンバーが担当する家事タスクがMy Tasks画面に混在していないか確認（複数メンバーがいる世帯で確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>自分のタスクが0件のとき画面が正常に表示されること</strong>
+          <span>自分担当のタスクが1件もない状態でMy Tasks画面を開き、エラーやクラッシュが発生しないことを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>今回の根本原因は「ACを満たさない実装をテストが正として通過させてしまった」こと。同種の問題を防ぐためにテストのACコメントと専用テストケースを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">my_tasks_notifier_test.dart（83〜86行目）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">groupブロック先頭にAC1〜AC3の原文をコメントとして追記。テスト期待値とACの対応を一目で確認できるようにした</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">my_tasks_notifier_test.dart（132〜166行目）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「未割当タスク（assigneeUserId=null）は past にも future にも含まれない」専用テストを追加。今後このフィルタロジックを変更する際にAC3違反を即座に検知できる</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

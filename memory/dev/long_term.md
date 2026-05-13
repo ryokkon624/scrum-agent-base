@@ -139,6 +139,20 @@
 
 ---
 
+## Sprint 30 サマリー（2026-05-13完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #81 | [mobile] ログイン済みユーザー情報をRiverpodで保持し、各画面の冗長なAPI呼び出しを解消する | `AuthAuthenticated` に `AuthUser user` を追加、`AuthUser` を `core/models/` に移動。`AuthNotifier.build()` で token 復元時に `/api/users/me/profile` を呼んで `AuthAuthenticated(user)` を構築（失敗時は `AuthUnauthenticated`）。`saveTokens(user: ...)` シグネチャ化。`HomeNotifier` / `MyTasksNotifier` の `loadCurrentUserId()` 呼び出しを authState 参照に置換し、Repository から `loadCurrentUserId` を削除。テスト（auth_notifier_test / login_notifier_test / signup_notifier_test / home_notifier_test / my_tasks_notifier_test）を authState スタブに差し替え、`@GenerateMocks` 再生成 |
+
+### Sprint 30 で習得したこと
+- ログインユーザー情報のような「全画面共通の認証コンテキスト」は `AuthAuthenticated(user)` のように auth state 自体に持たせるのが最小コスト。各 Notifier に `loadCurrentUserId` を持たせるのは早期の重複の兆候
+- `AuthUser` のような共有ドメインモデルは `features/auth/data/models/` ではなく `lib/core/models/` 配下に置く（core→features 依存を作らないため）
+- `AuthNotifier.build()` で `/me` を呼ぶ場合、ネットワーク失敗時は `AuthUnauthenticated` にフォールバックし、router 側で `/login` リダイレクトに任せる方が UX が破綻しない
+- Riverpod テストで authState を差し替える際は `_FakeAuthNotifier extends AuthNotifier` を作って `build()` だけ override すれば十分（saveTokens 等は呼ばれないため）
+
+---
+
 ## Sprint 29 サマリー（2026-05-12完了）
 
 | Issue | 内容 | 成果 |
