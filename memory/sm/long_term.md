@@ -39,6 +39,7 @@
 | Sprint 29  | Sprint 28 Review指摘対応 — My Tasks担当者フィルタバグ・デザインweb SP版合わせ・GoRoute定数化漏れを完了させる | ⚠️ 部分達成（#78全AC達成 / #76 AC1未達成・未割当タスク表示 / #77 カードレイアウト未対応）Sprint Review指摘2件（①未割当タスク表示→#79 / ②カードレイアウト→#80） | DEVが「未割当タスクは含める」と自己判断してAC1に反する実装をした（ACに明記されているのに）→ACが曖昧な場合はりょこさんに確認してから実装する原則を再確認。bugラベルIssueの計画フェーズでの原因・改修方針記録フローを初適用（GitHub Issue Bodyに記録）。convention-reviewerがapp_es.arb未作成・provider定義位置・HouseworkTaskDto配置・テストスタブ値不一致の4件を検出・全対応済み。reviewer Discordタイムアウト2回発生→即再起動で解決。reviewer Discord投稿が18スプリント連続成功。 |
 | Sprint 30  | ログイン済みユーザー情報をRiverpodのauthStateで一元管理し、home・My Tasks画面の冗長なAPI呼び出しを排除することでモバイルアプリのパフォーマンスを向上させる | ✅ 全AC達成（#81: 4AC / 221件全グリーン）Sprint Reviewりょこさん指摘なし | convention-reviewerがauth_notifier.dartのDio直接参照（アーキテクチャ違反）を検出・AuthRepository経由に修正済み。DEVの計画フェーズでAuthUserの移動先（core/auth/ → core/models/）をりょこさんが修正（core/models/が正しい）。Sprint Review HTMLのDEV生成（⑥b）を今スプリントから初適用→正常動作確認。mobile-conventionsに「Notifier内でDioを直接使用しない」ルールを追記。reviewer Discord投稿が19スプリント連続成功。 |
 | Sprint 31  | Sprint 29 Review指摘の残課題2件（My Tasksフィルタバグ・カードレイアウト）を解消し、モバイルMy Tasks画面を完成品質に引き上げる | ⚠️ 部分達成（#79全AC達成 / #80 AC2未達成・カード幅コンテンツ依存）Sprint Review指摘1件（#80 AC2未達成→#82起票） | #79のAC4原因分析（①コードスコープクリープ ②テスト期待値のAC違反 ③再発防止策）をOpus 4.7で重点実施・GitHub Issue Body更新。3観点レビュー一発指摘なし（20スプリント連続）。#80でswipeable_task_card.dartのmargin削除後にwidth: double.infinityを設定しなかったためカード幅がコンテンツ依存のままになりSprint Reviewで指摘→mobile-conventionsに全幅表示パターン・developer-workflowにUI視覚的AC確認チェックを追記。 |
+| Sprint 32  | My Tasks画面の家事カードを画面幅いっぱいに正しく表示する | ✅ 全AC達成（#82: 2AC）Sprint Reviewりょこさん指摘なし | Sprint 31 Retroのチャレンジ（ウィジェットテストでカード幅チェック）をAC2として実装・達成。TDD（RED→GREEN）でカード幅の不一致を数値で確認してから修正。3観点レビュー一発「指摘なし」（21スプリント連続）。計画フェーズDEVが既存ブランチ継続にもかかわらず `fix/82-xxx` の新規ブランチ名をDiscordに誤記→実装フェーズDEVが自己修正・実害なし→scrum-master-workflowのDEV起動指示に既存ブランチ名の明示を追加。 |
 
 ---
 
@@ -123,6 +124,10 @@
 | Sprint 31  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回）で投稿成功（**20スプリント連続**）。定着確認                                                   | 継続監視                                                    |
 | Sprint 31  | mobile-conventionsに全幅表示ウィジェットパターンを追加             | ✅ section 3に「全幅表示が必要なウィジェット」サブセクションを追加。Sprint 31でカード幅がコンテンツ依存になったSprint Review指摘（#82）を受けて明文化 | mobile-conventions更新                                      |
 | Sprint 31  | developer-workflowにモバイルUI視覚的AC確認を追記                  | ✅ コミット前チェックリストに「モバイルのUIに関する視覚的AC（幅・配置）はシミュレーターまたはウィジェットテストで確認してからコミット」を追記。Sprint 31でカード全幅表示ACを目視未確認のまま達成と報告した反省 | developer-workflow更新                                      |
+| Sprint 32  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 32  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回）で投稿成功（**21スプリント連続**）。定着確認                                                   | 継続監視                                                    |
+| Sprint 32  | scrum-master-workflowのDEV起動指示に既存ブランチ名の明示を追加    | ✅ SendMessageのDEV指示に「既存ブランチ継続使用時はブランチ名を明示・新規ブランチを作成しないこと」の注記を追加。Sprint 32で計画フェーズDEVが誤ったブランチ名を誤記した実績を受けて明文化 | scrum-master-workflow②更新                                  |
+| Sprint 32  | ウィジェットテスト（tester.getSize()）でカード幅チェックをACとして組み込む（Sprint 31 Retroチャレンジ） | ✅ AC2として実装・達成。短タスク名（48.25px）vs 長タスク名（532.75px）の不一致をREDで確認してからGREEN。Sprint 31で提案した防止策が本番検証を通過 | 今後のモバイルUIの幅・配置系ACで継続適用                    |
 
 ---
 
@@ -195,4 +200,5 @@
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
 - reviewerのDiscord投稿継続監視（Sprint 13〜31で20スプリント連続成功。根本原因は未特定）
-- モバイルUIの視覚的AC（幅・配置）にウィジェットテストの幅チェックを組み込む（Sprint 31 Retroで提案。tester.getSize()でカード幅がコンテナ幅と一致することを検証）
+- Claudeモデルの最新バージョン確認（継続監視）
+- reviewerのDiscord投稿継続監視（21スプリント連続成功）

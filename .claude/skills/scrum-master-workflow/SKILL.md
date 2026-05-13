@@ -92,7 +92,8 @@ DEVへ: backlog/sprint_XX/sprint_backlog.md を読んで実装方針を整理し
    ※ TaskCreateは実装フェーズ（Sonnet再起動後）で行うため、計画フェーズでは不要です。
    ※ 以下のIssueはbugラベルです。計画フェーズで根本原因の調査・改修方針の整理を行い、
      承認を得た後に github-issues スキルを使ってGitHub IssueのBodyを更新してください：
-     - #N: [タイトル]  （bugラベルのIssueがない場合はこの行を省略）」
+     - #N: [タイトル]  （bugラベルのIssueがない場合はこの行を省略）
+   ※ 既存ブランチを継続使用する場合は、ブランチ名を明示してください（例：「ブランチは既存の `feature/XX-xxx` を継続使用してください。新規ブランチを作成しないこと」）。」
 ```
 
 > ⚠️ **計画フェーズでTaskCreateしない。TaskCreateは実装フェーズのDEVが行う。**

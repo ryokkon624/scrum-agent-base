@@ -139,6 +139,20 @@
 
 ---
 
+## Sprint 31 サマリー（2026-05-13完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #79 | [mobile] My Tasks画面に未割当のタスクが表示される | `MyTasksNotifier._load()` 42行目の `task.assigneeUserId != null &&` を削除し、`assigneeUserId == currentUserId` のみを past/future 振り分け対象に。Sprint 29でDEVが「親切のため未割当も表示」と自己判断したスコープクリープを是正。テスト期待値を `[1, 5]` → `[1]` に修正しACコメント追加。未割当(id=5)が past/future いずれにも含まれない検証を追加 |
+| #80 | [mobile] My Tasks画面のカードレイアウトをwebのSP版に合わせる | `PastTasksSection` / `FutureTasksSection` をセクションコンテナ化（`Container(borderRadius:12, border, color: surfaceCard, padding: md)`）、`SwipeableTaskCard` の margin を削除して外側で制御。BoxShadow は入れない方針（commit: 17a7268） |
+
+### Sprint 31 で習得したこと
+- AC違反の動作を既存テストが「正」として通過させていた場合、DEV・reviewer・SM誰も気づかない（#79のAC4分析で判明）。Sprint Review HTML生成時にACとコードを対応させる作業が再発防止の機能を果たす
+- セクションコンテナ化と「カードのmargin削除」だけでは `width: double.infinity` を別途指定しないとカード幅がタスク名長に依存してしまう（Sprint 31 Reviewで指摘 → #82 で対応）
+- `mobile-conventions.md` に「全幅表示が必要なウィジェット」セクションを追加し、`SizedBox(width: double.infinity)` / `Container(width: double.infinity)` / `Column(crossAxisAlignment: stretch)` の3パターンを明示
+
+---
+
 ## Sprint 30 サマリー（2026-05-13完了）
 
 | Issue | 内容 | 成果 |

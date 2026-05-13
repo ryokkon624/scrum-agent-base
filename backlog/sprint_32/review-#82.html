@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 32 Review — #82 My Tasks画面の家事カードが幅いっぱいに表示されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* モバイルUI モック */
+  .mobile-frame { background: #f1f5f9; border-radius: 8px; padding: 12px; font-size: 12px; }
+  .mobile-frame-title { font-size: 10px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .task-section-label { font-size: 10px; font-weight: 700; color: #6b7280; margin-bottom: 6px; }
+
+  /* バグあり: カードがコンテンツ幅に依存 */
+  .task-cards-bad { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .task-card-bad-short { background: #fff1f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #9f1239; white-space: nowrap; }
+  .task-card-bad-long { background: #fff1f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #9f1239; white-space: nowrap; }
+  .width-indicator-bad { display: flex; gap: 4px; align-items: center; margin-top: 4px; font-size: 10px; color: #b91c1c; }
+  .width-bar-short { height: 4px; background: #fca5a5; border-radius: 2px; width: 60px; }
+  .width-bar-long { height: 4px; background: #fca5a5; border-radius: 2px; width: 140px; }
+
+  /* 修正後: カードが全幅 */
+  .task-cards-good { display: flex; flex-direction: column; gap: 6px; }
+  .task-card-good { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #166534; width: 100%; }
+  .width-indicator-good { display: flex; gap: 4px; align-items: center; margin-top: 4px; font-size: 10px; color: #166534; }
+  .width-bar-full { height: 4px; background: #86efac; border-radius: 2px; width: 100%; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .cause-body code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  .history-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .history-item { display: flex; align-items: flex-start; gap: 10px; background: #fef9c3; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #78350f; }
+  .history-sprint { font-weight: 700; flex-shrink: 0; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+  .ac-body code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 32 Review · Bug Fix</div>
+  <h1>#82 — My Tasks画面の家事カードが<br>幅いっぱいに表示されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 32</span>
+    <span class="badge badge-issue">#82</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mobile-frame">
+          <div class="mobile-frame-title">My Tasks</div>
+          <div class="task-section-label">今後のタスク</div>
+          <div class="task-cards-bad">
+            <div class="task-card-bad-short">皿洗い</div>
+            <div class="task-card-bad-long">家の中の掃除と整理整頓をまとめて行う</div>
+          </div>
+          <div style="margin-top:8px;">
+            <div class="width-indicator-bad"><div class="width-bar-short"></div><span>短いカード</span></div>
+            <div class="width-indicator-bad" style="margin-top:3px;"><div class="width-bar-long"></div><span>長いカード</span></div>
+            <div style="margin-top:4px;font-size:10px;color:#b91c1c;font-weight:600;">カード幅がタスク名の長さに依存</div>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mobile-frame">
+          <div class="mobile-frame-title">My Tasks</div>
+          <div class="task-section-label">今後のタスク</div>
+          <div class="task-cards-good">
+            <div class="task-card-good">皿洗い</div>
+            <div class="task-card-good">家の中の掃除と整理整頓をまとめて行う</div>
+          </div>
+          <div style="margin-top:8px;">
+            <div class="width-indicator-good"><div class="width-bar-full"></div></div>
+            <div class="width-indicator-good" style="margin-top:3px;"><div class="width-bar-full"></div></div>
+            <div style="margin-top:4px;font-size:10px;color:#166534;font-weight:600;">どちらも親コンテナ幅いっぱいに表示</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">Dismissible の child Container に width 指定が漏れていた</span>
+      </div>
+      <div class="cause-body">
+        <p>
+          <code>swipeable_task_card.dart</code> の <code>Dismissible</code> の child である <code>Container</code> に
+          <code>width</code> の指定がなかったため、Flutter のデフォルト動作でコンテンツ（タスク名テキスト）の
+          intrinsic な幅になっていた。短いタスク名なら小さなカード、長いタスク名なら大きなカードという状態になっていた。
+        </p>
+        <p>
+          Sprint 31（#80）でセクションコンテナ化と <code>SwipeableTaskCard</code> の <code>margin</code> 削除を行ったが、
+          その際に <code>width: double.infinity</code> の設定が漏れたことが直接原因。
+        </p>
+        <ul class="history-list">
+          <li class="history-item">
+            <span class="history-sprint">Sprint 31 #80</span>
+            <span>カードレイアウトをweb SP版に合わせる対応で <code>margin</code> を削除。このとき <code>width: double.infinity</code> を追加し忘れた</span>
+          </li>
+          <li class="history-item">
+            <span class="history-sprint">Sprint 32 #82</span>
+            <span>Sprint 31 Review 指摘を受けて修正。<code>Container</code> に <code>width: double.infinity</code> を1行追加</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/tasks/presentation/widgets/swipeable_task_card.dart</span>
+        <span class="diff-stat">+1 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">74</span><span class="line-prefix"> </span><span>        return true;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">75</span><span class="line-prefix"> </span><span>      },</span></div>
+        <div class="code-line line-ctx"><span class="line-num">76</span><span class="line-prefix"> </span><span>      child: Container(</span></div>
+        <div class="code-line line-add"><span class="line-num">77</span><span class="line-prefix">+</span><span>        width: double.infinity,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">78</span><span class="line-prefix"> </span><span>        decoration: BoxDecoration(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">79</span><span class="line-prefix"> </span><span>          color: cardBg,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">80</span><span class="line-prefix"> </span><span>          border: Border.all(color: cardBorder),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">81</span><span class="line-prefix"> </span><span>          borderRadius: BorderRadius.circular(8),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">82</span><span class="line-prefix"> </span><span>        ),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>Flutter の <code>Container</code> はデフォルトでコンテンツサイズになる。<code>width: double.infinity</code> を指定することで、
+        親ウィジェット（セクションコンテナ）が提供する最大幅いっぱいに広がる。
+        セクション側（<code>past_tasks_section.dart</code> / <code>future_tasks_section.dart</code>）の変更は不要。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">家事カードが画面横幅いっぱいに表示され、カード幅がコンテンツ（タスク名）の長さに依存しない</div>
+      </div>
+      <div class="ac-body">
+        <code>Container</code> に <code>width: double.infinity</code> を追加することで対応。
+        短いタスク名（「皿洗い」）も長いタスク名も、親コンテナの幅と同じ幅で表示される。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">ウィジェットテストで SwipeableTaskCard の幅がコンテナ幅と一致することを検証している</div>
+      </div>
+      <div class="ac-body">
+        <code>my_tasks_page_test.dart</code> に「タスク名の長短によらずSwipeableTaskCardの幅が等しい（親コンテナ全幅）」テストを追加。
+        短いタスク名（<code>'A'</code>）と長いタスク名の2枚カードを描画し、<code>tester.getSize()</code> で両者の幅が等しいことを assertion している。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>My Tasks画面を開き、タスクが複数ある状態でカード幅が揃っていること</strong>
+          <span>短いタスク名のカードと長いタスク名のカードが同じ幅（画面横幅いっぱい）で表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「今後のタスク」「過去のタスク」両セクションでカード幅が揃っていること</strong>
+          <span>past（rose系）・future（emerald系 / 通常）どの variant でも全幅表示になっていることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>左右スワイプで完了・スキップ操作が引き続き正常に動作すること</strong>
+          <span>width 指定を追加しても Dismissible のスワイプ動作に影響がないことを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>
+        根本原因は「Flutter の <code>Container</code> がデフォルトでコンテンツサイズになる」という仕様の見落とし。
+        同種のレイアウトバグを防ぐため、ウィジェットテストと conventions への記録を追加した。
+      </p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/tasks/presentation/my_tasks_page_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">
+            短いタスク名と長いタスク名の2枚カードを描画し、<code>tester.getSize()</code> で幅が等しいことを確認するウィジェットテストを追加。幅が0より大きいこと（レイアウト崩れ検知）もあわせて assertion している。
+          </div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">mobile-conventions.md「全幅表示が必要なウィジェット」セクション追加</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">
+            <code>SizedBox(width: double.infinity)</code> / <code>Container(width: double.infinity)</code> /
+            <code>Column(crossAxisAlignment: CrossAxisAlignment.stretch)</code> の3パターンと、Sprint 31 の経緯を背景として記録。次回以降の実装で参照できるようにした。
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
