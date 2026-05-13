@@ -139,6 +139,21 @@
 
 ---
 
+## Sprint 28 サマリー（2026-05-11完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #75 | 画面遷移時に指定するpathを定数に置き換えたい | `app_router.dart` 末尾に `AppRoutes` クラス追加。`context.go('/xxx')` を全て `AppRoutes.xxx` に置換 |
+| #67 | [mobile] My Tasks画面を実装する | `features/tasks/` 配下に Repository / Notifier / State / Page / Widget一式新規。`Dismissible` を使ったスワイプUIで完了・スキップ・bulk-status を実装。AC10カバレッジ95%以上 |
+
+### Sprint 28 で習得したこと（モバイル）
+- Flutter標準の `Dismissible` でスワイプUIを実装：`dismissThresholds` で30%しきい値、`background`/`secondaryBackground` で方向別の色・アイコンを表示、`confirmDismiss` でAPI呼び出し
+- `AsyncNotifier.build()` で `ref.watch(householdNotifierProvider.future)` を await することで世帯切り替えに自動追従（AutoDispose + invalidate不要）
+- `AppRoutes` 定数化は `context.go()` 引数の置換から先行すると影響範囲が把握しやすい。`GoRoute(path: ...)` 側の置換は別Issueで分離した方が安全（→ Sprint 29 #78 で対応）
+- モバイルの My Tasks では `assigneeUserId == currentUserId` フィルタを忘れがち（web SP版を参照しつつもバックエンドが全世帯員分を返す前提を見落とす）→ Sprint 28 Review で指摘（#76）
+
+---
+
 ## Sprint 24 サマリー（2026-05-06完了）
 
 | Issue | 内容 | 成果 |

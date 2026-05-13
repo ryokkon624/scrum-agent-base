@@ -1,33 +1,17 @@
 # PO 短期記憶
 
-**スプリント**: Sprint 14 Planning準備中  
-**最終更新**: 2026-04-30
+**スプリント**: Sprint 30 Planning準備中  
+**最終更新**: 2026-05-12
 
 ---
 
 ## 今スプリントの文脈
 
-- Sprint 05 Planningに向けてバックログリファインメントを実施（2026-04-20）
-- 対象Issue：
-  - **#12**「買い物アイテムを削除できるようにしたい」→ User Story・AC記入、Body更新完了
-  - **#10**「家事テンプレート画面のi18n未対応」→ 「本来どうなるべきか」セクション追加完了
-- りょこさんがGitHub ProjectsのReady列をReady・Sprint列に「5」を入力済み
-- 2026-04-22 Refinement実施：#15・#16のBody整備完了、りょこさんがReady更新済み
-- bugラベルのIssueにはユーザーストーリー・AC に加え「発生事象・原因・改修方針」セクションが必要（Skills v1.5.0に反映済み）
-- 2026-04-23 Refinement実施：#17・#18・#19のBody整備完了（りょこさんがReady・Sprint列更新予定）
-  - #17: ブランチprefixは `docs/`（docsラベル相当の作業漏れ修正）
-  - #18: AC1をバッチ更新API追加に限定（Promise.allによる並列化は不可）
-- 2026-04-23 Refinement実施：#20・#22・#23・#24のBody整備完了（りょこさんがReady・Sprint列更新予定）
-  - #20: bugラベル・深刻度高のセキュリティ脆弱性。ブランチ `fix/20-bulk-update-status-auth`
-  - #22: bugラベル・docsの作業漏れ。ブランチ `docs/22-api-integration-bulk-status`
-  - #23: SP版ヘッダーコンパクト化。ブランチ `feature/23-sp-header-compact`
-  - #24: ボタン配置統一。概要の誤記（家事テンプレートカードのボタン：左→右）も修正。ブランチ `feature/24-button-layout-unify`
-- 2026-04-28 Refinement実施：#3・#31のBody整備完了、Ready=Ready・Project設定完了
-  - #3: featureラベル。おうち未所属ガード＆導線整理。SP=5（3→5に変更）、Sprint=10。ブランチ `feature/3-household-guard-guide`
-  - #31: refactorラベル。買い物アイテム更新APIのURL変更。SP=2、Sprint=10。ブランチ `refactor/31-shopping-item-put-url`
-- 2026-04-30 Refinement実施：#45のBody整備・Projectsへの追加完了、#44・#45をSprint14に設定
-  - #45: bugラベル。購入済みアイテム左スワイプ時の背景アイコン削除。SP=1、Sprint=14。ブランチ `fix/45-remove-swipe-bg-icon`
-  - #44: スケルトンスクリーン導入。SP=3、Sprint=14（Ready済みを割り当て）
+- 2026-05-12 Sprint 30 Planning前 Refinement実施：#79・#80のBody整備完了
+  - **#79**（bugラベル）: My Tasks画面に未割当タスクが表示される。AC4を追加（DEVが根本原因・AC未達通過理由・再発防止策を計画フェーズで分析・記録すること）。SP=2、Ready=Ready。item_id: PVTI_lAHODoPAds4BIV4czgsgH9I
+  - **#80**（bugラベル）: My Tasks画面のカードレイアウトをwebのSP版に合わせる。AC2の実装詳細（`double.infinity`）を除去し意図ベースの記述に変更。SP=2、Ready=Ready。item_id: PVTI_lAHODoPAds4BIV4czgsgH9k
+  - ブランチ: `feature/67-mobile-my-tasks`（既存ブランチへのコミット）
+- #79の重要な設計判断：再発防止策はPO/SMが先行して規定するのではなく、DEVが計画フェーズで分析・提案する（AC4として要件化）
 
 ---
 
