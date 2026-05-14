@@ -215,6 +215,22 @@ Column(
 | Page（ウィジェット） | **必須** | 主要な表示確認・ユーザー操作のゴールデンパス |
 | 自動生成ファイル（`.g.dart` / `.mocks.dart`） | **不要** | 除外対象 |
 
+### Repository impl テスト時のモック構造確認（重要）
+
+Repository のモックを作成する前に、バックエンドの実際の API レスポンス構造を必ず確認すること。
+
+- **ラッパー形式 `{"items": [...]}` か、フラットなリスト `[...]` かを確認する**
+- バックエンドの `@RestApi` / Controller の戻り値型・レスポンスクラスを `hw-hub-backend` で確認する
+- モックを誤った構造で作成すると、テストが通過してもランタイムで `ClassCastException` が発生する（Sprint 33 で発生）
+
+```dart
+// NG: フラットリストをレスポンスとしてモック
+when(mockDio.get(...)).thenAnswer((_) async => Response(data: [{"id": 1, ...}], ...));
+
+// OK: ラッパー形式を確認してモック
+when(mockDio.get(...)).thenAnswer((_) async => Response(data: {"items": [{"id": 1, ...}]}, ...));
+```
+
 ### ウィジェットテストのヘルパー
 
 `test/helpers/widget_test_helpers.dart` に共通ヘルパーがある。

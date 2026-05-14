@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 33 Review — #85 [mobile] 買い物リスト画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #ecfdf5; color: #065f46; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Story box */
+  .story-box { background: #f0fdf4; border-left: 3px solid #22c55e; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .story-box .label { font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .story-box p { color: #14532d; font-size: 13px; line-height: 1.8; }
+
+  /* Architecture / Feature overview */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+  .dot-blue { background: #3b82f6; }
+
+  /* Feature structure */
+  .feature-structure { background: #1e1e2e; border-radius: 8px; padding: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #cdd6f4; line-height: 1.8; margin-bottom: 16px; overflow-x: auto; }
+  .dir-green { color: #a6e3a1; }
+  .dir-blue { color: #89dceb; }
+  .dir-yellow { color: #f9e2af; }
+  .dir-purple { color: #cba6f7; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* UI mockup - tab bar */
+  .mockup-container { background: white; border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .mockup-header { background: #f9fafb; padding: 10px 16px; font-size: 11px; font-weight: 700; color: #6b7280; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid #e5e5e5; }
+  .phone-frame { width: 300px; background: #f8f7f5; border-radius: 8px; overflow: hidden; margin: 16px auto; border: 1px solid #e5e5e5; }
+  .phone-frame.wide { width: 100%; margin: 0; }
+  .phone-appbar { background: #166534; color: white; padding: 10px 16px; font-size: 14px; font-weight: 600; }
+  .phone-body { padding: 0; }
+
+  /* Tab bar UI */
+  .tab-bar { display: flex; background: white; border-bottom: 1px solid #e5e5e5; }
+  .tab-item { flex: 1; text-align: center; padding: 10px 4px; font-size: 12px; color: #9ca3af; cursor: pointer; border-bottom: 2px solid transparent; }
+  .tab-item.active { color: #166534; border-bottom-color: #166534; font-weight: 600; }
+  .tab-badge { display: inline-block; background: #e5e7eb; color: #9ca3af; border-radius: 10px; font-size: 10px; font-weight: 700; padding: 0 5px; margin-left: 3px; }
+  .tab-badge.active { background: #166534; color: white; }
+
+  /* Add button */
+  .add-btn { margin: 8px 12px; background: #166534; color: white; text-align: center; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; background: #f9fafb; border-bottom: 1px solid #e5e5e5; }
+  .filter-chip { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; border: 1px solid #e5e5e5; background: white; color: #6b7280; white-space: nowrap; }
+  .filter-chip.active-all { background: rgba(22,101,52,0.1); border-color: #166534; color: #166534; font-weight: 600; }
+  .filter-chip.active-super { background: rgba(34,197,94,0.1); border-color: #22c55e; color: #166534; font-weight: 600; }
+
+  /* Shopping card */
+  .shopping-card { display: flex; background: white; border-bottom: 1px solid #f0f0f0; align-items: stretch; }
+  .card-color-bar { width: 4px; flex-shrink: 0; }
+  .bar-super { background: #22c55e; }
+  .bar-drug { background: #f59e0b; }
+  .bar-online { background: #3b82f6; }
+  .bar-none { background: #e5e5e5; }
+  .card-content { flex: 1; padding: 10px 12px; }
+  .card-name { font-size: 13px; font-weight: 600; color: #111827; }
+  .card-memo { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+  .card-icons { padding: 10px 8px; display: flex; align-items: center; gap: 4px; }
+  .icon-star { color: #fbbf24; font-size: 16px; }
+  .icon-muted { color: #9ca3af; font-size: 16px; }
+
+  /* Swipe demo */
+  .swipe-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .swipe-card-wrapper { border-radius: 8px; overflow: hidden; }
+  .swipe-card-label { font-size: 11px; font-weight: 700; color: #6b7280; text-align: center; padding: 6px; background: #f9fafb; border: 1px solid #e5e5e5; border-bottom: none; }
+  .swipe-bg-right { background: #10b981; padding: 10px 16px; color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .swipe-bg-left-rose { background: #f43f5e; padding: 10px 16px; color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .swipe-bg-left-slate { background: #64748b; padding: 10px 16px; color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+
+  /* Purchased tab */
+  .date-group-header { padding: 8px 12px 2px; font-size: 11px; font-weight: 700; color: #9ca3af; }
+  .purchased-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #f0f0f0; background: white; }
+  .purchased-name { font-size: 13px; color: #374151; }
+  .store-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+  .store-badge-super { background: rgba(34,197,94,0.1); color: #166534; }
+  .store-badge-drug { background: rgba(245,158,11,0.1); color: #92400e; }
+
+  /* Dialog mockup */
+  .dialog-overlay { background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; margin-top: 8px; }
+  .dialog-box { background: white; border-radius: 12px; padding: 20px; }
+  .dialog-title { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+  .dialog-message { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .dialog-btn-cancel { font-size: 13px; color: #6b7280; padding: 6px 12px; }
+  .dialog-btn-confirm { font-size: 13px; font-weight: 600; color: #166534; padding: 6px 12px; }
+  .dialog-btn-delete { font-size: 13px; font-weight: 600; color: #ef4444; padding: 6px 12px; }
+
+  /* Coverage badge */
+  .coverage-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; text-align: center; }
+  .coverage-num { font-size: 48px; font-weight: 700; color: #22c55e; line-height: 1; }
+  .coverage-label { font-size: 13px; color: #6b7280; margin-top: 6px; }
+  .coverage-target { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-test { font-size: 11px; font-weight: 600; background: #fdf4ff; color: #7e22ce; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 33 Review</div>
+  <h1>#85 — [mobile] 買い物リスト画面を実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 33</span>
+    <span class="badge badge-issue">#85</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- User Story & Overview -->
+  <section>
+    <h2>なぜこの機能が必要だったか</h2>
+    <div class="story-box">
+      <div class="label">ユーザーストーリー</div>
+      <p>
+        HwHubモバイルアプリのユーザーとして、<br>
+        買い物アイテムを<strong>タブ切り替えとスワイプ操作</strong>で管理したい。<br>
+        買い物中に「かごへ入れる」「購入済みにする」を素早くこなせるようにするため。
+      </p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>買い物リストルートがプレースホルダー（「買い物リスト」テキスト表示のみ）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>タブ・スワイプ・フィルタ等の機能なし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>APIとの接続なし</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>未購入 / かご / 購入済みの3タブで買い物フローを管理</div>
+        <div class="flow-item"><span class="dot dot-green"></span>スワイプ操作でかごへ追加・購入済みに・削除が完結</div>
+        <div class="flow-item"><span class="dot dot-green"></span>世帯切り替えに自動追従、APIとの完全接続</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="mockup-container">
+        <div class="mockup-header">実装したUIのイメージ（未購入タブ）</div>
+        <div class="phone-frame wide">
+          <div class="phone-appbar">買い物リスト</div>
+          <div class="phone-body">
+            <div class="add-btn">+ アイテムを追加</div>
+            <div class="tab-bar">
+              <div class="tab-item active">未購入 <span class="tab-badge active">3</span></div>
+              <div class="tab-item">かご <span class="tab-badge">1</span></div>
+              <div class="tab-item">購入済み <span class="tab-badge">5</span></div>
+            </div>
+            <div class="filter-bar">
+              <div class="filter-chip active-all">すべて</div>
+              <div class="filter-chip">スーパー</div>
+              <div class="filter-chip">ドラッグストア</div>
+              <div class="filter-chip">オンライン</div>
+            </div>
+            <div class="shopping-card">
+              <div class="card-color-bar bar-super"></div>
+              <div class="card-content">
+                <div class="card-name">牛乳</div>
+                <div class="card-memo">低脂肪タイプ</div>
+              </div>
+              <div class="card-icons"><span class="icon-star">★</span></div>
+            </div>
+            <div class="shopping-card">
+              <div class="card-color-bar bar-drug"></div>
+              <div class="card-content">
+                <div class="card-name">ティッシュ</div>
+              </div>
+              <div class="card-icons"><span class="icon-muted">☆</span><span class="icon-muted" style="font-size:13px;">📷</span></div>
+            </div>
+            <div class="shopping-card">
+              <div class="card-color-bar bar-online"></div>
+              <div class="card-content">
+                <div class="card-name">洗剤</div>
+                <div class="card-memo">詰め替え用</div>
+              </div>
+              <div class="card-icons"><span class="icon-muted">☆</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">3タブ（未購入 / かご / 購入済み）を表示する。デフォルトは「未購入」タブ。各タブヘッダーに件数バッジを表示する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>ShoppingTabBar</code> ウィジェットを新規作成。<code>ShoppingListState.activeTab</code>（<code>ShoppingTab</code> enum）で現在のタブを管理し、<code>ShoppingListNotifier.setTab()</code> で切り替える。件数バッジは <code>state.unpurchasedItems.length</code> 等の派生 getter から取得する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/shopping_tab_bar.dart</span>
+            <span class="diff-stat">+123 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>class ShoppingTabBar extends StatelessWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>  const ShoppingTabBar({</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>    required this.activeTab,</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>    required this.unpurchasedCount,</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>    required this.basketCount,</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>    required this.purchasedCount,</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>    required this.onTabChanged,</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>  });</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>// アクティブタブに応じてborder-bottomの色・fontWeightを切り替え</span></div>
+            <div class="code-line line-add"><span class="line-num">97</span><span class="line-prefix">+</span><span>  if (count &gt; 0) Container(</span></div>
+            <div class="code-line line-add"><span class="line-num">98</span><span class="line-prefix">+</span><span>    decoration: BoxDecoration(</span></div>
+            <div class="code-line line-add"><span class="line-num">99</span><span class="line-prefix">+</span><span>      color: isActive ? activeColor : colors.border,</span></div>
+            <div class="code-line line-add"><span class="line-num">100</span><span class="line-prefix">+</span><span>      borderRadius: BorderRadius.circular(10),</span></div>
+            <div class="code-line line-add"><span class="line-num">101</span><span class="line-prefix">+</span><span>    ),</span></div>
+            <div class="code-line line-add"><span class="line-num">102</span><span class="line-prefix">+</span><span>    child: Text('$count', ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">103</span><span class="line-prefix">+</span><span>  )</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#9888;</span>
+            <span>件数が0のタブはバッジを非表示にする（<code>if (count &gt; 0)</code> で制御）。アクティブ状態のバッジはprimary色、非アクティブはborderグレー。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">未購入タブ - 購入場所フィルタでフロント側絞り込みができる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>ShoppingLocationFilter</code> ウィジェットを新規作成。Web SP版と同様に「すべて / スーパー / ドラッグストア / オンライン」の固定4ボタンを常時表示する。<code>PurchaseLocationType</code> enum（自動生成済み）のコード値でフィルタリングする。フィルタリング自体は <code>ShoppingListState.filteredUnpurchasedItems</code> の派生 getter で行うため、API再取得は不要。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/shopping_location_filter.dart</span>
+            <span class="diff-stat">+113 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>_FilterChip(</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>  label: l10n.shoppingFilterSupermarket,</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>  isSelected: selectedFilter == PurchaseLocationType.supermarket.code,</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>  color: _storeColor(context, PurchaseLocationType.supermarket),</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>  onTap: () =&gt; onFilterChanged(PurchaseLocationType.supermarket.code),</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#9888;</span>
+            <span>購入場所フィルタは <code>state.locationFilter</code>（<code>String?</code>）に保存。null=すべて、<code>'1'</code>=スーパー、<code>'3'</code>=ドラッグストア、<code>'2'</code>=オンライン（PurchaseLocationType.code準拠）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">未購入タブ - アイテムカードに購入場所カラーバー・品名・メモ・お気に入りアイコン・画像アイコンを表示する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>SwipeableShoppingCard</code> 内の <code>_CardBody</code> ウィジェットで実装。左端の4pxカラーバーで購入場所を色分け（スーパー=緑/ドラッグストア=黄/オンライン=青）、右にお気に入り★アイコン、<code>hasImage == true</code> の場合のみカメラアイコンを追加表示する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/swipeable_shopping_card.dart</span>
+            <span class="diff-stat">+234 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">103</span><span class="line-prefix">+</span><span>// 購入場所カラーバー</span></div>
+            <div class="code-line line-add"><span class="line-num">104</span><span class="line-prefix">+</span><span>Container(</span></div>
+            <div class="code-line line-add"><span class="line-num">105</span><span class="line-prefix">+</span><span>  width: 4,</span></div>
+            <div class="code-line line-add"><span class="line-num">106</span><span class="line-prefix">+</span><span>  decoration: BoxDecoration(</span></div>
+            <div class="code-line line-add"><span class="line-num">107</span><span class="line-prefix">+</span><span>    color: storeColor,</span></div>
+            <div class="code-line line-add"><span class="line-num">108</span><span class="line-prefix">+</span><span>    borderRadius: const BorderRadius.only(</span></div>
+            <div class="code-line line-add"><span class="line-num">109</span><span class="line-prefix">+</span><span>      topLeft: Radius.circular(4),</span></div>
+            <div class="code-line line-add"><span class="line-num">110</span><span class="line-prefix">+</span><span>      bottomLeft: Radius.circular(4),</span></div>
+            <div class="code-line line-add"><span class="line-num">111</span><span class="line-prefix">+</span><span>    ),</span></div>
+            <div class="code-line line-add"><span class="line-num">112</span><span class="line-prefix">+</span><span>  ),</span></div>
+            <div class="code-line line-add"><span class="line-num">113</span><span class="line-prefix">+</span><span>),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">152</span><span class="line-prefix">+</span><span>// お気に入りアイコン（AC10）</span></div>
+            <div class="code-line line-add"><span class="line-num">153</span><span class="line-prefix">+</span><span>GestureDetector(</span></div>
+            <div class="code-line line-add"><span class="line-num">154</span><span class="line-prefix">+</span><span>  onTap: onFavoriteTap,</span></div>
+            <div class="code-line line-add"><span class="line-num">155</span><span class="line-prefix">+</span><span>  child: Icon(</span></div>
+            <div class="code-line line-add"><span class="line-num">156</span><span class="line-prefix">+</span><span>    item.favorite == '1' ? Icons.star : Icons.star_border,</span></div>
+            <div class="code-line line-add"><span class="line-num">157</span><span class="line-prefix">+</span><span>    color: item.favorite == '1' ? Colors.amber : colors.textMuted,</span></div>
+            <div class="code-line line-add"><span class="line-num">158</span><span class="line-prefix">+</span><span>  ),</span></div>
+            <div class="code-line line-add"><span class="line-num">159</span><span class="line-prefix">+</span><span>),</span></div>
+            <div class="code-line line-add"><span class="line-num">160</span><span class="line-prefix">+</span><span>if (item.hasImage) Icon(Icons.photo_camera_outlined, ...)</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#9888;</span>
+            <span>カード本体の <code>Container</code> に <code>width: double.infinity</code> を設定し、アイテム名の長短にかかわらず常に全幅表示にする（Sprint 31の教訓を適用）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 + AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4 / AC5</div>
+        <div class="ac-text">未購入タブ - 右スワイプで「かごへ」、左スワイプで「削除」（確認ダイアログあり）</div>
+      </div>
+      <div class="ac-body">
+        <p>Flutter標準の <code>Dismissible</code> ウィジェットを使用。<code>dismissThresholds</code> でカード幅30%超えでアクション確定。<code>confirmDismiss</code> コールバックで API 呼び出しと確認ダイアログを制御する。</p>
+        <div class="swipe-demo">
+          <div class="swipe-card-wrapper">
+            <div class="swipe-card-label">右スワイプ（かごへ）</div>
+            <div class="swipe-bg-right">&#128717; かごへ</div>
+            <div style="background:white;padding:8px 12px;font-size:12px;border:1px solid #e5e5e5;">牛乳</div>
+          </div>
+          <div class="swipe-card-wrapper">
+            <div class="swipe-card-label">左スワイプ（削除）</div>
+            <div style="background:white;padding:8px 12px;font-size:12px;border:1px solid #e5e5e5;">牛乳</div>
+            <div class="swipe-bg-left-rose">&#128465; 削除</div>
+          </div>
+        </div>
+        <div class="file-change" style="margin-top:12px;">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/swipeable_shopping_card.dart</span>
+            <span class="diff-stat">（confirmDismiss部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">72</span><span class="line-prefix">+</span><span>confirmDismiss: (direction) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">73</span><span class="line-prefix">+</span><span>  if (direction == DismissDirection.startToEnd) {</span></div>
+            <div class="code-line line-add"><span class="line-num">74</span><span class="line-prefix">+</span><span>    return onPrimarySwipe(); // 右スワイプ: かごへ</span></div>
+            <div class="code-line line-add"><span class="line-num">75</span><span class="line-prefix">+</span><span>  } else {</span></div>
+            <div class="code-line line-add"><span class="line-num">76</span><span class="line-prefix">+</span><span>    return onSecondarySwipe(); // 左スワイプ: 削除確認</span></div>
+            <div class="code-line line-add"><span class="line-num">77</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">78</span><span class="line-prefix">+</span><span>},</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#9888;</span>
+            <span>左スワイプ（削除）は <code>showDeleteConfirmDialog</code> を <code>await</code> して、キャンセル時は <code>false</code> を返してカードを元の位置に戻す。確認後のみ <code>DELETE /api/shopping-items/{id}</code> を発行する。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 + AC7 + AC8 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6 / AC7 / AC8</div>
+        <div class="ac-text">かごタブ - 一括購入済みボタン / 右スワイプで「購入済みに」 / 左スワイプで「戻す」</div>
+      </div>
+      <div class="ac-body">
+        <p>かごタブは <code>BasketTab</code> ウィジェットで実装。ヘッダーに「購入済みにする」ボタンを配置し、確認ダイアログ後に <code>PATCH /api/shopping-items/bulk-status</code>（<code>ids: [...]</code>）を発行する。スワイプは <code>SwipeableShoppingCard</code> に <code>variant: ShoppingTab.basket</code> を渡すことで、アイコン・色・ラベルが切り替わる。</p>
+        <div class="swipe-demo">
+          <div class="swipe-card-wrapper">
+            <div class="swipe-card-label">右スワイプ（購入済みに）</div>
+            <div class="swipe-bg-right">&#10003; 購入済みに</div>
+            <div style="background:white;padding:8px 12px;font-size:12px;border:1px solid #e5e5e5;">牛乳</div>
+          </div>
+          <div class="swipe-card-wrapper">
+            <div class="swipe-card-label">左スワイプ（戻す）</div>
+            <div style="background:white;padding:8px 12px;font-size:12px;border:1px solid #e5e5e5;">牛乳</div>
+            <div class="swipe-bg-left-slate">&#8617; 戻す</div>
+          </div>
+        </div>
+        <div class="file-change" style="margin-top:12px;">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_list_notifier.dart</span>
+            <span class="diff-stat">（bulkPurchase部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">110</span><span class="line-prefix">+</span><span>Future&lt;void&gt; bulkPurchase() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">111</span><span class="line-prefix">+</span><span>  final basketItems = current.basketItems;</span></div>
+            <div class="code-line line-add"><span class="line-num">112</span><span class="line-prefix">+</span><span>  if (basketItems.isEmpty) return;</span></div>
+            <div class="code-line line-add"><span class="line-num">113</span><span class="line-prefix">+</span><span>  final ids = basketItems.map((e) =&gt; e.shoppingItemId).toList();</span></div>
+            <div class="code-line line-add"><span class="line-num">114</span><span class="line-prefix">+</span><span>  await repo.bulkUpdateStatus(ids: ids, status: '9');</span></div>
+            <div class="code-line line-add"><span class="line-num">115</span><span class="line-prefix">+</span><span>  // state を楽観的に更新してAPIの結果を待たずに画面に反映</span></div>
+            <div class="code-line line-add"><span class="line-num">116</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#9888;</span>
+            <span>リクエストボディのキーは <code>ids</code>。これはWebのAPIと同一仕様。Notifier はAPIコール後にローカルの state を楽観的に更新するため、再フェッチなしで即座にリストから消える。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC9 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC9</div>
+        <div class="ac-text">購入済みタブ - 直近7日間の購入済みアイテムを日付グループで表示する。スワイプ操作なし</div>
+      </div>
+      <div class="ac-body">
+        <p><code>PurchasedTab</code> ウィジェットで実装。<code>ShoppingListState.purchasedItems</code> は直近7日間（<code>purchasedAt</code> が7日以内）のみを返す派生 getter。<code>purchasedItemsByDate</code> で日付キーに集約してから降順ソートし、「今日 / 昨日 / M/D」のラベルで表示する。各アイテムは <code>PurchasedItemTile</code>（スワイプなし・通常の <code>Container</code>）で描画する。</p>
+        <div class="mockup-container">
+          <div class="mockup-header">購入済みタブのUIイメージ</div>
+          <div class="phone-frame wide">
+            <div class="date-group-header">今日 3件</div>
+            <div class="purchased-item">
+              <span class="purchased-name">牛乳</span>
+              <span class="store-badge store-badge-super">スーパー</span>
+            </div>
+            <div class="purchased-item">
+              <span class="purchased-name">ティッシュ</span>
+              <span class="store-badge store-badge-drug">ドラッグストア</span>
+            </div>
+            <div class="purchased-item">
+              <span class="purchased-name">洗剤</span>
+              <span class="store-badge store-badge-super">スーパー</span>
+            </div>
+            <div class="date-group-header">昨日 2件</div>
+            <div class="purchased-item">
+              <span class="purchased-name">シャンプー</span>
+              <span class="store-badge store-badge-drug">ドラッグストア</span>
+            </div>
+            <div class="purchased-item">
+              <span class="purchased-name">トイレットペーパー</span>
+              <span class="store-badge store-badge-super">スーパー</span>
+            </div>
+          </div>
+        </div>
+        <div class="file-change" style="margin-top:12px;">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_list_state.dart</span>
+            <span class="diff-stat">（purchasedItems getter部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>/// 直近7日間の購入済みアイテム（purchasedAt が null のものは除外）</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>List&lt;ShoppingItemDto&gt; get purchasedItems {</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>  final cutoff = DateTime.now().subtract(const Duration(days: 7));</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>  return items.where((e) {</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>    if (e.status != '9') return false;</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>    final dt = DateTime.tryParse(e.purchasedAt ?? '');</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>    return dt != null &amp;&amp; dt.isAfter(cutoff);</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>  }).toList();</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC10 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC10</div>
+        <div class="ac-text">お気に入りアイコンタップでお気に入りをトグルできる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>ShoppingListNotifier.toggleFavorite()</code> で実装。現在の <code>favorite</code> 値（<code>'0'</code>/<code>'1'</code>）を反転し、<code>PATCH /api/shopping-items/{id}/favorite</code> を発行。API成功後にローカルの state を更新する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_list_notifier.dart</span>
+            <span class="diff-stat">（toggleFavorite部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">149</span><span class="line-prefix">+</span><span>Future&lt;void&gt; toggleFavorite(int shoppingItemId) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">150</span><span class="line-prefix">+</span><span>  // 現在の favorite を反転</span></div>
+            <div class="code-line line-add"><span class="line-num">151</span><span class="line-prefix">+</span><span>  final currentFavorite = item.favorite ?? '0';</span></div>
+            <div class="code-line line-add"><span class="line-num">152</span><span class="line-prefix">+</span><span>  final newFavorite = currentFavorite == '1' ? '0' : '1';</span></div>
+            <div class="code-line line-add"><span class="line-num">153</span><span class="line-prefix">+</span><span>  await repo.toggleFavorite(</span></div>
+            <div class="code-line line-add"><span class="line-num">154</span><span class="line-prefix">+</span><span>    shoppingItemId: shoppingItemId,</span></div>
+            <div class="code-line line-add"><span class="line-num">155</span><span class="line-prefix">+</span><span>    favorite: newFavorite,</span></div>
+            <div class="code-line line-add"><span class="line-num">156</span><span class="line-prefix">+</span><span>  );</span></div>
+            <div class="code-line line-add"><span class="line-num">157</span><span class="line-prefix">+</span><span>  // state を更新して★表示を即反映</span></div>
+            <div class="code-line line-add"><span class="line-num">158</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC11 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC11</div>
+        <div class="ac-text">スワイプ操作はカードがドラッグに追従し、カード幅30%超えでアクション確定。背景に色とラベルを表示し、確定後にトーストを表示する</div>
+      </div>
+      <div class="ac-body">
+        <p>Flutter 標準の <code>Dismissible</code> ウィジェットがドラッグ追従・30%しきい値・背景表示をネイティブに提供する。アクション確定後は <code>ScaffoldMessenger.showSnackBar</code> でトーストを表示する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/swipeable_shopping_card.dart</span>
+            <span class="diff-stat">（Dismissible設定部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>return Dismissible(</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>  key: ValueKey('${variant.name}_${item.shoppingItemId}'),</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>  dismissThresholds: const {</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>    DismissDirection.startToEnd: 0.3,</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>    DismissDirection.endToStart: 0.3,</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>  },</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>  background: _SwipeBackground(color: colors.swipeAction, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>  secondaryBackground: _SwipeBackground(color: secondaryColor, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>  confirmDismiss: ...,</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>);</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#9888;</span>
+            <span>My Tasks画面（Sprint 28）で実装した <code>SwipeableTaskCard</code> と同じ <code>Dismissible</code> パターンを踏襲。未購入タブの左スワイプ（削除）は <code>confirmDismiss</code> でダイアログを待ち、キャンセル時に <code>false</code> を返すことでカードが元に戻る。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC12 + AC13 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC12 / AC13</div>
+        <div class="ac-text">「+ アイテムを追加」ボタンで新規作成画面へ / カードタップで詳細画面へ遷移できる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>app_router.dart</code> には買い物リスト新規作成（<code>/shopping/new</code>）と詳細（<code>/shopping/:id</code>）のサブルートが定義済み（プレースホルダー）。今回は遷移先の <code>context.push(AppRoutes.shoppingNew)</code> / <code>context.push(AppRoutes.shoppingDetail(id.toString()))</code> の呼び出しのみ実装する（画面実装はスコープ外 #14/#15）。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/app_router.dart</span>
+            <span class="diff-stat">+2 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">150</span><span class="line-prefix">-</span><span>  builder: (_, _) =&gt; const _P('買い物リスト'),</span></div>
+            <div class="code-line line-add"><span class="line-num">150</span><span class="line-prefix">+</span><span>  import 'features/shopping/presentation/shopping_list_page.dart';</span></div>
+            <div class="code-line line-add"><span class="line-num">151</span><span class="line-prefix">+</span><span>  builder: (_, _) =&gt; const ShoppingListPage(),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC14 + AC15 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC14 / AC15</div>
+        <div class="ac-text">複数世帯所属時は世帯インジケーターを表示し世帯切り替えができる / 画面表示時・世帯切り替え時にAPIからデータを取得しローディング表示する</div>
+      </div>
+      <div class="ac-body">
+        <p>ホーム画面（Sprint 28）で実装済みの <code>HouseholdSwitcher</code> は <code>MainShell</code>（BottomNavigationBar シェル）に統合されているため、追加実装なしで世帯切り替えが動作する。<code>ShoppingListNotifier.build()</code> で <code>ref.watch(householdNotifierProvider.future)</code> を await するため、世帯切り替え時に自動で再フェッチされる。ローディング中は <code>shoppingAsync.when(loading: () =&gt; CircularProgressIndicator())</code> で表示する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_list_notifier.dart</span>
+            <span class="diff-stat">（build部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>@override</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>Future&lt;ShoppingListState&gt; build() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>  // 世帯切り替えを watch することで自動再フェッチ（AC15）</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>  final householdState = await ref.watch(householdNotifierProvider.future);</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>  final selectedHousehold = householdState.selectedHousehold;</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>  if (selectedHousehold == null) return const ShoppingListState();</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>  return _load(selectedHousehold.id);</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#9888;</span>
+            <span>My Tasks画面（Sprint 28 #67）と同じ <code>ref.watch(householdNotifierProvider.future)</code> パターン。世帯が切り替わると Riverpod が自動で <code>build()</code> を再実行し、新しい世帯の買い物リストを取得する。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC16 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC16</div>
+        <div class="ac-text">テストカバレッジ ≥95%（Notifier・ウィジェットテスト）</div>
+      </div>
+      <div class="ac-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div class="coverage-box">
+            <div class="coverage-num">98.7%</div>
+            <div class="coverage-label">テストカバレッジ</div>
+            <div class="coverage-target">目標: ≥95%</div>
+          </div>
+          <div class="coverage-box" style="text-align:left;padding:16px;">
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:8px;">テスト対象</div>
+            <div class="flow-item"><span class="dot dot-green"></span>ShoppingRepositoryImpl（成功パス + DioException変換）</div>
+            <div class="flow-item"><span class="dot dot-green"></span>ShoppingListNotifier（全操作の状態遷移）</div>
+            <div class="flow-item"><span class="dot dot-green"></span>ShoppingListPage（ウィジェットテスト）</div>
+          </div>
+          <div class="coverage-box" style="text-align:left;padding:16px;">
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:8px;">テストファイル</div>
+            <div class="flow-item"><span class="dot dot-blue"></span><code style="font-size:10px;">shopping_repository_test.dart</code></div>
+            <div class="flow-item"><span class="dot dot-blue"></span><code style="font-size:10px;">shopping_list_notifier_test.dart</code></div>
+            <div class="flow-item"><span class="dot dot-blue"></span><code style="font-size:10px;">shopping_list_page_test.dart</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>買い物リスト画面を開くと、アイテムが3タブに分かれて表示されること</strong>
+          <span>「未購入」タブがデフォルトで選択されている。各タブのヘッダーに件数バッジが表示されている</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>未購入タブでフィルタボタン（スーパー / ドラッグストア / オンライン）をタップすると、対象の購入場所のアイテムだけに絞り込まれること</strong>
+          <span>「すべて」ボタンで絞り込み解除できること。フィルタ切り替えはAPIを呼ばずに即時反映される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>未購入タブのカードを右にスワイプすると「かごへ」が表示され、確定するとかごタブに移動すること</strong>
+          <span>emerald色の背景に「かごへ」ラベルが表示される。確定後に「かごに追加しました」のトーストが出る</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>未購入タブのカードを左にスワイプすると確認ダイアログが表示され、「削除」タップでアイテムが消えること</strong>
+          <span>rose色の背景に「削除」ラベルが表示される。ダイアログで「キャンセル」するとカードが元に戻ること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>かごタブで「購入済みにする」ボタン → 確認ダイアログ → 確認で、かご内の全アイテムが購入済みに移動すること</strong>
+          <span>一括購入済みにした後、「一括購入済みにしました」のトーストが表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>購入済みタブに、直近7日間の購入済みアイテムが日付ごとにまとまって表示されること</strong>
+          <span>「今日」「昨日」「M/D」の日付ラベルが正しく表示される。8日以上前のアイテムは非表示</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">7</div>
+        <div class="verify-content">
+          <strong>カードの★アイコンをタップするとお気に入り状態が切り替わること（★↔☆）</strong>
+          <span>お気に入り（★）は黄色、未お気に入り（☆）はグレーで表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">8</div>
+        <div class="verify-content">
+          <strong>複数世帯所属の場合、世帯を切り替えると選択した世帯の買い物リストに切り替わること</strong>
+          <span>切り替え時にローディングインジケーターが表示され、新しいリストが取得されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">9</div>
+        <div class="verify-content">
+          <strong>「+ アイテムを追加」ボタンタップで買い物アイテム作成画面（プレースホルダー）へ遷移すること</strong>
+          <span>アイテムカードタップでも詳細画面（プレースホルダー）へ遷移すること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>shopping_providers.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>shoppingRepositoryProvider の DI 配線</td>
+      </tr>
+      <tr>
+        <td><code>data/shopping_repository.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ShoppingRepository interface + ShoppingRepositoryImpl（5メソッド）</td>
+      </tr>
+      <tr>
+        <td><code>presentation/shopping_list_state.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ShoppingListState（items / locationFilter / activeTab）+ 派生 getter + ShoppingTab enum</td>
+      </tr>
+      <tr>
+        <td><code>presentation/shopping_list_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ShoppingListNotifier（setTab / setLocationFilter / moveToBasket / markPurchased / moveBackToUnpurchased / bulkPurchase / deleteItem / toggleFavorite）</td>
+      </tr>
+      <tr>
+        <td><code>presentation/shopping_list_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ShoppingListPage（ローディング / エラー / データ3状態）</td>
+      </tr>
+      <tr>
+        <td><code>widgets/shopping_tab_bar.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>3タブ + 件数バッジ付きタブバー</td>
+      </tr>
+      <tr>
+        <td><code>widgets/shopping_location_filter.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>購入場所フィルタ（固定4ボタン：すべて / スーパー / ドラッグストア / オンライン）</td>
+      </tr>
+      <tr>
+        <td><code>widgets/swipeable_shopping_card.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>Dismissible ベースのスワイプカード（variant=unpurchased/basket で挙動切替）</td>
+      </tr>
+      <tr>
+        <td><code>widgets/unpurchased_tab.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>未購入タブ（フィルタ付きリスト + スワイプカード）</td>
+      </tr>
+      <tr>
+        <td><code>widgets/basket_tab.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>かごタブ（一括購入済みボタン + スワイプカード）</td>
+      </tr>
+      <tr>
+        <td><code>widgets/purchased_tab.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>購入済みタブ（日付グループ + スワイプなし）</td>
+      </tr>
+      <tr>
+        <td><code>widgets/purchased_item_tile.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>購入済みタブのアイテム行（購入場所バッジ付き）</td>
+      </tr>
+      <tr>
+        <td><code>widgets/bulk_purchase_dialog.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>一括購入済み確認ダイアログ + 削除確認ダイアログ</td>
+      </tr>
+      <tr>
+        <td><code>lib/app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>買い物リストルートのbuilderを <code>_P('買い物リスト')</code> から <code>ShoppingListPage()</code> に差し替え</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb</code> / <code>app_en.arb</code> / <code>app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>shopping系 i18n キー28件追加（タブ名 / フィルタ / スワイプラベル / ダイアログ / トースト / 日付グループ / 空状態）</td>
+      </tr>
+      <tr>
+        <td><code>test/features/shopping/</code> 配下 4ファイル</td>
+        <td><span class="tag-test">テスト新規</span></td>
+        <td>shopping_repository_test / shopping_list_notifier_test / shopping_list_page_test / shopping_mocks（カバレッジ 98.7%）</td>
+      </tr>
+      <tr>
+        <td>UI層（home_page / my_tasks_page 等）</td>
+        <td style="color:#9ca3af;">変更なし</td>
+        <td>他画面への影響なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

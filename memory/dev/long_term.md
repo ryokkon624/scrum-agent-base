@@ -139,6 +139,17 @@
 
 ---
 
+## Sprint 32 サマリー（2026-05-13完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #82 | [mobile] My Tasksカードがタスク名の長さで幅が変わる | `swipeable_task_card.dart` の Dismissible child の `Container` に `width: double.infinity` を追加。Sprint 31 で margin 削除のみ対応し全幅指定を漏らした件を是正。`my_tasks_page_test.dart` に短いタスク名と長いタスク名でカード幅が等しいことを `tester.getSize()` で検証するテストを追加 |
+
+### Sprint 32 で習得したこと
+- Flutter の `Container` は子サイズに自動でフィットするため、横幅をいっぱいに広げたい場合は明示的に `width: double.infinity` を指定する必要がある。Dismissible の中で並んでいるカードは特に注意
+
+---
+
 ## Sprint 31 サマリー（2026-05-13完了）
 
 | Issue | 内容 | 成果 |
