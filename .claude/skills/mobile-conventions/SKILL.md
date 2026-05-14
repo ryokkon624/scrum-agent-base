@@ -202,6 +202,29 @@ Column(
 
 - 認証トークンの付与・リフレッシュは `AuthInterceptor` で一元管理する
 
+### エラーハンドリングルール
+
+- **`catch (_) {}` でエラーを握りつぶしてはならない**（Sprint 34 Review で指摘）。必ず以下のいずれかを行うこと：
+  - `rethrow` でそのまま上位に伝播する
+  - `AppException` サブクラスに変換して `throw` する
+- 握りつぶしが発生するとException発生時の原因調査に時間を要するため、必ずエラーを伝播させること
+
+```dart
+// NG: エラーを握りつぶす
+} catch (_) {}
+
+// OK: rethrow
+} catch (e) {
+  rethrow;
+}
+
+// OK: AppException に変換
+} on DioException catch (e) {
+  if (e.error is AppException) throw e.error!;
+  throw NetworkException(e.message ?? 'Network error');
+}
+```
+
 ---
 
 ## 7. テスト方針（flutter_test + mockito）

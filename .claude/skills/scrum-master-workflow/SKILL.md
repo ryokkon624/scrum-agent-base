@@ -381,7 +381,9 @@ Sprint Review ファイルをブラウザで開いて動作確認をお願いし
    - 回避すること（Avoid）
    - チャレンジすること（Challenge）
 3. りょこさんの指摘を GitHub REST API（curl）で `ryokkon624/hw-hub-manage` にIssueを作成する（`github-issues` スキル参照）
-   - タイトルと本文のみ。ReadyフィールドへのDraft設定はりょこさんが行う
+   - **起票前に必ず `mcp__github__list_issues`（state: open）で既存Issueのタイトルを確認し、同内容が存在しないことを確認してから起票する**（Sprint 34 Retroで2重起票が発生）
+   - `github-issues` スキルの手順3に従い、Issue作成（Step 1）→ Projectsへの追加（Step 2）→ ReadyフィールドをDraftに設定（Step 3）まで**SMが行う**
+   - Draft→Ready更新・Story Points設定はりょこさんが行う（SMは不要）
 4. Skillsファイルの更新が必要かどうかを判断する
 5. 更新内容を `#skills-changelog` に投稿する
 6. `memory/sm/short_term.md` をリセット、`memory/sm/long_term.md` に要約を移す

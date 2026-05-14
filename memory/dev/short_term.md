@@ -1,13 +1,13 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 33
-**最終更新**: 2026-05-13
+**スプリント**: Sprint 34
+**最終更新**: 2026-05-14
 
 ---
 
 ## スプリントゴール
 
-買い物リスト画面をモバイルに実装し、タブ切り替え・スワイプ操作で買い物中の体験を向上させる
+買い物アイテム作成・詳細画面をモバイルに実装し、画像添付や履歴からの選択で買い物リストをより充実させられるようにする
 
 ---
 
@@ -15,113 +15,160 @@
 
 | Issue | 内容 | SP | ブランチ |
 |-------|------|----|----|
-| #85 | [mobile] 買い物リスト画面を実装する (#13) | TBD | `feature/85-mobile-shopping-list` |
+| #86 | [mobile] 買い物アイテム作成・詳細画面を実装する (#14/#15) | TBD | `feature/85-mobile-shopping-list`（Sprint33から継続使用） |
 
 リポジトリパス: `C:\work\hw-hub\hw-hub-mobile`
+作業スレッドID: `1504279756722405467`
 
 ---
 
 ## 承認済み実装方針
 
-### #85: 買い物リスト画面を実装する
+### #86: 買い物アイテム作成・詳細画面を実装する
 
-**コミットメッセージ**: `feat: モバイルの買い物リスト画面を実装する (ryokkon624/hw-hub-manage#85)`
+**コミットメッセージ**: `feat: モバイルの買い物アイテム作成・詳細画面を実装する (ryokkon624/hw-hub-manage#86)`
 
-**全体アーキテクチャ（My Tasks(#67)実装パターンを踏襲）**:
+#### りょこさんとの確認事項回答（承認済み）
 
-`features/shopping/` 配下に feature-first 構成で実装する。
+1. **history-suggestions の期間フィルタ** → **案A採用**: `limit=100` で全件取得後、`lastPurchasedDate` でモバイル側ローカルフィルタする
+2. **詳細画面の更新API** → **PUT で実装**（仕様書のPATCHは後追い修正。Webと同じく `PUT /api/shopping-items/{id}`）
+3. **画像枚数制限** → **クライアント側枚数制限なし**（Webに合わせる）
+4. **「このアイテムを削除」ボタン** → **未購入ステータス時のみ表示**（Web `ShoppingItemDetailPage.vue` の `v-if="isNotPurchased"` 仕様に合わせる）
+
+#### 全体構成
+
+`features/shopping/` 既存ディレクトリに追加実装する（Sprint33の `shopping_list_page` 等は既存）。
 
 ```
 features/shopping/
-├── shopping_providers.dart                # Repository / Notifier の Provider 定義
+├── shopping_providers.dart                 # 既存: 追加プロバイダーを宣言
 ├── data/
-│   ├── shopping_repository.dart           # interface + impl
+│   ├── shopping_repository.dart            # 既存: createItem / updateItem / deleteItem / fetchOne / favorites / historySuggestions を追加
+│   ├── shopping_attachment_repository.dart # 【新規】Presigned URL発行 / S3 PUT / metadata登録 / 一覧 / 削除
 │   └── models/
-│       └── shopping_item_dto.dart         # 既存 home 配下のDTOを移動 or 新規（hasImage, favorite, memo, purchasedAt 含む）
+│       ├── shopping_item_history_suggestion_dto.dart  # 【新規】name / storeType / lastPurchasedDate / purchaseCount / sourceShoppingItemId
+│       ├── shopping_attachment_dto.dart                # 【新規】id / fileName / imageUrl / sortOrder
+│       ├── create_shopping_item_request.dart           # 【新規】name / memo / storeType / favorite / sourceShoppingItemId
+│       ├── update_shopping_item_request.dart           # 【新規】name / memo / storeType / favorite
+│       ├── create_upload_url_request.dart              # 【新規】fileName / mimeType
+│       ├── create_upload_url_response.dart             # 【新規】uploadUrl / fileKey
+│       └── create_attachment_request.dart              # 【新規】fileKey / fileName / mimeType
 └── presentation/
-    ├── shopping_list_notifier.dart        # AsyncNotifier
-    ├── shopping_list_state.dart           # items / locationFilter / activeTab / isLoading
+    ├── shopping_item_new/
+    │   ├── shopping_item_new_page.dart       # 【新規】#14 作成画面
+    │   ├── shopping_item_new_notifier.dart   # 【新規】フォーム状態 + 登録処理 + 画像アップ
+    │   └── shopping_item_new_state.dart      # 【新規】name / memo / storeType / favorite / pickedImage / sourceShoppingItemId / isSubmitting / errorMessage
+    ├── shopping_item_detail/
+    │   ├── shopping_item_detail_page.dart    # 【新規】#15 詳細画面
+    │   ├── shopping_item_detail_notifier.dart# 【新規】読込 / 更新 / 削除 / status変更 / favorite / 画像追加削除
+    │   └── shopping_item_detail_state.dart   # 【新規】item / attachments / editable... / isLoading / isSaving / errorMessage
     └── widgets/
-        ├── shopping_tab_bar.dart                # 3タブ（バッジ件数つき）
-        ├── shopping_location_filter.dart        # 未購入タブ用の購入場所フィルタ
-        ├── unpurchased_tab.dart                 # 未購入タブの本体
-        ├── basket_tab.dart                      # かごタブの本体（一括購入済みボタン含む）
-        ├── purchased_tab.dart                   # 購入済みタブの本体（日付グループ）
-        ├── swipeable_shopping_card.dart         # 未購入・かごのスワイプ可能カード（variant切替）
-        ├── purchased_item_tile.dart             # 購入済みタブのアイテム行
-        └── bulk_purchase_dialog.dart            # かご一括購入済み確認ダイアログ
+        ├── history_picker_bottom_sheet.dart  # 【新規】AC3: 過去履歴から選ぶ
+        ├── favorite_picker_bottom_sheet.dart # 【新規】AC4: お気に入りから選ぶ
+        ├── status_step_selector.dart         # 【新規】AC7: 未購入→かご→購入済みステップ
+        └── image_picker_field.dart           # 【新規】image_picker 呼出・サムネ表示の共通ウィジェット
 ```
 
-**ルーティング**:
-`app_router.dart` の `AppRoutes.shopping` の builder を `const _P('買い物リスト')` から `const ShoppingListPage()` に差し替える。サブルート（`/shopping/new`・`/shopping/:id`）は本Issueのスコープ外（プレースホルダー維持）。
+#### Repository 拡張（`ShoppingRepository`）
 
-**Repository（`shopping_repository.dart`）の責務**:
-- `fetchItems({required int householdId})` → `GET /api/households/{householdId}/shopping-items`
-- `updateStatus({required int shoppingItemId, required String status})` → `PATCH /api/shopping-items/{id}/status`
-- `bulkUpdateStatus({required List<int> ids, required String status})` → `PATCH /api/shopping-items/bulk-status`（**リクエストキーは `ids`**。webの api と一致）
-- `toggleFavorite({required int shoppingItemId, required String favorite})` → `PATCH /api/shopping-items/{id}/favorite`
-- `deleteItem({required int shoppingItemId})` → `DELETE /api/shopping-items/{id}`
+既存 interface に以下を追加：
 
-`DioException` → `AppException` 変換は既存 `MyTasksRepositoryImpl` と同じパターン。
+- `createItem({required int householdId, required CreateShoppingItemRequest req})` → `POST /api/households/{id}/shopping-items` → `ShoppingItemDto`
+- `updateItem({required int shoppingItemId, required UpdateShoppingItemRequest req})` → `PUT /api/shopping-items/{id}` → `ShoppingItemDto`
+- `fetchOne({required int shoppingItemId})` … 既存 `fetchItems` のローカルキャッシュを優先利用するが、直リンク対策で API 経由でも取得できるようにする（**ただしバックエンドに単体取得 API がない場合は `fetchItems` で取得→find する**）→ 実装前に backend を確認
+- `fetchFavorites({required int householdId})` → `GET /api/households/{id}/shopping-items/favorites` → `List<ShoppingItemDto>`
+- `fetchHistorySuggestions({required int householdId, String? q, String? storeType, int limit = 100})` → `GET /api/households/{id}/shopping-items/history-suggestions` → `List<ShoppingItemHistorySuggestionDto>`
 
-**AC2 購入場所フィルタ方針（web ShoppingStoreTypeFilter.vue 調査結果）**:
-webのSP版は `すべて / スーパー(1) / ドラッグストア(3) / オンライン(2)` を **固定4ボタン**で常に表示する（動的増減なし）。モバイルも同方針で実装する。`PurchaseLocationType` enum 全値（3種）＋「すべて」の計4ボタン固定表示。
+#### Attachment Repository（新規）
 
-**State 設計**:
+- `createUploadUrl({required int itemId, required String fileName, required String mimeType})` → `POST /api/shopping-items/{itemId}/attachments/upload-url` → `CreateUploadUrlResponse`
+- `uploadToS3({required String uploadUrl, required Uint8List bytes, required String mimeType})` → 素の Dio（**インターセプターを使わない別インスタンス**）で `PUT`
+- `createAttachment({required int itemId, required CreateAttachmentRequest req})` → `POST /api/shopping-items/{itemId}/attachments`
+- `listAttachments({required int itemId})` → `GET /api/shopping-items/{itemId}/attachments` → `List<ShoppingAttachmentDto>`
+- `deleteAttachment({required int itemId, required int attachmentId})` → `DELETE /api/shopping-items/{itemId}/attachments/{attachmentId}`
 
-```dart
-enum ShoppingTab { unpurchased, basket, purchased }
+> S3 PUT 用 Dio は `image_uploader.dart` というユーティリティに切り出してリピートさせる。`dio = Dio()`（baseUrl 無し・interceptor 無し）
 
-class ShoppingListState {
-  final List<ShoppingItemDto> items;        // 全アイテム（フィルタ前）
-  final String? locationFilter;              // null=全て、PurchaseLocationType.code値
-  final ShoppingTab activeTab;
-  // 派生 getter: unpurchasedItems / basketItems / purchasedItems(直近7日)
-  //              filteredUnpurchasedItems / purchasedItemsByDate
-}
-```
+#### Notifier の責務
 
-**Notifier の操作**:
-- `setTab(ShoppingTab)` / `setLocationFilter(String?)` … state 更新のみ
-- `moveToBasket(int)` / `markPurchased(int)` / `moveBackToUnpurchased(int)` … `updateStatus` を呼んでローカル state も更新
-- `bulkPurchase()` … basket 内全件の id を集めて `bulkUpdateStatus` を呼ぶ
-- `deleteItem(int)` … `deleteItem` API → state から除外
-- `toggleFavorite(int)` … 現在の favorite を反転して `toggleFavorite` API
+**`ShoppingItemNewNotifier extends AutoDisposeNotifier<ShoppingItemNewState>`**
+- `setName(String) / setMemo(String) / setStoreType(String) / setFavorite(bool)`
+- `setFromHistory(ShoppingItemHistorySuggestionDto)` … name / storeType / sourceShoppingItemId をセット（favorite はクリア）
+- `setFromFavorite(ShoppingItemDto)` … name / memo / storeType / sourceShoppingItemId をセット（favorite はクリア・固定）
+- `pickImage(ImageSource source)` … image_picker 経由で XFile を取得・bytes 保持
+- `clearImage()` … 選択解除
+- `submit({required int householdId})` … バリデーション → createItem → 画像があれば uploadAttachment → 戻る
 
-**スワイプ実装方針（AC11）**:
-`SwipeableTaskCard` と同じく **`Dismissible` を使う**。`dismissThresholds` で30%、`confirmDismiss` でアクションを実行して true を返すパターン。
+**`ShoppingItemDetailNotifier extends AutoDisposeFamilyAsyncNotifier<ShoppingItemDetailState, int>`** （itemIdをfamilyで受ける）
+- `build(int itemId)` … item と attachments を並行取得
+- `setName / setMemo / setStoreType` … editable state 更新
+- `toggleFavorite()` … 即座に API 呼ぶ
+- `updateStatus(String status)` … 即座に API 呼ぶ
+- `save()` … updateItem (PUT) → list 画面に戻る
+- `deleteItem()` … 削除確認後 → API → 戻る
+- `addImage(XFile file)` … Presigned URL 発行 → S3 PUT → metadata 登録 → 一覧再取得
+- `deleteAttachment(int attachmentId)` … 削除 → 一覧再取得
 
-- 未購入カード: `background`（左→右スワイプ・右側に出る色 emerald-500 「かごへ」）/ `secondaryBackground`（右→左スワイプ・rose-500 「削除」、ただし削除は確認ダイアログ表示後にのみ確定するため `confirmDismiss` で `showDialog` を await し、キャンセル時は false を返してカードを戻す）
-- かごカード: emerald-500「購入済みに」/ slate-400「戻す」
-- 購入済みカード: `Dismissible` を使わず通常の `Container` にする
+#### ボトムシート（AC3 / AC4）
 
-> AC11 のドラッグ追従とアクション確定は `Dismissible` が標準で備えている挙動でカバーできる。トーストは `ScaffoldMessenger` の SnackBar で表示する。
+`showModalBottomSheet` で表示。中身は StatefulWidget で keyword / storeTypeFilter / periodFilter（履歴のみ）を保持し、フィルタした結果を表示。「選ぶ」タップで `Navigator.pop(result)` し、呼出元 Notifier の `setFromHistory` / `setFromFavorite` を呼ぶ。
 
-**i18n 追加キー（ja/en/es）**:
-- `shoppingListTitle` / `shoppingListAddItemButton`
-- `shoppingTabUnpurchased` / `shoppingTabBasket` / `shoppingTabPurchased`
-- `shoppingFilterAll` / `shoppingFilterSupermarket` / `shoppingFilterDrugstore` / `shoppingFilterOnline`
-- `shoppingSwipeMoveToBasket` / `shoppingSwipeDelete` / `shoppingSwipeMarkPurchased` / `shoppingSwipeMoveBack`
-- `shoppingBulkPurchaseButton` / `shoppingBulkPurchaseConfirm` / `shoppingBulkPurchaseConfirmMessage`
-- `shoppingDeleteConfirm` / `shoppingDeleteConfirmMessage`
-- `shoppingToastMovedToBasket` / `shoppingToastMarkedPurchased` / `shoppingToastDeleted` / `shoppingToastMovedBack` / `shoppingToastBulkPurchased`
-- `shoppingPurchasedDateGroupToday` / `shoppingPurchasedDateGroupYesterday` / `shoppingPurchasedDateGroupOther`
-- `shoppingEmptyUnpurchased` / `shoppingEmptyBasket` / `shoppingEmptyPurchased`
+**期間フィルタ（履歴のみ）**：「すべて / 過去30日 / 過去90日 / 過去1年」の4択チップ。`lastPurchasedDate` を `DateTime.parse` してクライアント側で `now.subtract(Duration(days: 30|90|365))` と比較してフィルタ（**API では取得しない・ローカルフィルタ**）。
 
-**カラー方針**:
-- 購入場所カラーバー: `PurchaseLocationType` の各色（mobile-conventions に従って既存 surfaceCard / border 等を使いつつ、購入場所別の色は新規トークン化が必要なら追加）
-- スワイプ背景は `colors.swipeAction`（emerald-500相当）/ `colors.swipeDelete`（rose-500相当）/ `colors.swipeDisabled`（slate-400相当）を使い回す（既存定義あり）
+#### ステータスステップセレクター（AC7）
+
+`StatusStepSelector` ウィジェット：
+- 横並び3ステップ「1 未購入 → 2 かご → 3 購入済み」
+- 各ステップに `TaskStatus` 風の丸アイコン
+- 過去ステップ = 緑塗りつぶし＋✓ / 現在ステップ = primary塗りつぶし / 未来ステップ = グレー枠線
+- ステップタップで `onChanged(status)` コールバック
+- ステップ下に説明テキスト（「まだ買う前の状態です」等）
+
+#### image_picker 導入と permissions
+
+`pubspec.yaml` に `image_picker: ^1.1.0` を追加。`AndroidManifest.xml` と `Info.plist` の permissions も追加（仕様書 `common/image_upload.md` 参照）。
+
+`image_picker` 呼出は `ImagePicker().pickImage(source: ..., maxWidth: 1920, maxHeight: 1920, imageQuality: 85)` を使用。Notifier 経由ではなくウィジェット側（モーダル選択用ボトムシート）で実行し、結果の `XFile` を Notifier に渡す（モック容易化のため）。
+
+#### i18n 追加キー（ja/en/es）
+
+`app_*.arb` に追加：
+- `shoppingNewTitle` / `shoppingNewIntro`
+- `shoppingNewSelectFromHistory` / `shoppingNewSelectFromFavorite`
+- `shoppingNewName` / `shoppingNewMemo` / `shoppingNewStoreType` / `shoppingNewFavorite` / `shoppingNewImage`
+- `shoppingNewImageHint` / `shoppingNewSubmit` / `shoppingNewCancel`
+- `shoppingNewToastSuccess` / `shoppingNewToastError`
+- `shoppingHistoryModalTitle` / `shoppingHistoryModalDescription`
+- `shoppingHistoryModalKeywordPlaceholder` / `shoppingHistoryModalEmpty`
+- `shoppingHistoryModalPeriodAll` / `shoppingHistoryModalPeriod30d` / `shoppingHistoryModalPeriod90d` / `shoppingHistoryModalPeriod365d`
+- `shoppingFavoriteModalTitle` / `shoppingFavoriteModalDescription` / `shoppingFavoriteModalEmpty`
+- `shoppingDetailTitle` / `shoppingDetailIntro`
+- `shoppingDetailStatus` / `shoppingDetailStatusHelpNotPurchased` / `shoppingDetailStatusHelpInBasket` / `shoppingDetailStatusHelpPurchased`
+- `shoppingDetailSave` / `shoppingDetailDeleteItem` / `shoppingDetailDeleteConfirm`
+- `shoppingDetailImageSectionTitle` / `shoppingDetailImageAdd` / `shoppingDetailImageDelete` / `shoppingDetailImageDeleteConfirm`
+- `shoppingDetailToastSaveSuccess` / `shoppingDetailToastDeleteSuccess` / `shoppingDetailToastImageAddSuccess` / `shoppingDetailToastImageDeleteSuccess`
+- `shoppingImagePickerCamera` / `shoppingImagePickerGallery` / `shoppingImagePickerCancel`
+
+#### ルーティング
+
+`app_router.dart` の以下 2 ヶ所を差し替え：
+- `AppRoutes._shoppingNewRelative` の builder を `const _P('買い物アイテム作成')` → `const ShoppingItemNewPage()`
+- `AppRoutes._shoppingDetailRelative` の builder を `_P('買い物アイテム詳細 ${s.pathParameters['id']}')` → `ShoppingItemDetailPage(itemId: int.parse(s.pathParameters['id']!))`
 
 ---
 
 ## 作業順序（TDD: RED → GREEN → REFACTOR）
 
-1. **Repository**: interface 定義 → impl 実装 → repository_test（成功パス + DioException 変換）
-2. **State + Notifier**: state クラス → notifier の各操作 → notifier_test（タブ切替・フィルタ・各 API 操作の状態遷移）
-3. **i18n キー追加**: ja/en/es の ARB を編集 → `flutter gen-l10n`
-4. **Page + Widget**: tab_bar → list ページ → swipeable_shopping_card → dialog → page_test（ウィジェットテスト）
-5. **router 差し替え**: `_P('買い物リスト')` を `ShoppingListPage()` に
-6. **AC16: カバレッジ計測**: `coverage.ps1` で ≥95% 達成を確認
+1. **準備**: `pubspec.yaml` に image_picker 追加 → `flutter pub get` → AndroidManifest / Info.plist に permissions 追加
+2. **DTO・Request モデル**: 新規 8 ファイル → `build_runner` で `.g.dart` 生成
+3. **ShoppingRepository 拡張**: interface に 4 メソッド追加 → impl 実装 → repository_test（成功 + DioException 変換）
+4. **ShoppingAttachmentRepository 新規**: interface + impl → attachment_repository_test
+5. **ShoppingItemNewNotifier + State**: state クラス → notifier → notifier_test（各操作の遷移）
+6. **ShoppingItemDetailNotifier + State**: state → notifier → notifier_test
+7. **i18n キー追加**: ja/en/es の ARB を編集 → `flutter gen-l10n`
+8. **Widget 系**: `status_step_selector` → `image_picker_field` → `history_picker_bottom_sheet` → `favorite_picker_bottom_sheet` → page 本体 → page_test
+9. **router 差し替え**: `_P('買い物アイテム作成')` → `ShoppingItemNewPage`、`_P('買い物アイテム詳細 ...')` → `ShoppingItemDetailPage`
+10. **AC11: カバレッジ計測**: `coverage.ps1` で features.shopping 配下 ≥95% 達成を確認
 
 ---
 
@@ -129,56 +176,79 @@ class ShoppingListState {
 
 | 対象 | テスト |
 |------|--------|
-| `ShoppingRepositoryImpl` | 各メソッドの成功パス + DioException→AppException 変換 |
-| `ShoppingListNotifier` | タブ切替・フィルタ・moveToBasket / markPurchased / moveBackToUnpurchased / bulkPurchase / deleteItem / toggleFavorite の状態遷移（成功・エラー） |
-| `ShoppingListPage`（ウィジェット） | 3タブ表示・件数バッジ・購入場所フィルタ・空状態表示・スワイプによる状態遷移・確認ダイアログ・「+ アイテムを追加」「カードタップ」のナビゲーション |
+| `ShoppingRepositoryImpl`（拡張分） | createItem / updateItem / fetchFavorites / fetchHistorySuggestions の成功パス + DioException 変換 |
+| `ShoppingAttachmentRepositoryImpl` | createUploadUrl / uploadToS3 / createAttachment / listAttachments / deleteAttachment の成功 + DioException 変換 |
+| `ShoppingItemNewNotifier` | フォーム入力 / setFromHistory / setFromFavorite / pickImage / submit（成功・失敗）。`ImagePicker` はテストで Notifier に注入できる形にせず、`pickImage` メソッドを `XFile` 受取り型にしてテストで直接 `setPickedImage` を呼ぶ |
+| `ShoppingItemDetailNotifier` | build / save / deleteItem / toggleFavorite / updateStatus / addImage / deleteAttachment の状態遷移 |
+| `ShoppingItemNewPage` (widget) | 主要表示・カメラ/ライブラリ選択肢ボトムシート表示・送信ボタンタップで Notifier の `submit` が呼ばれること（Notifier はフェイク） |
+| `ShoppingItemDetailPage` (widget) | 主要表示・ステータスステップタップ・お気に入りトグル・削除ダイアログ・「未購入時のみ削除ボタン表示」・保存ボタン |
+
+> `image_picker` のモックは Notifier には差し込まず、画面側のソース選択ボトムシート（カメラ/ギャラリー）からの呼び出しを切り離す。Notifier の `pickImage` テストは `XFile` を直接渡せる契約にする（テスタビリティ優先）。
 
 ---
 
 ## 変更ファイル一覧
 
-**新規:**
-- `lib/features/shopping/shopping_providers.dart`
-- `lib/features/shopping/data/shopping_repository.dart`
-- `lib/features/shopping/data/models/shopping_item_dto.dart`（home配下のDTOを共通化）
-- `lib/features/shopping/presentation/shopping_list_page.dart`
-- `lib/features/shopping/presentation/shopping_list_notifier.dart`
-- `lib/features/shopping/presentation/shopping_list_state.dart`
-- `lib/features/shopping/presentation/widgets/shopping_tab_bar.dart`
-- `lib/features/shopping/presentation/widgets/shopping_location_filter.dart`
-- `lib/features/shopping/presentation/widgets/unpurchased_tab.dart`
-- `lib/features/shopping/presentation/widgets/basket_tab.dart`
-- `lib/features/shopping/presentation/widgets/purchased_tab.dart`
-- `lib/features/shopping/presentation/widgets/swipeable_shopping_card.dart`
-- `lib/features/shopping/presentation/widgets/purchased_item_tile.dart`
-- `lib/features/shopping/presentation/widgets/bulk_purchase_dialog.dart`
-- `test/features/shopping/` 配下にテスト一式
+### pubspec / native
+- `pubspec.yaml`（image_picker 追加）
+- `android/app/src/main/AndroidManifest.xml`（CAMERA 権限）
+- `ios/Runner/Info.plist`（NSCameraUsageDescription / NSPhotoLibraryUsageDescription）
 
-**編集:**
-- `lib/app_router.dart`（`_P('買い物リスト')` を `ShoppingListPage()` に差し替え）
-- `lib/l10n/app_ja.arb` / `lib/l10n/app_en.arb` / `lib/l10n/app_es.arb`（i18nキー追加）
-- 必要に応じて `lib/core/theme/app_color_scheme.dart`（購入場所カラーバー用トークン追加）
+### 新規（lib）
+- `lib/features/shopping/data/shopping_attachment_repository.dart`
+- `lib/features/shopping/data/models/shopping_item_history_suggestion_dto.dart`
+- `lib/features/shopping/data/models/shopping_attachment_dto.dart`
+- `lib/features/shopping/data/models/create_shopping_item_request.dart`
+- `lib/features/shopping/data/models/update_shopping_item_request.dart`
+- `lib/features/shopping/data/models/create_upload_url_request.dart`
+- `lib/features/shopping/data/models/create_upload_url_response.dart`
+- `lib/features/shopping/data/models/create_attachment_request.dart`
+- `lib/features/shopping/presentation/shopping_item_new/shopping_item_new_page.dart`
+- `lib/features/shopping/presentation/shopping_item_new/shopping_item_new_notifier.dart`
+- `lib/features/shopping/presentation/shopping_item_new/shopping_item_new_state.dart`
+- `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart`
+- `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_notifier.dart`
+- `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_state.dart`
+- `lib/features/shopping/presentation/widgets/history_picker_bottom_sheet.dart`
+- `lib/features/shopping/presentation/widgets/favorite_picker_bottom_sheet.dart`
+- `lib/features/shopping/presentation/widgets/status_step_selector.dart`
+- `lib/features/shopping/presentation/widgets/image_picker_field.dart`
+
+### 新規（test）
+- `test/features/shopping/data/shopping_repository_test.dart`（拡張分テスト追加）
+- `test/features/shopping/data/shopping_attachment_repository_test.dart`
+- `test/features/shopping/presentation/shopping_item_new/shopping_item_new_notifier_test.dart`
+- `test/features/shopping/presentation/shopping_item_new/shopping_item_new_page_test.dart`
+- `test/features/shopping/presentation/shopping_item_detail/shopping_item_detail_notifier_test.dart`
+- `test/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page_test.dart`
+
+### 編集
+- `lib/features/shopping/data/shopping_repository.dart`（メソッド追加）
+- `lib/features/shopping/shopping_providers.dart`（attachment / notifier providers 追加）
+- `lib/app_router.dart`（2ヶ所の builder 差し替え）
+- `lib/l10n/app_ja.arb` / `app_en.arb` / `app_es.arb`
 
 ---
 
 ## コミット前チェックリスト
 
-- [ ] ACをすべて満たしているか（特に AC1〜AC16）
+- [ ] ACをすべて満たしているか（AC1〜AC11）
 - [ ] `dart format .`
 - [ ] `flutter analyze`（警告ゼロ）
 - [ ] `flutter test`（全グリーン）
-- [ ] `coverage.ps1` でカバレッジ ≥95%
-- [ ] シミュレーターまたはウィジェットテストで実際の見た目（タブ・スワイプ・カード幅・バッジ件数）を確認した
+- [ ] `coverage.ps1` で features.shopping 配下のカバレッジ ≥95%
 - [ ] AppLocalizations の import パスは `lib/l10n/app_localizations.dart` への相対パス
-- [ ] `git push -u origin feature/85-mobile-shopping-list`
+- [ ] image_picker の権限設定（AndroidManifest / Info.plist）を追加した
+- [ ] シミュレーターまたはウィジェットテストで主要画面の見た目（ステップUI・サムネ横スクロール・ボトムシート）を確認した
+- [ ] `git push origin feature/85-mobile-shopping-list`
 
 ---
 
 ## 作業ルール
 
 - [DEV] プレフィックスをDiscord投稿に必ずつける
-- 作業スレッドID: `1504024781492584583`
-- ブランチ: `feature/85-mobile-shopping-list`（main から新規作成）
+- 作業スレッドID: `1504279756722405467`
+- ブランチ: `feature/85-mobile-shopping-list`（既存・新規作成しない）
 - PRはSMが行う。DEVはpushまでが担当
 
 ---
@@ -187,15 +257,10 @@ class ShoppingListState {
 
 | Issue | 状態 |
 |-------|------|
-| #85 買い物リスト画面実装 | バグ修正完了・push済み（feature/85-mobile-shopping-list） |
+| #86 買い物アイテム作成・詳細画面実装 | 計画フェーズ完了・Sonnetでの実装フェーズ待ち |
 
 ---
 
 ## ハマりポイントログ
 
-| 日付 | 問題 | 原因 | 解決策 |
-|------|------|------|--------|
-| 2026-05-13 | カバレッジ計測で home/ ファイルが混入 | lcov.infoのSF:パスが `features\shopping` と `features\home` を両方含む | awk でパス判定して features.shopping のみ集計 |
-| 2026-05-13 | ServerException のコンストラクタがnamed引数 | `const ServerException('msg')` → コンパイルエラー | `const ServerException(message: 'msg')` に修正 |
-| 2026-05-13 | find.text('削除') が複数ヒット | スワイプ背景のラベルとダイアログボタン両方にある | `find.text('削除').last` でダイアログボタンを特定 |
-| 2026-05-13 | Sprint Review中に「予期しないエラー」が表示される | `fetchItems()` が `response.data as List<dynamic>` でキャストしていたが、実際のレスポンスは `{"items": [...]}` のラッパー形式 | `(response.data as Map<String, dynamic>)['items'] as List<dynamic>` に修正。テストのモックも同様に修正 |
+（実装フェーズで都度追加する）

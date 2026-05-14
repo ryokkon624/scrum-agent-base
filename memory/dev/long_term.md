@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-06
+**最終更新**: 2026-05-14
 
 ---
 
@@ -136,6 +136,21 @@
 - HwHub 規約の依存ルール表に従い、Domain Model と完全一致する Inner record は不要なボイラープレート。Service は Domain Model を直接返してよい
 - yup の `byte-length` テストはマルチバイト・絵文字を含む文字列にも安全（`TextEncoder`）
 - vee-validate の `errors` が空でない場合 `Object.keys(errors).length > 0` でボタン無効化制御を行うと AC「エラー時ボタン無効化」を防御的に満たせる
+
+---
+
+## Sprint 33 サマリー（2026-05-13完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #85 | [mobile] 買い物リスト画面を実装する (#13) | `features/shopping/` 配下に Repository・AsyncNotifier・State・Page 一式を新規作成。3タブ（未購入/かご/購入済み）+ 購入場所フィルタ + Dismissible によるスワイプ操作（かごへ/削除/購入済み/戻す）。`bulk_purchase_dialog`・`swipeable_shopping_card`・`purchased_item_tile` 等のウィジェット分割。i18n（ja/en/es）に shopping* キーを追加。`coverage.ps1` で features.shopping のみ集計し ≥95% 達成。Sprint Review 中に発覚した「`fetchItems()` のレスポンスが `{"items":[...]}` ラッパー形式なのに `List<dynamic>` キャストしていた」バグを `(response.data as Map)['items']` に修正・テストモックも修正 |
+
+### Sprint 33 で習得したこと
+- Flutter標準 `Dismissible` で「キャンセル可能なスワイプ削除」を実装するときは `confirmDismiss` 内で `showDialog` を `await` し、キャンセル時は `false` を返すとカードが元の位置に戻る
+- カバレッジ計測で feature ディレクトリ単位で集計したい場合、`lcov.info` の `SF:` パスを `awk` で判定して features.shopping のみ抽出する手が速い
+- `ServerException` などのカスタム例外が **named パラメータ**（`message:`）か positional かはテスト書き始める前に必ず確認する
+- ウィジェットテストで `find.text('削除')` のような短いテキストはスワイプ背景ラベルと確認ダイアログボタンの両方にヒットしやすい。`find.text('...').last` や `find.descendant` で特定する
+- Repository の API レスポンス形状（ラッパー `{"items":[...]}` か フラット配列か）はバックエンドの Controller / Response クラスを必ず確認してからモックを書く（mobile-conventions の重要事項としても明記済み）
 
 ---
 

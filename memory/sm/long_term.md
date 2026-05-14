@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-12（Sprint 27 Retro後）
+**最終更新**: 2026-05-14（Sprint 33 Retro後）
 
 ---
 
@@ -40,6 +40,8 @@
 | Sprint 30  | ログイン済みユーザー情報をRiverpodのauthStateで一元管理し、home・My Tasks画面の冗長なAPI呼び出しを排除することでモバイルアプリのパフォーマンスを向上させる | ✅ 全AC達成（#81: 4AC / 221件全グリーン）Sprint Reviewりょこさん指摘なし | convention-reviewerがauth_notifier.dartのDio直接参照（アーキテクチャ違反）を検出・AuthRepository経由に修正済み。DEVの計画フェーズでAuthUserの移動先（core/auth/ → core/models/）をりょこさんが修正（core/models/が正しい）。Sprint Review HTMLのDEV生成（⑥b）を今スプリントから初適用→正常動作確認。mobile-conventionsに「Notifier内でDioを直接使用しない」ルールを追記。reviewer Discord投稿が19スプリント連続成功。 |
 | Sprint 31  | Sprint 29 Review指摘の残課題2件（My Tasksフィルタバグ・カードレイアウト）を解消し、モバイルMy Tasks画面を完成品質に引き上げる | ⚠️ 部分達成（#79全AC達成 / #80 AC2未達成・カード幅コンテンツ依存）Sprint Review指摘1件（#80 AC2未達成→#82起票） | #79のAC4原因分析（①コードスコープクリープ ②テスト期待値のAC違反 ③再発防止策）をOpus 4.7で重点実施・GitHub Issue Body更新。3観点レビュー一発指摘なし（20スプリント連続）。#80でswipeable_task_card.dartのmargin削除後にwidth: double.infinityを設定しなかったためカード幅がコンテンツ依存のままになりSprint Reviewで指摘→mobile-conventionsに全幅表示パターン・developer-workflowにUI視覚的AC確認チェックを追記。 |
 | Sprint 32  | My Tasks画面の家事カードを画面幅いっぱいに正しく表示する | ✅ 全AC達成（#82: 2AC）Sprint Reviewりょこさん指摘なし | Sprint 31 Retroのチャレンジ（ウィジェットテストでカード幅チェック）をAC2として実装・達成。TDD（RED→GREEN）でカード幅の不一致を数値で確認してから修正。3観点レビュー一発「指摘なし」（21スプリント連続）。計画フェーズDEVが既存ブランチ継続にもかかわらず `fix/82-xxx` の新規ブランチ名をDiscordに誤記→実装フェーズDEVが自己修正・実害なし→scrum-master-workflowのDEV起動指示に既存ブランチ名の明示を追加。 |
+| Sprint 33  | 買い物リスト画面をモバイルに実装し、タブ切り替え・スワイプ操作で買い物中の体験を向上させる | ✅ 全AC達成（#85: 16AC / 98.7%テストカバレッジ）Sprint Review中にClassCastExceptionバグ発見→Sprint 33内で修正済み・「他は指摘ありませんでした」 | `shopping_repository.dart`で`response.data as List<dynamic>`と直接キャストしたが、実際のAPIレスポンスは`{"items": [...]}`のラッパー形式。テストではモックが正しくキャストされていたためテスト通過し、Sprint Reviewまで発覚せず。mobile-conventionsに「Repository impl テスト時のモック構造確認」を追記（ラッパー形式か否かを実装前に仕様で確認すること）。3観点レビューは再レビュー後全員「指摘なし」（22スプリント連続）。 |
+| Sprint 34  | 買い物アイテム作成・詳細画面をモバイルに実装し、画像添付や履歴からの選択で買い物リストをより充実させられるようにする | ✅ 全AC達成（#86: 11AC）Sprint Review指摘7件（①〜⑦ → Issue #100〜#106起票） | `catch (_) {}`によるエラー握りつぶしがshopping feature全体で多数あり、Sprint Review時の原因調査を困難にした（⑦指摘）。削除ダイアログ後のナビゲーション処理に不具合（②④指摘）。アイテム追加後の一覧画面へのデータ反映タイミング問題（①指摘）。mobile-conventions section 6にエラーハンドリングルールを追記。3観点レビューは再レビュー後全員「指摘なし」（23スプリント連続）。 |
 
 ---
 
@@ -128,6 +130,13 @@
 | Sprint 32  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回）で投稿成功（**21スプリント連続**）。定着確認                                                   | 継続監視                                                    |
 | Sprint 32  | scrum-master-workflowのDEV起動指示に既存ブランチ名の明示を追加    | ✅ SendMessageのDEV指示に「既存ブランチ継続使用時はブランチ名を明示・新規ブランチを作成しないこと」の注記を追加。Sprint 32で計画フェーズDEVが誤ったブランチ名を誤記した実績を受けて明文化 | scrum-master-workflow②更新                                  |
 | Sprint 32  | ウィジェットテスト（tester.getSize()）でカード幅チェックをACとして組み込む（Sprint 31 Retroチャレンジ） | ✅ AC2として実装・達成。短タスク名（48.25px）vs 長タスク名（532.75px）の不一致をREDで確認してからGREEN。Sprint 31で提案した防止策が本番検証を通過 | 今後のモバイルUIの幅・配置系ACで継続適用                    |
+| Sprint 33  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 33  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（**22スプリント連続**）。定着確認                                   | 継続監視                                                    |
+| Sprint 33  | mobile-conventionsにRepository implテスト時のモック構造確認を追加  | ✅ APIレスポンスのラッパー形式（`{"items": [...]}`）か否かを実装前に確認するルールを明文化。Sprint 33 Review でClassCastExceptionバグが発覚したことを受けてテスト方針に追記 | mobile-conventions SKILL.md section 7追記                  |
+| Sprint 34  | Claudeモデルの最新バージョン確認                                   | ✅ 確認済み。Opus 4.7（計画）/ Sonnet 4.6（実装）が現時点の最新。変更なし                                        | 次Planning時に再確認                                        |
+| Sprint 34  | reviewerのDiscord投稿継続監視                                    | ✅ 全3観点（初回・再レビュー両方）で投稿成功（**23スプリント連続**）。定着確認                                   | 継続監視                                                    |
+| Sprint 34  | mobile-conventions section 6にエラーハンドリングルールを追加        | ✅ `catch (_) {}`でエラーを握りつぶさず必ず`rethrow`か`AppException`変換を行うルールを追記。Sprint 34 Review でshopping feature全体のエラー握りつぶしが指摘されたことを受けて明文化 | mobile-conventions SKILL.md section 6追記                  |
+| Sprint 34  | Retro Issue起票前の既存Issue確認を必須化                            | ✅ scrum-master-workflow⑧手順3に「起票前に`list_issues`で既存openIssueを確認し重複がないことを確認してから起票する」を追記。Sprint 34 Retroで前セッション起票済み#93〜#99と同内容の#100〜#106を重複起票したことを受けて再発防止 | scrum-master-workflow⑧更新                                  |
 
 ---
 
@@ -195,10 +204,11 @@
 - DEVがACに明記されていない動作を自己判断でスコープに含めること（Sprint 29 → 「未割当タスクは含める」と自己判断してAC1に反する実装 → ACが曖昧な場合はりょこさんに確認してから実装する）
 - Notifier内でDioを直接使用すること（Sprint 30 → auth_notifier.dartでDio直接参照が発生→convention-reviewerが検出・修正済み → mobile-conventionsの依存方向ルールに明記）
 - モバイルのUIに関する視覚的AC（幅・配置・レイアウト）をシミュレーター確認なしに達成とすること（Sprint 31 → swipeable_task_card.dartのカード全幅表示AC2未達成をSprint Reviewまで気づかなかった → developer-workflowのコミット前チェックリストに追記・mobile-conventionsに全幅表示パターンを追加）
+- RepositoryのAPIレスポンスをキャストする際にバックエンドの実際の構造を確認しないこと（Sprint 33 → `response.data as List<dynamic>`と直接キャストしたが実際は`{"items": [...]}`のラッパー形式。テストが通過してもSprint ReviewでClassCastExceptionが発覚 → mobile-conventionsのテスト方針に「モック構造確認」を追記）
+- `catch (_) {}`でエラーを握りつぶすこと（Sprint 34 → shopping feature全体でエラーを握りつぶしており、Sprint Review時の原因調査が困難になった → mobile-conventions section 6にエラーハンドリングルールを追記）
+- Retro Issue起票前に既存openIssueを確認せずに重複起票すること（Sprint 34 → 前セッション起票済み#93〜#99と同内容の#100〜#106を重複起票。scrum-master-workflow⑧に確認必須を追記）
 
 ### Challenge（次に試すこと）
 
 - Claudeモデルの最新バージョン確認（Planning時に確認、現在: Sonnet 4.6 / Opus 4.7）
-- reviewerのDiscord投稿継続監視（Sprint 13〜31で20スプリント連続成功。根本原因は未特定）
-- Claudeモデルの最新バージョン確認（継続監視）
-- reviewerのDiscord投稿継続監視（21スプリント連続成功）
+- reviewerのDiscord投稿継続監視（23スプリント連続成功。根本原因は未特定）
