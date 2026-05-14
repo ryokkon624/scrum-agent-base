@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 35 Review — #96 画像削除モーダルが消えず、画像も削除されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-screen { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-screen-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-image-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .mock-image-thumb { width: 48px; height: 48px; background: #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #6b7280; position: relative; }
+  .mock-image-close { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ef4444; border-radius: 50%; color: white; font-size: 9px; display: flex; align-items: center; justify-content: center; }
+  .mock-dialog-overlay { background: rgba(0,0,0,0.08); border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .mock-dialog { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 12px; }
+  .mock-dialog-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #1a1a1a; }
+  .mock-dialog-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .mock-btn-cancel { font-size: 10px; padding: 3px 8px; border-radius: 3px; border: 1px solid #e5e5e5; color: #6b7280; background: white; }
+  .mock-btn-delete { font-size: 10px; padding: 3px 8px; border-radius: 3px; border: none; color: #b91c1c; background: #fef2f2; font-weight: 700; }
+  .mock-result-bad { font-size: 11px; color: #b91c1c; margin-top: 8px; font-style: italic; }
+  .mock-result-good { font-size: 11px; color: #166534; margin-top: 8px; font-style: italic; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .flow-box { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 6px; padding: 12px 14px; margin-bottom: 12px; font-size: 12px; }
+  .flow-box .flow-title { font-weight: 700; color: #374151; margin-bottom: 6px; }
+  .flow-step { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; }
+  .flow-arrow { color: #6b7280; margin: 0 4px; }
+  .flow-bad { color: #b91c1c; }
+  .flow-good { color: #166534; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 35 Review · Bug Fix</div>
+  <h1>#96 — 買い物アイテム詳細画面で画像の削除をした際に<br>モーダルが消えず、画像も削除されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 35</span>
+    <span class="badge badge-issue">#96</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">詳細画面 - 添付画像</div>
+          <div class="mock-image-row">
+            <div class="mock-image-thumb">
+              IMG
+              <span class="mock-image-close">×</span>
+            </div>
+          </div>
+        </div>
+        <div class="mock-dialog-overlay">
+          <div class="mock-dialog">
+            <div class="mock-dialog-title">この画像を削除しますか？</div>
+            <div class="mock-dialog-actions">
+              <span class="mock-btn-cancel">キャンセル</span>
+              <span class="mock-btn-delete">この画像を削除</span>
+            </div>
+          </div>
+        </div>
+        <div class="mock-result-bad">→「この画像を削除」をタップすると詳細画面が閉じる（go_router が詳細ルートをpop）。モーダルは消えず、画像も削除されない。</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">詳細画面 - 添付画像（削除後）</div>
+          <div style="font-size: 12px; color: #9ca3af; padding: 8px 0; text-align: center;">（画像なし）</div>
+        </div>
+        <div style="margin-top: 8px; background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px; font-size: 12px; color: #6b7280;">
+          「この画像を削除」タップ → モーダルが閉じる → deleteAttachment が呼ばれ画像が削除される → 詳細画面の画像一覧からサムネイルが消える
+        </div>
+        <div class="mock-result-good">→ モーダルが正常に閉じ、画像も削除される。詳細画面はそのまま表示され続ける。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">#94 と同一根本原因：go_router 環境での AlertDialog context ミスマッチ</span>
+      </div>
+      <div class="cause-body">
+        <p><code>_confirmDeleteAttachment</code> 内の <code>showDialog</code> の <code>builder: (_) =&gt;</code> でダイアログ専用の <code>BuildContext</code> を捨て、<code>Navigator.pop(context, ...)</code> に外側 (<code>_DetailBodyState</code>) の context を使っていた。</p>
+        <p>go_router 環境では <code>showDialog</code> が内部的に Navigator スタックの上に重ねるため、外側の context からは「ルートのポップ」として解釈される。これにより：</p>
+        <div class="flow-box">
+          <div class="flow-title">修正前のフロー（バグあり）</div>
+          <div class="flow-step"><span class="flow-bad">×</span> 「この画像を削除」タップ → <code>Navigator.pop(context, true)</code></div>
+          <div class="flow-step"><span class="flow-arrow">→</span> 外側context = <code>_DetailBodyState</code> の context（詳細画面ルート）</div>
+          <div class="flow-step"><span class="flow-arrow">→</span> go_router が詳細画面をpop（メイン画面の買い物リストへ遷移）</div>
+          <div class="flow-step"><span class="flow-arrow">→</span> ダイアログは閉じず、<code>showDialog</code> の <code>await</code> が完了しない</div>
+          <div class="flow-step"><span class="flow-arrow">→</span> <code>deleteAttachment</code> が呼ばれない（画像削除されない）</div>
+        </div>
+        <div class="flow-box">
+          <div class="flow-title">修正後のフロー（正常）</div>
+          <div class="flow-step"><span class="flow-good">✓</span> 「この画像を削除」タップ → <code>Navigator.pop(dialogContext, true)</code></div>
+          <div class="flow-step"><span class="flow-arrow">→</span> dialogContext = ダイアログ専用の <code>BuildContext</code></div>
+          <div class="flow-step"><span class="flow-arrow">→</span> ダイアログだけが閉じる</div>
+          <div class="flow-step"><span class="flow-arrow">→</span> <code>showDialog</code> の <code>await</code> が <code>true</code> を返す</div>
+          <div class="flow-step"><span class="flow-arrow">→</span> <code>deleteAttachment(attachmentId)</code> が呼ばれ画像が削除される</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart（_confirmDeleteAttachment）</span>
+        <span class="diff-stat">+4 / -3</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">167</span><span class="line-prefix"> </span><span>  ) async {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">168</span><span class="line-prefix"> </span><span>    final l10n = AppLocalizations.of(context);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">169</span><span class="line-prefix"> </span><span>    final messenger = ScaffoldMessenger.of(context);</span></div>
+        <div class="code-line line-add"><span class="line-num">170</span><span class="line-prefix">+</span><span>    // #96: dialogContextを使ってダイアログ自体をpopする</span></div>
+        <div class="code-line ctx"><span class="line-num">171</span><span class="line-prefix"> </span><span>    final confirmed = await showDialog&lt;bool&gt;(</span></div>
+        <div class="code-line ctx"><span class="line-num">172</span><span class="line-prefix"> </span><span>      context: context,</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>      builder: (_) =&gt; AlertDialog(</span></div>
+        <div class="code-line line-add"><span class="line-num">173</span><span class="line-prefix">+</span><span>      builder: (dialogContext) =&gt; AlertDialog(</span></div>
+        <div class="code-line ctx"><span class="line-num">174</span><span class="line-prefix"> </span><span>        content: Text(l10n.shoppingDetailImageDeleteConfirm),</span></div>
+        <div class="code-line ctx"><span class="line-num">175</span><span class="line-prefix"> </span><span>        actions: [</span></div>
+        <div class="code-line ctx"><span class="line-num">176</span><span class="line-prefix"> </span><span>          TextButton(</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>            onPressed: () =&gt; Navigator.pop(context, false),</span></div>
+        <div class="code-line line-add"><span class="line-num">177</span><span class="line-prefix">+</span><span>            onPressed: () =&gt; Navigator.pop(dialogContext, false),</span></div>
+        <div class="code-line ctx"><span class="line-num">178</span><span class="line-prefix"> </span><span>            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),</span></div>
+        <div class="code-line ctx"><span class="line-num">179</span><span class="line-prefix"> </span><span>          ),</span></div>
+        <div class="code-line ctx"><span class="line-num">180</span><span class="line-prefix"> </span><span>          TextButton(</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>            onPressed: () =&gt; Navigator.pop(context, true),</span></div>
+        <div class="code-line line-add"><span class="line-num">181</span><span class="line-prefix">+</span><span>            onPressed: () =&gt; Navigator.pop(dialogContext, true),</span></div>
+        <div class="code-line ctx"><span class="line-num">182</span><span class="line-prefix"> </span><span>            child: Text(l10n.shoppingDetailImageDelete),</span></div>
+        <div class="code-line ctx"><span class="line-num">183</span><span class="line-prefix"> </span><span>          ),</span></div>
+        <div class="code-line ctx"><span class="line-num">184</span><span class="line-prefix"> </span><span>        ],</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>#94 の <code>_confirmDeleteItem</code> と全く同じパターンのバグ。go_router を使うアプリでは <code>showDialog</code> の <code>builder</code> で受け取れる <code>dialogContext</code> を使わないと、外側の route が pop されてしまう。AlertDialog の actions は必ず <code>dialogContext</code> で <code>Navigator.pop</code> を呼ぶこと。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">画像削除確認モーダルで「この画像を削除」をクリックすると画像が削除される</div>
+      </div>
+      <div class="ac-body"><code>dialogContext</code> でダイアログをポップすることで <code>showDialog</code> の <code>await</code> が <code>true</code> を返し、<code>deleteAttachment(attachmentId)</code> が呼ばれるようになった。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">削除後、モーダルが自動的に閉じる</div>
+      </div>
+      <div class="ac-body">ダイアログ専用の context でポップすることでダイアログのみが閉じ、詳細画面はそのまま表示される。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">削除後、詳細画面に該当画像が表示されなくなる</div>
+      </div>
+      <div class="ac-body"><code>deleteAttachment</code> 成功後、Notifier が <code>state.attachments</code> から該当 attachment を除外することで画像一覧から即時消える。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>画像サムネイルの「×」ボタンをタップすると確認ダイアログが表示されること</strong>
+          <span>詳細画面の添付画像セクションでサムネイルの×ボタンをタップして「この画像を削除しますか？」が表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「この画像を削除」をタップするとダイアログが閉じ、詳細画面のままで画像が消えること</strong>
+          <span>削除後に詳細画面が閉じず（買い物リストへの意図しない遷移なし）、該当画像のサムネイルが消えているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>「キャンセル」をタップするとダイアログが閉じ、画像が残っていること</strong>
+          <span>キャンセル後に詳細画面に戻り、画像が削除されていないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>複数の画像がある場合、1枚だけ削除して他の画像が残ること</strong>
+          <span>複数画像のうち1枚のみ削除し、残りの画像が引き続き表示されるか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>#94 と同一のパターンバグ。go_router 環境での AlertDialog context の使い分けは今後も注意が必要な点として認識し、テストで担保する。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_detail_page_test.dart（画像削除ダイアログテスト 新規追加）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">go_router環境で画像削除ダイアログの「この画像を削除」をタップするとdeleteAttachmentが呼ばれ、かつ詳細画面がpopされないことを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_detail_page_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">ダイアログ「キャンセル」タップ後に詳細画面のsaveButtonが引き続き表示されることで、詳細画面が閉じていないことを確認</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,174 +1,106 @@
 # Dev 短期記憶
 
-**スプリント**: Sprint 34
+**スプリント**: Sprint 35
 **最終更新**: 2026-05-14
 
 ---
 
 ## スプリントゴール
 
-買い物アイテム作成・詳細画面をモバイルに実装し、画像添付や履歴からの選択で買い物リストをより充実させられるようにする
+買い物リスト機能の状態反映・削除機能バグを修正し、ユーザーが操作結果をリアルタイムで確認できるようにする
 
 ---
 
-## 対象Issue（featureラベル）
+## 対象Issue（すべて bug ラベル）
 
-| Issue | 内容 | SP | ブランチ |
-|-------|------|----|----|
-| #86 | [mobile] 買い物アイテム作成・詳細画面を実装する (#14/#15) | TBD | `feature/85-mobile-shopping-list`（Sprint33から継続使用） |
+| Issue | 内容 | コミット番号 |
+|-------|------|----|
+| #88 | かごタブスワイプ購入済み後、購入済みタブに即時表示されない | `fix: かごタブスワイプ購入済み後の購入済みタブ即時反映を修正 (ryokkon624/hw-hub-manage#88)` |
+| #93 | アイテム追加後・お気に入り操作後、買い物リストに反映されない | `fix: アイテム追加・お気に入り操作後の買い物リスト即時反映を修正 (ryokkon624/hw-hub-manage#93)` |
+| #96 | 画像削除モーダルが消えず、画像も削除されない | `fix: 買い物アイテム詳細画面の画像削除モーダル・削除処理バグを修正 (ryokkon624/hw-hub-manage#96)` |
+| #94 | 削除ダイアログでボタン押下してもアイテムが削除されない | `fix: 買い物アイテム詳細画面の削除ダイアログ・削除ボタン表示バグを修正 (ryokkon624/hw-hub-manage#94)` |
 
 リポジトリパス: `C:\work\hw-hub\hw-hub-mobile`
-作業スレッドID: `1504279756722405467`
+ブランチ: `feature/85-mobile-shopping-list`（既存・新規作成しない）
+作業スレッドID: `1504411180876435597`
+**各Issueごとに個別コミットを作成すること。**
 
 ---
 
 ## 承認済み実装方針
 
-### #86: 買い物アイテム作成・詳細画面を実装する
+### #88: かご→購入済みスワイプ後、購入済みタブに表示されない
 
-**コミットメッセージ**: `feat: モバイルの買い物アイテム作成・詳細画面を実装する (ryokkon624/hw-hub-manage#86)`
+**原因**:
+`shopping_list_state.dart` の `purchasedItems` getter は `status == '9'` かつ `purchasedAt != null` の両方を要求している。
+一方 `shopping_list_notifier.dart` の `markPurchased` / `bulkPurchase` は `_copyItemWithStatus` で
+status を '9' に変えるが `purchasedAt: item.purchasedAt`（元の null のまま）を保持する。
+そのため購入済みタブの getter フィルタを通らず表示されない。
+未購入↔かごは `purchasedAt` を条件にしないため即時反映される。再起動後はサーバーから `purchasedAt` 付きで返るため表示される。
 
-#### りょこさんとの確認事項回答（承認済み）
+**改修方針**:
+`_copyItemWithStatus` に `purchasedAt` 引数を追加し、
+- `markPurchased` / `bulkPurchase`（status='9'）→ `purchasedAt: DateTime.now().toIso8601String()` を渡す
+- `moveToBasket`（'1'）/ `moveBackToUnpurchased`（'0'）→ `purchasedAt: null` を渡す（購入済みから戻したケースのクリーンアップ）
+- 修正ファイル: `lib/features/shopping/presentation/shopping_list_notifier.dart`
 
-1. **history-suggestions の期間フィルタ** → **案A採用**: `limit=100` で全件取得後、`lastPurchasedDate` でモバイル側ローカルフィルタする
-2. **詳細画面の更新API** → **PUT で実装**（仕様書のPATCHは後追い修正。Webと同じく `PUT /api/shopping-items/{id}`）
-3. **画像枚数制限** → **クライアント側枚数制限なし**（Webに合わせる）
-4. **「このアイテムを削除」ボタン** → **未購入ステータス時のみ表示**（Web `ShoppingItemDetailPage.vue` の `v-if="isNotPurchased"` 仕様に合わせる）
+### #93: アイテム追加後・お気に入り操作後、買い物リストに反映されない
 
-#### 全体構成
+**原因**:
+`shopping_item_new_notifier.dart` の `submit` は `createItem` 成功後に
+一覧側（`shoppingListNotifierProvider`）を invalidate していない。
+詳細画面の `toggleFavorite` も同様。
+`ShoppingListNotifier` は `AutoDispose` だが、`StatefulShellRoute.indexedStack` 配下では
+一覧画面ウィジェットが `IndexedStack` で保持されるため AutoDispose が破棄されず古い state が残る。
 
-`features/shopping/` 既存ディレクトリに追加実装する（Sprint33の `shopping_list_page` 等は既存）。
+**改修方針**:
+Page 側の `ref.listen` で一覧 Provider を invalidate する（依存方向を守るため Notifier 内ではなく Page 側で実施）。
+- `shopping_item_new_page.dart`: `ref.listen` の `successItemId` 検知ブロックに `ref.invalidate(shoppingListNotifierProvider)` を追加
+- `shopping_item_detail_page.dart`: 詳細画面の `_DetailBody` でお気に入りスイッチ操作の都度 `ref.invalidate(shoppingListNotifierProvider)` を呼ぶ（りょこさん承認済み方針）
+- 修正ファイル: `lib/features/shopping/presentation/shopping_item_new/shopping_item_new_page.dart`、
+  `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart`
 
-```
-features/shopping/
-├── shopping_providers.dart                 # 既存: 追加プロバイダーを宣言
-├── data/
-│   ├── shopping_repository.dart            # 既存: createItem / updateItem / deleteItem / fetchOne / favorites / historySuggestions を追加
-│   ├── shopping_attachment_repository.dart # 【新規】Presigned URL発行 / S3 PUT / metadata登録 / 一覧 / 削除
-│   └── models/
-│       ├── shopping_item_history_suggestion_dto.dart  # 【新規】name / storeType / lastPurchasedDate / purchaseCount / sourceShoppingItemId
-│       ├── shopping_attachment_dto.dart                # 【新規】id / fileName / imageUrl / sortOrder
-│       ├── create_shopping_item_request.dart           # 【新規】name / memo / storeType / favorite / sourceShoppingItemId
-│       ├── update_shopping_item_request.dart           # 【新規】name / memo / storeType / favorite
-│       ├── create_upload_url_request.dart              # 【新規】fileName / mimeType
-│       ├── create_upload_url_response.dart             # 【新規】uploadUrl / fileKey
-│       └── create_attachment_request.dart              # 【新規】fileKey / fileName / mimeType
-└── presentation/
-    ├── shopping_item_new/
-    │   ├── shopping_item_new_page.dart       # 【新規】#14 作成画面
-    │   ├── shopping_item_new_notifier.dart   # 【新規】フォーム状態 + 登録処理 + 画像アップ
-    │   └── shopping_item_new_state.dart      # 【新規】name / memo / storeType / favorite / pickedImage / sourceShoppingItemId / isSubmitting / errorMessage
-    ├── shopping_item_detail/
-    │   ├── shopping_item_detail_page.dart    # 【新規】#15 詳細画面
-    │   ├── shopping_item_detail_notifier.dart# 【新規】読込 / 更新 / 削除 / status変更 / favorite / 画像追加削除
-    │   └── shopping_item_detail_state.dart   # 【新規】item / attachments / editable... / isLoading / isSaving / errorMessage
-    └── widgets/
-        ├── history_picker_bottom_sheet.dart  # 【新規】AC3: 過去履歴から選ぶ
-        ├── favorite_picker_bottom_sheet.dart # 【新規】AC4: お気に入りから選ぶ
-        ├── status_step_selector.dart         # 【新規】AC7: 未購入→かご→購入済みステップ
-        └── image_picker_field.dart           # 【新規】image_picker 呼出・サムネ表示の共通ウィジェット
-```
+### #96: 画像削除モーダルが消えず、画像も削除されない
 
-#### Repository 拡張（`ShoppingRepository`）
+**原因**:
+`shopping_item_detail_page.dart` の `_confirmDeleteAttachment` 内の `AlertDialog` で
+`builder: (_) => AlertDialog(...)` とダイアログの BuildContext を `_` で捨て、
+actions の `Navigator.pop(context, true)` を外側（`_DetailBodyState`）の `context` で呼んでいる。
+go_router 環境で外側 context の `Navigator.pop` を呼ぶと、ダイアログではなく
+詳細画面ルート自体が pop される（→「メイン画面が買い物リストに遷移」）。
+ダイアログは閉じず（barrier タップで初めて閉じる）、`showDialog` の `await` も完了しないため
+`deleteAttachment` が呼ばれず画像も削除されない。
 
-既存 interface に以下を追加：
+**改修方針**:
+`AlertDialog` の `builder` でダイアログ context を受け取り（`builder: (dialogContext) =>`）、
+actions の `Navigator.pop` をその `dialogContext` で呼ぶ。これでダイアログだけが閉じる。
+- 修正ファイル: `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart`（`_confirmDeleteAttachment`）
 
-- `createItem({required int householdId, required CreateShoppingItemRequest req})` → `POST /api/households/{id}/shopping-items` → `ShoppingItemDto`
-- `updateItem({required int shoppingItemId, required UpdateShoppingItemRequest req})` → `PUT /api/shopping-items/{id}` → `ShoppingItemDto`
-- `fetchOne({required int shoppingItemId})` … 既存 `fetchItems` のローカルキャッシュを優先利用するが、直リンク対策で API 経由でも取得できるようにする（**ただしバックエンドに単体取得 API がない場合は `fetchItems` で取得→find する**）→ 実装前に backend を確認
-- `fetchFavorites({required int householdId})` → `GET /api/households/{id}/shopping-items/favorites` → `List<ShoppingItemDto>`
-- `fetchHistorySuggestions({required int householdId, String? q, String? storeType, int limit = 100})` → `GET /api/households/{id}/shopping-items/history-suggestions` → `List<ShoppingItemHistorySuggestionDto>`
+### #94: 削除ダイアログのボタンを押してもアイテムが削除されない
 
-#### Attachment Repository（新規）
+**原因**:
+#96 と同一原因。`_confirmDeleteItem` 内の `AlertDialog` actions も `builder: (_)` で
+ダイアログ context を捨て、外側 context で `Navigator.pop` している。
+加えて削除ボタン表示制御の `isNotPurchased` getter が `notPurchased` だけでなく
+`inBasket`（かご）も `true` を返すため、かご状態でも削除ボタンが表示される（AC3違反）。
 
-- `createUploadUrl({required int itemId, required String fileName, required String mimeType})` → `POST /api/shopping-items/{itemId}/attachments/upload-url` → `CreateUploadUrlResponse`
-- `uploadToS3({required String uploadUrl, required Uint8List bytes, required String mimeType})` → 素の Dio（**インターセプターを使わない別インスタンス**）で `PUT`
-- `createAttachment({required int itemId, required CreateAttachmentRequest req})` → `POST /api/shopping-items/{itemId}/attachments`
-- `listAttachments({required int itemId})` → `GET /api/shopping-items/{itemId}/attachments` → `List<ShoppingAttachmentDto>`
-- `deleteAttachment({required int itemId, required int attachmentId})` → `DELETE /api/shopping-items/{itemId}/attachments/{attachmentId}`
-
-> S3 PUT 用 Dio は `image_uploader.dart` というユーティリティに切り出してリピートさせる。`dio = Dio()`（baseUrl 無し・interceptor 無し）
-
-#### Notifier の責務
-
-**`ShoppingItemNewNotifier extends AutoDisposeNotifier<ShoppingItemNewState>`**
-- `setName(String) / setMemo(String) / setStoreType(String) / setFavorite(bool)`
-- `setFromHistory(ShoppingItemHistorySuggestionDto)` … name / storeType / sourceShoppingItemId をセット（favorite はクリア）
-- `setFromFavorite(ShoppingItemDto)` … name / memo / storeType / sourceShoppingItemId をセット（favorite はクリア・固定）
-- `pickImage(ImageSource source)` … image_picker 経由で XFile を取得・bytes 保持
-- `clearImage()` … 選択解除
-- `submit({required int householdId})` … バリデーション → createItem → 画像があれば uploadAttachment → 戻る
-
-**`ShoppingItemDetailNotifier extends AutoDisposeFamilyAsyncNotifier<ShoppingItemDetailState, int>`** （itemIdをfamilyで受ける）
-- `build(int itemId)` … item と attachments を並行取得
-- `setName / setMemo / setStoreType` … editable state 更新
-- `toggleFavorite()` … 即座に API 呼ぶ
-- `updateStatus(String status)` … 即座に API 呼ぶ
-- `save()` … updateItem (PUT) → list 画面に戻る
-- `deleteItem()` … 削除確認後 → API → 戻る
-- `addImage(XFile file)` … Presigned URL 発行 → S3 PUT → metadata 登録 → 一覧再取得
-- `deleteAttachment(int attachmentId)` … 削除 → 一覧再取得
-
-#### ボトムシート（AC3 / AC4）
-
-`showModalBottomSheet` で表示。中身は StatefulWidget で keyword / storeTypeFilter / periodFilter（履歴のみ）を保持し、フィルタした結果を表示。「選ぶ」タップで `Navigator.pop(result)` し、呼出元 Notifier の `setFromHistory` / `setFromFavorite` を呼ぶ。
-
-**期間フィルタ（履歴のみ）**：「すべて / 過去30日 / 過去90日 / 過去1年」の4択チップ。`lastPurchasedDate` を `DateTime.parse` してクライアント側で `now.subtract(Duration(days: 30|90|365))` と比較してフィルタ（**API では取得しない・ローカルフィルタ**）。
-
-#### ステータスステップセレクター（AC7）
-
-`StatusStepSelector` ウィジェット：
-- 横並び3ステップ「1 未購入 → 2 かご → 3 購入済み」
-- 各ステップに `TaskStatus` 風の丸アイコン
-- 過去ステップ = 緑塗りつぶし＋✓ / 現在ステップ = primary塗りつぶし / 未来ステップ = グレー枠線
-- ステップタップで `onChanged(status)` コールバック
-- ステップ下に説明テキスト（「まだ買う前の状態です」等）
-
-#### image_picker 導入と permissions
-
-`pubspec.yaml` に `image_picker: ^1.1.0` を追加。`AndroidManifest.xml` と `Info.plist` の permissions も追加（仕様書 `common/image_upload.md` 参照）。
-
-`image_picker` 呼出は `ImagePicker().pickImage(source: ..., maxWidth: 1920, maxHeight: 1920, imageQuality: 85)` を使用。Notifier 経由ではなくウィジェット側（モーダル選択用ボトムシート）で実行し、結果の `XFile` を Notifier に渡す（モック容易化のため）。
-
-#### i18n 追加キー（ja/en/es）
-
-`app_*.arb` に追加：
-- `shoppingNewTitle` / `shoppingNewIntro`
-- `shoppingNewSelectFromHistory` / `shoppingNewSelectFromFavorite`
-- `shoppingNewName` / `shoppingNewMemo` / `shoppingNewStoreType` / `shoppingNewFavorite` / `shoppingNewImage`
-- `shoppingNewImageHint` / `shoppingNewSubmit` / `shoppingNewCancel`
-- `shoppingNewToastSuccess` / `shoppingNewToastError`
-- `shoppingHistoryModalTitle` / `shoppingHistoryModalDescription`
-- `shoppingHistoryModalKeywordPlaceholder` / `shoppingHistoryModalEmpty`
-- `shoppingHistoryModalPeriodAll` / `shoppingHistoryModalPeriod30d` / `shoppingHistoryModalPeriod90d` / `shoppingHistoryModalPeriod365d`
-- `shoppingFavoriteModalTitle` / `shoppingFavoriteModalDescription` / `shoppingFavoriteModalEmpty`
-- `shoppingDetailTitle` / `shoppingDetailIntro`
-- `shoppingDetailStatus` / `shoppingDetailStatusHelpNotPurchased` / `shoppingDetailStatusHelpInBasket` / `shoppingDetailStatusHelpPurchased`
-- `shoppingDetailSave` / `shoppingDetailDeleteItem` / `shoppingDetailDeleteConfirm`
-- `shoppingDetailImageSectionTitle` / `shoppingDetailImageAdd` / `shoppingDetailImageDelete` / `shoppingDetailImageDeleteConfirm`
-- `shoppingDetailToastSaveSuccess` / `shoppingDetailToastDeleteSuccess` / `shoppingDetailToastImageAddSuccess` / `shoppingDetailToastImageDeleteSuccess`
-- `shoppingImagePickerCamera` / `shoppingImagePickerGallery` / `shoppingImagePickerCancel`
-
-#### ルーティング
-
-`app_router.dart` の以下 2 ヶ所を差し替え：
-- `AppRoutes._shoppingNewRelative` の builder を `const _P('買い物アイテム作成')` → `const ShoppingItemNewPage()`
-- `AppRoutes._shoppingDetailRelative` の builder を `_P('買い物アイテム詳細 ${s.pathParameters['id']}')` → `ShoppingItemDetailPage(itemId: int.parse(s.pathParameters['id']!))`
+**改修方針**:
+1. `_confirmDeleteItem` の `AlertDialog` を `builder: (dialogContext) =>` にし、actions の `Navigator.pop` を `dialogContext` で呼ぶ（#96 と同じ修正）
+2. `shopping_item_detail_state.dart` の `isNotPurchased` getter を `item?.status == ShoppingItemStatus.notPurchased.code` のみ true を返すよう修正（`inBasket` を条件から外す）。getter 名が実態と合致する形になる
+- 修正ファイル: `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart`（`_confirmDeleteItem`）、
+  `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_state.dart`（`isNotPurchased`）
 
 ---
 
-## 作業順序（TDD: RED → GREEN → REFACTOR）
+## 作業順序（TDD: RED → GREEN → REFACTOR）／コミット単位
 
-1. **準備**: `pubspec.yaml` に image_picker 追加 → `flutter pub get` → AndroidManifest / Info.plist に permissions 追加
-2. **DTO・Request モデル**: 新規 8 ファイル → `build_runner` で `.g.dart` 生成
-3. **ShoppingRepository 拡張**: interface に 4 メソッド追加 → impl 実装 → repository_test（成功 + DioException 変換）
-4. **ShoppingAttachmentRepository 新規**: interface + impl → attachment_repository_test
-5. **ShoppingItemNewNotifier + State**: state クラス → notifier → notifier_test（各操作の遷移）
-6. **ShoppingItemDetailNotifier + State**: state → notifier → notifier_test
-7. **i18n キー追加**: ja/en/es の ARB を編集 → `flutter gen-l10n`
-8. **Widget 系**: `status_step_selector` → `image_picker_field` → `history_picker_bottom_sheet` → `favorite_picker_bottom_sheet` → page 本体 → page_test
-9. **router 差し替え**: `_P('買い物アイテム作成')` → `ShoppingItemNewPage`、`_P('買い物アイテム詳細 ...')` → `ShoppingItemDetailPage`
-10. **AC11: カバレッジ計測**: `coverage.ps1` で features.shopping 配下 ≥95% 達成を確認
+1. **#88**: `shopping_list_notifier_test.dart` に「markPurchased / bulkPurchase 後に purchasedItems に含まれる」テストを追加（RED）→ `_copyItemWithStatus` に purchasedAt 引数追加（GREEN）→ コミット
+2. **#94**: `shopping_item_detail_state` の `isNotPurchased` テスト（かご→false）を追加（RED）→ getter 修正＋ダイアログ context 修正（GREEN）→ `shopping_item_detail_page_test` でダイアログ削除ボタンタップ→削除呼出を検証 → コミット
+3. **#96**: `shopping_item_detail_page_test` で画像削除ダイアログのボタンタップ→deleteAttachment 呼出・ダイアログ閉じを検証（RED）→ ダイアログ context 修正（GREEN）→ コミット
+4. **#93**: `shopping_item_new_page_test` / `shopping_item_detail_page_test` で成功時・お気に入り操作時に `shoppingListNotifierProvider` が invalidate されることを検証（RED）→ Page に invalidate 追加（GREEN）→ コミット
+
+> #94 と #96 は同一ファイル（`shopping_item_detail_page.dart`）を触るが、Issue ごとに個別コミットするため
+> #94 のコミット → #96 のコミットの順で、それぞれ該当メソッドのみを変更してコミットする。
 
 ---
 
@@ -176,70 +108,21 @@ features/shopping/
 
 | 対象 | テスト |
 |------|--------|
-| `ShoppingRepositoryImpl`（拡張分） | createItem / updateItem / fetchFavorites / fetchHistorySuggestions の成功パス + DioException 変換 |
-| `ShoppingAttachmentRepositoryImpl` | createUploadUrl / uploadToS3 / createAttachment / listAttachments / deleteAttachment の成功 + DioException 変換 |
-| `ShoppingItemNewNotifier` | フォーム入力 / setFromHistory / setFromFavorite / pickImage / submit（成功・失敗）。`ImagePicker` はテストで Notifier に注入できる形にせず、`pickImage` メソッドを `XFile` 受取り型にしてテストで直接 `setPickedImage` を呼ぶ |
-| `ShoppingItemDetailNotifier` | build / save / deleteItem / toggleFavorite / updateStatus / addImage / deleteAttachment の状態遷移 |
-| `ShoppingItemNewPage` (widget) | 主要表示・カメラ/ライブラリ選択肢ボトムシート表示・送信ボタンタップで Notifier の `submit` が呼ばれること（Notifier はフェイク） |
-| `ShoppingItemDetailPage` (widget) | 主要表示・ステータスステップタップ・お気に入りトグル・削除ダイアログ・「未購入時のみ削除ボタン表示」・保存ボタン |
-
-> `image_picker` のモックは Notifier には差し込まず、画面側のソース選択ボトムシート（カメラ/ギャラリー）からの呼び出しを切り離す。Notifier の `pickImage` テストは `XFile` を直接渡せる契約にする（テスタビリティ優先）。
-
----
-
-## 変更ファイル一覧
-
-### pubspec / native
-- `pubspec.yaml`（image_picker 追加）
-- `android/app/src/main/AndroidManifest.xml`（CAMERA 権限）
-- `ios/Runner/Info.plist`（NSCameraUsageDescription / NSPhotoLibraryUsageDescription）
-
-### 新規（lib）
-- `lib/features/shopping/data/shopping_attachment_repository.dart`
-- `lib/features/shopping/data/models/shopping_item_history_suggestion_dto.dart`
-- `lib/features/shopping/data/models/shopping_attachment_dto.dart`
-- `lib/features/shopping/data/models/create_shopping_item_request.dart`
-- `lib/features/shopping/data/models/update_shopping_item_request.dart`
-- `lib/features/shopping/data/models/create_upload_url_request.dart`
-- `lib/features/shopping/data/models/create_upload_url_response.dart`
-- `lib/features/shopping/data/models/create_attachment_request.dart`
-- `lib/features/shopping/presentation/shopping_item_new/shopping_item_new_page.dart`
-- `lib/features/shopping/presentation/shopping_item_new/shopping_item_new_notifier.dart`
-- `lib/features/shopping/presentation/shopping_item_new/shopping_item_new_state.dart`
-- `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart`
-- `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_notifier.dart`
-- `lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_state.dart`
-- `lib/features/shopping/presentation/widgets/history_picker_bottom_sheet.dart`
-- `lib/features/shopping/presentation/widgets/favorite_picker_bottom_sheet.dart`
-- `lib/features/shopping/presentation/widgets/status_step_selector.dart`
-- `lib/features/shopping/presentation/widgets/image_picker_field.dart`
-
-### 新規（test）
-- `test/features/shopping/data/shopping_repository_test.dart`（拡張分テスト追加）
-- `test/features/shopping/data/shopping_attachment_repository_test.dart`
-- `test/features/shopping/presentation/shopping_item_new/shopping_item_new_notifier_test.dart`
-- `test/features/shopping/presentation/shopping_item_new/shopping_item_new_page_test.dart`
-- `test/features/shopping/presentation/shopping_item_detail/shopping_item_detail_notifier_test.dart`
-- `test/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page_test.dart`
-
-### 編集
-- `lib/features/shopping/data/shopping_repository.dart`（メソッド追加）
-- `lib/features/shopping/shopping_providers.dart`（attachment / notifier providers 追加）
-- `lib/app_router.dart`（2ヶ所の builder 差し替え）
-- `lib/l10n/app_ja.arb` / `app_en.arb` / `app_es.arb`
+| `ShoppingListNotifier`（#88） | markPurchased / bulkPurchase 後、`state.purchasedItems` に該当アイテムが含まれること。moveToBasket / moveBackToUnpurchased 後は purchasedItems から外れること |
+| `ShoppingItemDetailState`（#94） | `isNotPurchased`: notPurchased=true / inBasket=false / purchased=false |
+| `ShoppingItemDetailPage`（#94/#96） | 削除ダイアログ・画像削除ダイアログでボタンタップ後、Notifier の deleteItem/deleteAttachment が呼ばれること、ダイアログが閉じること（詳細画面が pop されないこと） |
+| `ShoppingItemNewPage` / `ShoppingItemDetailPage`（#93） | 追加成功時・お気に入り操作時に `shoppingListNotifierProvider` が invalidate されること |
 
 ---
 
 ## コミット前チェックリスト
 
-- [ ] ACをすべて満たしているか（AC1〜AC11）
+- [ ] 各Issueの AC をすべて満たしているか
 - [ ] `dart format .`
 - [ ] `flutter analyze`（警告ゼロ）
 - [ ] `flutter test`（全グリーン）
-- [ ] `coverage.ps1` で features.shopping 配下のカバレッジ ≥95%
+- [ ] 各Issueごとに個別コミットを作成したか
 - [ ] AppLocalizations の import パスは `lib/l10n/app_localizations.dart` への相対パス
-- [ ] image_picker の権限設定（AndroidManifest / Info.plist）を追加した
-- [ ] シミュレーターまたはウィジェットテストで主要画面の見た目（ステップUI・サムネ横スクロール・ボトムシート）を確認した
 - [ ] `git push origin feature/85-mobile-shopping-list`
 
 ---
@@ -247,8 +130,9 @@ features/shopping/
 ## 作業ルール
 
 - [DEV] プレフィックスをDiscord投稿に必ずつける
-- 作業スレッドID: `1504279756722405467`
+- 作業スレッドID: `1504411180876435597`
 - ブランチ: `feature/85-mobile-shopping-list`（既存・新規作成しない）
+- 各Issueごとに個別コミット
 - PRはSMが行う。DEVはpushまでが担当
 
 ---
@@ -257,7 +141,10 @@ features/shopping/
 
 | Issue | 状態 |
 |-------|------|
-| #86 買い物アイテム作成・詳細画面実装 | 計画フェーズ完了・Sonnetでの実装フェーズ待ち |
+| #88 | 計画フェーズ完了・Sonnetでの実装フェーズ待ち |
+| #93 | 計画フェーズ完了・Sonnetでの実装フェーズ待ち |
+| #96 | 計画フェーズ完了・Sonnetでの実装フェーズ待ち |
+| #94 | 計画フェーズ完了・Sonnetでの実装フェーズ待ち |
 
 ---
 

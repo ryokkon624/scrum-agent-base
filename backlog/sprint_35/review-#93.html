@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 35 Review — #93 アイテム追加後・お気に入り操作後、買い物リスト画面に反映されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-card { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-card-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
+  .mock-item:last-child { border-bottom: none; }
+  .mock-item-name { color: #1a1a1a; }
+  .mock-item-new { color: #059669; font-weight: 600; }
+  .mock-badge-fav { background: #fef9c3; color: #854d0e; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 3px; }
+  .mock-badge-no-fav { background: #f3f4f6; color: #6b7280; font-size: 10px; padding: 2px 5px; border-radius: 3px; }
+  .mock-result-bad { font-size: 11px; color: #b91c1c; margin-top: 8px; font-style: italic; }
+  .mock-result-good { font-size: 11px; color: #166534; margin-top: 8px; font-style: italic; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .arch-box { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 6px; padding: 12px 14px; font-size: 12px; margin-bottom: 12px; }
+  .arch-title { font-weight: 700; color: #374151; margin-bottom: 8px; }
+  .arch-flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .arch-node { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .arch-node-page { background: #dbeafe; color: #1e40af; }
+  .arch-node-notifier { background: #dcfce7; color: #166534; }
+  .arch-node-provider { background: #fef9c3; color: #854d0e; }
+  .arch-arrow { color: #6b7280; font-size: 14px; }
+  .arch-arrow-bad { color: #ef4444; font-size: 14px; }
+  .arch-arrow-good { color: #22c55e; font-size: 14px; }
+  .arch-label { font-size: 11px; color: #6b7280; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 35 Review · Bug Fix</div>
+  <h1>#93 — 買い物アイテム追加画面でアイテム追加後、<br>買い物リスト画面に表示されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 35</span>
+    <span class="badge badge-issue">#93</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">買い物リスト（未購入タブ）</div>
+          <div class="mock-item">
+            <span class="mock-item-name">牛乳</span>
+            <span class="mock-badge-fav">お気に入り</span>
+          </div>
+          <div class="mock-item">
+            <span class="mock-item-name">シャンプー</span>
+            <span class="mock-badge-no-fav">なし</span>
+          </div>
+        </div>
+        <div class="mock-result-bad">→ 「卵」を追加して戻ってきても表示されない。詳細画面でお気に入りにしても、一覧に反映されない。アプリ再起動後に反映される。</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">買い物リスト（未購入タブ）</div>
+          <div class="mock-item">
+            <span class="mock-item-name">牛乳</span>
+            <span class="mock-badge-fav">お気に入り</span>
+          </div>
+          <div class="mock-item">
+            <span class="mock-item-name">シャンプー</span>
+            <span class="mock-badge-fav">お気に入り</span>
+          </div>
+          <div class="mock-item">
+            <span class="mock-item-new">卵（新規追加）</span>
+            <span class="mock-badge-no-fav">なし</span>
+          </div>
+        </div>
+        <div class="mock-result-good">→ アイテム追加後に即時リストに表示。詳細画面でお気に入りにすると即時反映される。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">shoppingListNotifierProvider の invalidate が呼ばれていなかった</span>
+      </div>
+      <div class="cause-body">
+        <p>アイテム追加（<code>createItem</code> 成功）後・お気に入り操作（<code>toggleFavorite</code>）後に、一覧側の <code>shoppingListNotifierProvider</code> を invalidate していなかった。</p>
+        <p><code>ShoppingListNotifier</code> は <code>AutoDispose</code> だが、<code>StatefulShellRoute.indexedStack</code> 配下では買い物リスト画面のウィジェットが <code>IndexedStack</code> で保持されるため、AutoDispose による破棄が起きない。そのため追加・お気に入り操作後も古い state が残り、変更が反映されない。</p>
+        <div class="arch-box">
+          <div class="arch-title">修正前：invalidate なし → 古いstateが残る</div>
+          <div class="arch-flow">
+            <span class="arch-node arch-node-page">ShoppingItemNewPage</span>
+            <span class="arch-arrow-bad">→</span>
+            <span class="arch-node arch-node-notifier">createItem成功</span>
+            <span class="arch-arrow-bad">→</span>
+            <span class="arch-label">invalidate なし</span>
+            <span class="arch-arrow-bad">→</span>
+            <span class="arch-label" style="color:#b91c1c;">古いstateのまま</span>
+          </div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-title">修正後：invalidate → 次に表示された際に再fetch</div>
+          <div class="arch-flow">
+            <span class="arch-node arch-node-page">ShoppingItemNewPage</span>
+            <span class="arch-arrow-good">→</span>
+            <span class="arch-node arch-node-notifier">createItem成功</span>
+            <span class="arch-arrow-good">→</span>
+            <span class="arch-node arch-node-provider">ref.invalidate(shoppingListNotifierProvider)</span>
+            <span class="arch-arrow-good">→</span>
+            <span class="arch-label" style="color:#166534;">リスト画面に戻った際に再fetch・即時反映</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_page.dart</span>
+        <span class="diff-stat">+3 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">24</span><span class="line-prefix"> </span><span>    // 登録成功後に前の画面に戻る</span></div>
+        <div class="code-line line-ctx"><span class="line-num">25</span><span class="line-prefix"> </span><span>    ref.listen(shoppingItemNewNotifierProvider, (prev, next) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">26</span><span class="line-prefix"> </span><span>      if (next.successItemId != null &amp;&amp; prev?.successItemId == null) {</span></div>
+        <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>        // #93: 追加成功後に買い物リストを即時反映するためinvalidate</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>        ref.invalidate(shoppingListNotifierProvider);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">29</span><span class="line-prefix"> </span><span>        ScaffoldMessenger.of(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">30</span><span class="line-prefix"> </span><span>          context,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span>        ).showSnackBar(SnackBar(content: Text(l10n.shoppingNewToastSuccess)));</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>Notifier の中で他の Provider を invalidate すると依存方向が崩れるため、Page 側の <code>ref.listen</code> ハンドラで invalidate を呼ぶのが正しいアーキテクチャ。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart（お気に入りスイッチ）</span>
+        <span class="diff-stat">+5 / -1</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">297</span><span class="line-prefix"> </span><span>          SwitchListTile(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">298</span><span class="line-prefix"> </span><span>            key: const Key('favoriteSwitch'),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">299</span><span class="line-prefix"> </span><span>            title: Text(l10n.shoppingNewFavorite),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">300</span><span class="line-prefix"> </span><span>            value: state.currentFavorite == FavoriteFlag.favorite.code,</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>            onChanged: (_) =&gt; widget.notifier.toggleFavorite(),</span></div>
+        <div class="code-line line-add"><span class="line-num">301</span><span class="line-prefix">+</span><span>            onChanged: (_) async {</span></div>
+        <div class="code-line line-add"><span class="line-num">302</span><span class="line-prefix">+</span><span>              await widget.notifier.toggleFavorite();</span></div>
+        <div class="code-line line-add"><span class="line-num">303</span><span class="line-prefix">+</span><span>              // #93: お気に入り操作後に買い物リストを即時反映するためinvalidate</span></div>
+        <div class="code-line line-add"><span class="line-num">304</span><span class="line-prefix">+</span><span>              ref.invalidate(shoppingListNotifierProvider);</span></div>
+        <div class="code-line line-add"><span class="line-num">305</span><span class="line-prefix">+</span><span>            },</span></div>
+        <div class="code-line line-ctx"><span class="line-num">306</span><span class="line-prefix"> </span><span>            contentPadding: EdgeInsets.zero,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">307</span><span class="line-prefix"> </span><span>          ),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>toggleFavorite</code> が完了してから invalidate を呼ぶことで、次回 <code>shoppingListNotifierProvider</code> が build された際にサーバーから最新データを取得してお気に入り状態が正しく反映される。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">買い物アイテム追加画面でアイテムを追加後、買い物リスト画面に即時表示される</div>
+      </div>
+      <div class="ac-body">追加成功時（<code>successItemId != null</code> 検知）に <code>ref.invalidate(shoppingListNotifierProvider)</code> を呼び、一覧画面に戻った際にデータが再取得されて新しいアイテムが表示されるようになった。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">買い物アイテム詳細画面でお気に入り設定後、買い物リスト画面に即時反映される</div>
+      </div>
+      <div class="ac-body">お気に入りスイッチ操作後に <code>ref.invalidate(shoppingListNotifierProvider)</code> を呼び、一覧画面に戻った際にお気に入り状態が更新されて表示される。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">アプリ再起動なしで反映が確認できる</div>
+      </div>
+      <div class="ac-body">invalidate により Provider が破棄・再 build されるため、アプリを再起動しなくても操作結果が即時反映される。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>「＋」ボタンからアイテムを追加後、買い物リスト画面に戻ると追加したアイテムが一覧に表示されること</strong>
+          <span>アプリ再起動なしで新しいアイテムが未購入タブに表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>アイテム詳細画面でお気に入りスイッチをオンにして戻ると、買い物リストのそのアイテムにお気に入りマークが表示されること</strong>
+          <span>詳細画面からリスト画面に戻った際にお気に入り状態が反映されているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>お気に入りをオフにして戻ると、買い物リストのお気に入りマークが消えること</strong>
+          <span>お気に入り解除も正しく反映されるか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>AutoDispose Provider と IndexedStack の組み合わせで「古いstateが残る」パターンは発生しやすい。invalidate による強制再取得パターンをテストで担保した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_new_page_test.dart（新規テストグループ）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">追加成功後にshoppingListNotifierProviderがinvalidateされリスト画面復帰時に再fetchされることを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_detail_page_test.dart（新規テストグループ）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">お気に入りスイッチタップ後にshoppingListNotifierProviderがinvalidateされリスト画面復帰時に再fetchされることを検証</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

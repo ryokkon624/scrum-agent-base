@@ -4,6 +4,19 @@
 
 ---
 
+## コミット前セルフチェック（繰り返し指摘パターン）
+
+コードレビューで繰り返し指摘されたパターン。コミット前に必ず確認すること。
+
+| チェック項目 | 確認内容 |
+|---|---|
+| **マジックストリング** | APIから返される区分値（`'0'`/`'1'`など）を直接比較していないか。`core/models/` の生成済み enum（`XxxStatus.code`）を使うこと（Sprint 35で指摘） |
+| **catch握りつぶし** | `catch (_) {}` でエラーを無視していないか。必ず `rethrow` または `AppException` に変換すること（Sprint 34・35で指摘） |
+| **i18nハードコード** | 日本語・英語文字列をウィジェット内に直書きしていないか。ARBファイルに定義して `AppLocalizations.of(context).key` を使うこと（Sprint 33で指摘） |
+| **invalidate漏れ** | 詳細・作成画面での操作（追加/削除/ステータス変更/お気に入り）後に一覧 Provider を `ref.invalidate()` しているか（IndexedStack配下では必須。Sprint 35で指摘） |
+
+---
+
 ## 技術的なハマりポイントと解決策
 
 （スプリントごとのshort_termから移してくる）
@@ -136,6 +149,36 @@
 - HwHub 規約の依存ルール表に従い、Domain Model と完全一致する Inner record は不要なボイラープレート。Service は Domain Model を直接返してよい
 - yup の `byte-length` テストはマルチバイト・絵文字を含む文字列にも安全（`TextEncoder`）
 - vee-validate の `errors` が空でない場合 `Object.keys(errors).length > 0` でボタン無効化制御を行うと AC「エラー時ボタン無効化」を防御的に満たせる
+
+---
+
+## Sprint 35 サマリー（2026-05-14完了）
+
+| Issue | 内容 |
+|-------|------|
+| #88 | 購入済みアイテムが購入後に非表示になる（`purchasedAt` が null → `purchasedItems` getter 除外） |
+| #94 | アイテム削除ダイアログのキャンセルでページごと閉じる（`Navigator.pop(context)` が外側 context を使用） |
+| #96 | 添付ファイル削除ダイアログのキャンセルでページごと閉じる（同上） |
+| #93 | かごに入れたアイテムが非購入タブに残る（`isNotPurchased` getter が `inBasket` を誤判定 + invalidate漏れ） |
+
+### Sprint 35 で習得したこと
+- `IndexedStack` 配下では `AutoDispose` が破棄されず古い state が残る。詳細・作成画面で一覧が変わる操作後は必ず `ref.invalidate(一覧Provider)` を呼ぶ（操作の種類を問わず網羅すること）
+- `showDialog(builder: (context) => AlertDialog(...))` 内で `Navigator.pop(context)` を使うと go_router 環境では外側の context が解決されページが閉じる。`builder: (dialogContext)` で dialog context を明示的に受け取り `Navigator.pop(dialogContext)` を使うこと
+- `isNotPurchased` のような否定ゲッターは「対象ステータスのみ true」に限定する。`notPurchased` のみを true とし、`inBasket` 等の他ステータスを含めない設計が直感的
+
+---
+
+## Sprint 34 サマリー（2026-05-14完了）
+
+| Issue | 内容 | 成果 |
+|-------|------|------|
+| #86 | [mobile] 買い物アイテム作成・詳細画面を実装する (#14/#15) | `features/shopping/` 配下に作成画面（`shopping_item_new`）・詳細画面（`shopping_item_detail`）一式を新規。作成は `ShoppingItemNewNotifier`（AutoDisposeNotifier）、詳細は `ShoppingItemDetailNotifier`（AutoDisposeFamilyNotifier、itemId を family で受ける）。`ShoppingAttachmentRepository` 新規（Presigned URL 発行→S3 PUT→metadata 登録の3段。S3 PUT は interceptor 無しの素の Dio）。DTO・Request モデル8種を新規＋`build_runner`。`history_picker_bottom_sheet`・`favorite_picker_bottom_sheet`・`status_step_selector`・`image_picker_field` ウィジェット。`image_picker: ^1.1.0` 追加＋AndroidManifest/Info.plist 権限。詳細画面の更新は PUT `/api/shopping-items/{id}`。「削除」ボタンは未購入時のみ表示。i18n（ja/en/es）に shopping* キー追加。`app_router.dart` の仮画面 builder を実画面に差し替え |
+
+### Sprint 34 で習得したこと
+- 詳細画面で itemId をキーにした画面ごとの状態は `AutoDisposeFamilyNotifier`／`NotifierProvider.autoDispose.family` で実装する
+- `Notifier.build()` が同期の場合、初期非同期ロードは `Future.microtask(() => _initialize(itemId))` で蹴り、`isLoading: true` の初期 state を返す
+- S3 Presigned URL への PUT はアプリの `AuthInterceptor` を通してはいけない（Authorization ヘッダが付くと S3 が 403）。`Dio()`（baseUrl 無し・interceptor 無し）の別インスタンスを使う
+- image_picker のモックは Notifier に差し込まず、Page 側のソース選択（カメラ/ギャラリー）から切り離して Notifier の `setPickedImage(bytes, fileName)` に `XFile` を読んだ結果を渡す契約にするとテスタビリティが上がる
 
 ---
 
