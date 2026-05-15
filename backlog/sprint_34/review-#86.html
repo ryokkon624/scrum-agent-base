@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 34 Review — #86 買い物アイテム作成・詳細画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #e0f2fe; color: #0369a1; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Background box */
+  .background-box { background: #f0fdf4; border-left: 3px solid #22c55e; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .background-box .label { font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .background-box p { color: #14532d; font-size: 13px; }
+
+  /* Screen overview grid */
+  .screen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+  .screen-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .screen-box .screen-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .screen-box .screen-name { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-blue { background: #3b82f6; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-screen { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
+  .ac-screen.new { background: #e0f2fe; color: #0369a1; }
+  .ac-screen.detail { background: #fdf4ff; color: #7e22ce; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Review response box */
+  .review-fix-box { background: #fff0f0; border: 1px solid #fca5a5; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+  .review-fix-box .label { font-size: 11px; font-weight: 700; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .review-fix-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; gap: 8px; }
+  .fix-before { color: #dc2626; }
+  .fix-after { color: #16a34a; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1d4ed8; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Mock UI for screens */
+  .mock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 8px; }
+  .mock-phone { background: white; border: 2px solid #e5e5e5; border-radius: 12px; padding: 12px; font-size: 12px; }
+  .mock-phone .mock-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; text-align: center; }
+  .mock-appbar { background: #166534; color: white; border-radius: 6px 6px 0 0; padding: 8px 12px; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .mock-body { border: 1px solid #e5e5e5; border-top: none; border-radius: 0 0 6px 6px; padding: 10px; background: #f8f7f5; }
+  .mock-field { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 11px; }
+  .mock-field-label { font-size: 10px; color: #6b7280; font-weight: 600; margin-bottom: 2px; }
+  .mock-field-value { color: #374151; }
+  .mock-chip { display: inline-block; background: #dcfce7; color: #166534; border-radius: 12px; padding: 2px 8px; font-size: 10px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; }
+  .mock-chip.inactive { background: #f3f4f6; color: #6b7280; }
+  .mock-step { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+  .mock-step-circle { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+  .mock-step-circle.done { background: #22c55e; color: white; }
+  .mock-step-circle.active { background: #166534; color: white; }
+  .mock-step-circle.future { background: white; border: 2px solid #d1d5db; color: #9ca3af; }
+  .mock-step-line { flex: 1; height: 2px; background: #e5e5e5; }
+  .mock-step-line.done { background: #22c55e; }
+  .mock-btn { background: #166534; color: white; border-radius: 6px; padding: 6px 12px; font-size: 11px; font-weight: 600; text-align: center; margin-top: 8px; }
+  .mock-btn.danger { background: #dc2626; }
+  .mock-sheet-header { background: #f9fafb; border-radius: 6px; padding: 8px; margin-bottom: 6px; font-size: 11px; font-weight: 700; color: #374151; border: 1px solid #e5e5e5; }
+  .mock-list-item { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 6px 8px; margin-bottom: 4px; font-size: 11px; color: #374151; display: flex; justify-content: space-between; align-items: center; }
+  .mock-period-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+  .mock-period-chip { background: #e0f2fe; color: #0369a1; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: 600; }
+  .mock-period-chip.inactive { background: #f3f4f6; color: #9ca3af; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 34 Review</div>
+  <h1>#86 — 買い物アイテム作成・詳細画面を実装する<br><span style="font-size:18px; font-weight:500; color:#555;">(モバイル #14/#15)</span></h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 34</span>
+    <span class="badge badge-issue">#86</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Background -->
+  <section>
+    <h2>なぜこの機能が必要だったか</h2>
+    <div class="background-box">
+      <div class="label">背景</div>
+      <p>Sprint 33 で買い物リスト画面（#85）を実装したが、リストからの遷移先である「作成画面」「詳細画面」がプレースホルダーのままだった。ユーザーがアイテムを新規作成・編集できないため、買い物リスト機能として実用的に使えない状態だった。</p>
+    </div>
+
+    <div class="screen-grid">
+      <div class="screen-box">
+        <div class="screen-title">AC1〜AC5: 作成画面（#14）</div>
+        <div class="screen-name">ShoppingItemNewPage</div>
+        <div class="flow-item"><span class="dot dot-blue"></span>品名・メモ・購入場所・お気に入りを入力</div>
+        <div class="flow-item"><span class="dot dot-blue"></span>過去の購入履歴から品名・購入場所をコピー</div>
+        <div class="flow-item"><span class="dot dot-blue"></span>お気に入りアイテムから選んでフォームに反映</div>
+        <div class="flow-item"><span class="dot dot-blue"></span>カメラ/ギャラリーで画像を1枚添付して登録</div>
+        <div class="flow-item"><span class="dot dot-blue"></span>登録後、買い物リスト画面に戻る</div>
+      </div>
+      <div class="screen-box">
+        <div class="screen-title">AC6〜AC10: 詳細画面（#15）</div>
+        <div class="screen-name">ShoppingItemDetailPage</div>
+        <div class="flow-item"><span class="dot dot-green"></span>品名・メモ・購入場所・お気に入りを編集して保存</div>
+        <div class="flow-item"><span class="dot dot-green"></span>ステップUI（未購入→かご→購入済み）でステータス変更</div>
+        <div class="flow-item"><span class="dot dot-green"></span>登録済み画像を横スクロールで表示・削除</div>
+        <div class="flow-item"><span class="dot dot-green"></span>カメラ/ギャラリーで画像を追加</div>
+        <div class="flow-item"><span class="dot dot-green"></span>確認ダイアログ後にアイテムを削除</div>
+      </div>
+    </div>
+
+    <!-- Screen mockups -->
+    <div class="mock-grid" style="margin-top:16px;">
+      <div class="mock-phone">
+        <div class="mock-title">作成画面イメージ</div>
+        <div class="mock-appbar">
+          <span>買い物アイテム追加</span>
+          <span style="font-size:10px; background: rgba(255,255,255,0.2); padding:2px 6px; border-radius:4px;">登録</span>
+        </div>
+        <div class="mock-body">
+          <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <div style="flex:1; background:#e0f2fe; border:1px solid #bae6fd; border-radius:6px; padding:5px 8px; font-size:10px; color:#0369a1; font-weight:600; text-align:center;">過去の購入から選ぶ</div>
+            <div style="flex:1; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:5px 8px; font-size:10px; color:#166534; font-weight:600; text-align:center;">お気に入りから選ぶ</div>
+          </div>
+          <div class="mock-field">
+            <div class="mock-field-label">品名（必須）</div>
+            <div class="mock-field-value">牛乳 2L</div>
+          </div>
+          <div class="mock-field">
+            <div class="mock-field-label">メモ</div>
+            <div class="mock-field-value" style="color:#9ca3af;">メモを入力</div>
+          </div>
+          <div class="mock-field">
+            <div class="mock-field-label">購入場所</div>
+            <div>
+              <span class="mock-chip">スーパー</span>
+              <span class="mock-chip inactive">オンライン</span>
+              <span class="mock-chip inactive">ドラッグストア</span>
+            </div>
+          </div>
+          <div class="mock-field" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="mock-field-label" style="margin:0;">お気に入り</div>
+            <div style="width:28px; height:16px; background:#22c55e; border-radius:8px; position:relative;">
+              <div style="width:12px; height:12px; background:white; border-radius:50%; position:absolute; top:2px; right:2px;"></div>
+            </div>
+          </div>
+          <div class="mock-btn">登録する</div>
+        </div>
+      </div>
+      <div class="mock-phone">
+        <div class="mock-title">詳細画面イメージ</div>
+        <div class="mock-appbar">
+          <span>&lt; 詳細</span>
+          <span style="font-size:10px; background: rgba(255,255,255,0.2); padding:2px 6px; border-radius:4px;">保存</span>
+        </div>
+        <div class="mock-body">
+          <div style="margin-bottom:8px;">
+            <div class="mock-field-label" style="margin-bottom:4px; font-size:10px; color:#6b7280; font-weight:700;">ステータス</div>
+            <div class="mock-step">
+              <div class="mock-step-circle done">✓</div>
+              <div class="mock-step-line done"></div>
+              <div class="mock-step-circle active">2</div>
+              <div class="mock-step-line"></div>
+              <div class="mock-step-circle future">3</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:9px; color:#6b7280;">
+              <span>未購入</span><span style="color:#166534; font-weight:700;">かご</span><span>購入済み</span>
+            </div>
+          </div>
+          <div class="mock-field">
+            <div class="mock-field-label">品名</div>
+            <div class="mock-field-value">牛乳 2L</div>
+          </div>
+          <div class="mock-field" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="mock-field-label" style="margin:0;">お気に入り</div>
+            <div style="width:28px; height:16px; background:#d1d5db; border-radius:8px; position:relative;">
+              <div style="width:12px; height:12px; background:white; border-radius:50%; position:absolute; top:2px; left:2px;"></div>
+            </div>
+          </div>
+          <div class="mock-btn danger" style="margin-top:4px; font-size:10px;">このアイテムを削除</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">品名・メモ・購入場所・お気に入りを入力してアイテムを登録できる</div>
+        <div class="ac-screen new">作成画面</div>
+      </div>
+      <div class="ac-body">
+        <p>フォーム入力を管理する <code>ShoppingItemNewNotifier</code> と状態クラス <code>ShoppingItemNewState</code> を実装。登録時は <code>POST /api/households/{id}/shopping-items</code> を呼び出す。購入場所のデフォルト値とお気に入りのデフォルト値は <code>PurchaseLocationType.supermarket</code> / <code>FavoriteFlag.normal</code> の enum から取得している。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_state.dart</span>
+            <span class="diff-stat">+5 / -3</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">8</span><span class="line-prefix"> </span><span>class ShoppingItemNewState {</span></div>
+            <div class="code-line line-del"><span class="line-num">9</span><span class="line-prefix">-</span><span>  const ShoppingItemNewState({</span></div>
+            <div class="code-line line-del"><span class="line-num">10</span><span class="line-prefix">-</span><span>    this.storeType = '1', // デフォルト: スーパー</span></div>
+            <div class="code-line line-del"><span class="line-num">11</span><span class="line-prefix">-</span><span>    this.favorite = '0',</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>  ShoppingItemNewState({</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>    String? storeType,</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    String? favorite,</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    // ... 他フィールド省略</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>  }) : storeType = storeType ?? PurchaseLocationType.supermarket.code,</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>       favorite = favorite ?? FavoriteFlag.normal.code;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>レビュー指摘でマジックストリング（<code>'1'</code>/<code>'0'</code>）を廃止。<code>PurchaseLocationType</code>/<code>FavoriteFlag</code> enum の <code>.code</code> で取得するように変更。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_page.dart（StoreTypeSelector）</span>
+            <span class="diff-stat">+8 / -12</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">283</span><span class="line-prefix">-</span><span>    const options = [</span></div>
+            <div class="code-line line-del"><span class="line-num">284</span><span class="line-prefix">-</span><span>      ('1', 'shoppingFilterSupermarket'),</span></div>
+            <div class="code-line line-del"><span class="line-num">285</span><span class="line-prefix">-</span><span>      ('2', 'shoppingFilterOnline'),</span></div>
+            <div class="code-line line-del"><span class="line-num">286</span><span class="line-prefix">-</span><span>      ('3', 'shoppingFilterDrugstore'),</span></div>
+            <div class="code-line line-del"><span class="line-num">287</span><span class="line-prefix">-</span><span>    ];</span></div>
+            <div class="code-line line-add"><span class="line-num">283</span><span class="line-prefix">+</span><span>    children: PurchaseLocationType.values.map((type) {</span></div>
+            <div class="code-line line-add"><span class="line-num">284</span><span class="line-prefix">+</span><span>      final isSelected = value == type.code;</span></div>
+            <div class="code-line line-add"><span class="line-num">285</span><span class="line-prefix">+</span><span>      return ChoiceChip(</span></div>
+            <div class="code-line line-add"><span class="line-num">286</span><span class="line-prefix">+</span><span>        label: Text(_labelOf(l10n, type)),</span></div>
+            <div class="code-line line-add"><span class="line-num">287</span><span class="line-prefix">+</span><span>        selected: isSelected,</span></div>
+            <div class="code-line line-add"><span class="line-num">288</span><span class="line-prefix">+</span><span>        onSelected: (_) =&gt; onChanged(type.code),</span></div>
+            <div class="code-line line-add"><span class="line-num">289</span><span class="line-prefix">+</span><span>      );</span></div>
+            <div class="code-line line-add"><span class="line-num">290</span><span class="line-prefix">+</span><span>    }).toList(),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>購入場所チップのマジックストリングを廃止。<code>PurchaseLocationType.values</code> を直接 <code>map</code> することで、将来 enum に値が追加されても自動対応する。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">カメラまたはフォトライブラリから画像を添付できる（Presigned URL経由S3アップロード）</div>
+        <div class="ac-screen new">作成画面</div>
+      </div>
+      <div class="ac-body">
+        <p><code>image_picker</code> パッケージでカメラ/ギャラリーから <code>XFile</code> を取得し、バイト列として <code>ShoppingItemNewNotifier.setPickedImage(bytes, fileName)</code> に渡す。<code>submit()</code> 時にアイテム作成後、Presigned URL発行 → S3 PUT → metadata登録の3ステップでアップロードする。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_notifier.dart（_uploadAttachment）</span>
+            <span class="diff-stat">（Sprint 34では既存実装を維持・マジックストリング修正のみ）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">105</span><span class="line-prefix"> </span><span>      // 画像があればアップロード</span></div>
+            <div class="code-line line-ctx"><span class="line-num">106</span><span class="line-prefix"> </span><span>      final imageBytes = state.pickedImageBytes;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">107</span><span class="line-prefix"> </span><span>      final imageName = state.pickedImageName;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">108</span><span class="line-prefix"> </span><span>      if (imageBytes != null &amp;&amp; imageName != null) {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">109</span><span class="line-prefix"> </span><span>        await _uploadAttachment(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">110</span><span class="line-prefix"> </span><span>          itemId: item.shoppingItemId,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">111</span><span class="line-prefix"> </span><span>          bytes: imageBytes, fileName: imageName,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">112</span><span class="line-prefix"> </span><span>        );</span></div>
+            <div class="code-line line-ctx"><span class="line-num">113</span><span class="line-prefix"> </span><span>      }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>S3 PUT 用 Dio は通常の認証インターセプターを使わない別インスタンスで実行（<code>ShoppingAttachmentRepository</code> 内で <code>Dio()</code> を直接生成）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">「過去の購入から選ぶ」ボトムシートで履歴からアイテムを選択してフォームに反映できる</div>
+        <div class="ac-screen new">作成画面</div>
+      </div>
+      <div class="ac-body">
+        <p><code>HistoryPickerBottomSheet</code> ウィジェットで品名・購入場所フィルタ・期間フィルタ（すべて/30日/90日/1年）を提供。データ取得は <code>ShoppingItemNewNotifier.fetchHistorySuggestions()</code> 経由で行い、依存方向（Page→Notifier→Repository）を正しく保つ。</p>
+
+        <div class="review-fix-box">
+          <div class="label">レビュー指摘対応（依存方向違反の修正）</div>
+          <div class="review-fix-item">
+            <span class="fix-before">修正前:</span>
+            <span>Page が <code>shoppingRepositoryProvider</code> を直接 <code>ref.read</code> してデータ取得</span>
+          </div>
+          <div class="review-fix-item">
+            <span class="fix-after">修正後:</span>
+            <span>Notifier に <code>fetchHistorySuggestions()</code> メソッドを追加し、Page は Notifier 経由でデータ取得</span>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_notifier.dart</span>
+            <span class="diff-stat">+24 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>  /// 過去の購入履歴候補を取得して返す（Page からの呼び出し用）</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>  Future&lt;List&lt;ShoppingItemHistorySuggestionDto&gt;&gt; fetchHistorySuggestions({</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>    required int householdId,</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>  }) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>      final repo = ref.read(shoppingRepositoryProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>      return await repo.fetchHistorySuggestions(householdId: householdId);</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>      return [];</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_page.dart（HistoryPickerBottomSheet呼出）</span>
+            <span class="diff-stat">+3 / -8</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">112</span><span class="line-prefix">-</span><span>    final repo = ref.read(shoppingRepositoryProvider);</span></div>
+            <div class="code-line line-del"><span class="line-num">113</span><span class="line-prefix">-</span><span>    List&lt;ShoppingItemHistorySuggestionDto&gt; suggestions = [];</span></div>
+            <div class="code-line line-del"><span class="line-num">114</span><span class="line-prefix">-</span><span>    try {</span></div>
+            <div class="code-line line-del"><span class="line-num">115</span><span class="line-prefix">-</span><span>      suggestions = await repo.fetchHistorySuggestions(</span></div>
+            <div class="code-line line-del"><span class="line-num">116</span><span class="line-prefix">-</span><span>        householdId: householdId,</span></div>
+            <div class="code-line line-del"><span class="line-num">117</span><span class="line-prefix">-</span><span>      );</span></div>
+            <div class="code-line line-del"><span class="line-num">118</span><span class="line-prefix">-</span><span>    } catch (_) {}</span></div>
+            <div class="code-line line-add"><span class="line-num">112</span><span class="line-prefix">+</span><span>    final suggestions = await widget.notifier.fetchHistorySuggestions(</span></div>
+            <div class="code-line line-add"><span class="line-num">113</span><span class="line-prefix">+</span><span>      householdId: householdId,</span></div>
+            <div class="code-line line-add"><span class="line-num">114</span><span class="line-prefix">+</span><span>    );</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>期間フィルタ（30日/90日/1年）はAPIにパラメータを渡さず、取得済みの <code>lastPurchasedDate</code> をクライアント側でフィルタリングする実装（API呼び出し回数を増やさない設計）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">「お気に入りから選ぶ」ボトムシートでお気に入りアイテムを選択してフォームに反映できる</div>
+        <div class="ac-screen new">作成画面</div>
+      </div>
+      <div class="ac-body">
+        <p><code>FavoritePickerBottomSheet</code> ウィジェットで品名・購入場所フィルタを提供。AC3と同じく、データ取得は <code>ShoppingItemNewNotifier.fetchFavorites()</code> 経由でNotifier経由に修正済み。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_notifier.dart（fetchFavorites追加）</span>
+            <span class="diff-stat">+14 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>  /// お気に入りアイテム一覧を取得して返す（Page からの呼び出し用）</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>  Future&lt;List&lt;ShoppingItemDto&gt;&gt; fetchFavorites({</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>    required int householdId,</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>  }) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>      final repo = ref.read(shoppingRepositoryProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>      return await repo.fetchFavorites(householdId: householdId);</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>      return [];</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>お気に入りボトムシートも favorites の型が <code>List&lt;dynamic&gt;</code> から <code>List&lt;ShoppingItemDto&gt;</code> に修正され（レビュー指摘）、型安全に参照できるようになった。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">登録完了後、買い物リスト画面に戻る</div>
+        <div class="ac-screen new">作成画面</div>
+      </div>
+      <div class="ac-body">
+        <p><code>ShoppingItemNewNotifier.submit()</code> 成功時に <code>successItemId</code> がセットされる。Page 側の <code>ref.listen</code> がこれを検知し、SnackBar表示後に <code>context.pop()</code> で戻る。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_page.dart（ref.listen）</span>
+            <span class="diff-stat">既存実装を維持</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">25</span><span class="line-prefix"> </span><span>    ref.listen(shoppingItemNewNotifierProvider, (prev, next) {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">26</span><span class="line-prefix"> </span><span>      if (next.successItemId != null &amp;&amp; prev?.successItemId == null) {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">27</span><span class="line-prefix"> </span><span>        ScaffoldMessenger.of(context)</span></div>
+            <div class="code-line line-ctx"><span class="line-num">28</span><span class="line-prefix"> </span><span>          .showSnackBar(SnackBar(content: Text(l10n.shoppingNewToastSuccess)));</span></div>
+            <div class="code-line line-ctx"><span class="line-num">29</span><span class="line-prefix"> </span><span>        context.pop();</span></div>
+            <div class="code-line line-ctx"><span class="line-num">30</span><span class="line-prefix"> </span><span>      }</span></div>
+            <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span>    });</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">品名・メモ・購入場所・お気に入りを編集して保存できる</div>
+        <div class="ac-screen detail">詳細画面</div>
+      </div>
+      <div class="ac-body">
+        <p><code>ShoppingItemDetailState</code> に <code>editableName</code> / <code>editableMemo</code> / <code>editableStoreType</code> / <code>editableFavorite</code> フィールドを持ち、<code>save()</code> 時に <code>PUT /api/shopping-items/{id}</code> で保存する。デフォルト値も enum 経由に修正。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_state.dart</span>
+            <span class="diff-stat">+8 / -2</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">36</span><span class="line-prefix">-</span><span>  String get currentStoreType =&gt; editableStoreType ?? item?.storeType ?? '1';</span></div>
+            <div class="code-line line-del"><span class="line-num">37</span><span class="line-prefix">-</span><span>  String get currentFavorite =&gt; editableFavorite ?? item?.favorite ?? '0';</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>  String get currentStoreType =&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>      editableStoreType ??</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>      item?.storeType ??</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>      PurchaseLocationType.supermarket.code;</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>  String get currentFavorite =&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>      editableFavorite ?? item?.favorite ?? FavoriteFlag.normal.code;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC7 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC7</div>
+        <div class="ac-text">ステータスをステップ表示（未購入→かご→購入済み）でタップ変更できる</div>
+        <div class="ac-screen detail">詳細画面</div>
+      </div>
+      <div class="ac-body">
+        <p><code>StatusStepSelector</code> ウィジェットでステップ表示を実装。過去ステップ=緑塗りつぶし+チェック、現在ステップ=primary塗りつぶし、未来ステップ=グレー枠線。ステータスのマジックストリング（<code>'0'</code>/<code>'1'</code>/<code>'2'</code>）は <code>ShoppingItemStatus</code> enum 経由に統一。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_state.dart（isNotPurchased getter）</span>
+            <span class="diff-stat">+5 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">46</span><span class="line-prefix">-</span><span>  bool get isNotPurchased =&gt; item?.status == '0' || item?.status == '1';</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>  bool get isNotPurchased =&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>      item?.status == ShoppingItemStatus.notPurchased.code ||</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>      item?.status == ShoppingItemStatus.inBasket.code;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span><code>isNotPurchased</code> は削除ボタンの表示制御に使用。未購入・かご中はボタンを表示し、購入済みは非表示にする（Webの <code>v-if="isNotPurchased"</code> 仕様に合わせた実装）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC8 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC8</div>
+        <div class="ac-text">登録済み画像を横スクロールで表示し、各画像を削除できる</div>
+        <div class="ac-screen detail">詳細画面</div>
+      </div>
+      <div class="ac-body">
+        <p><code>_AttachmentsSection</code> ウィジェットで横スクロールリストを表示。レビュー指摘で <code>List&lt;dynamic&gt;</code> から <code>List&lt;ShoppingAttachmentDto&gt;</code> に型を修正し、<code>att.imageUrl</code> / <code>att.id</code> を型安全に参照できるようになった。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart（_AttachmentsSection）</span>
+            <span class="diff-stat">+4 / -4</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">353</span><span class="line-prefix">-</span><span>  final List&lt;dynamic&gt; attachments;</span></div>
+            <div class="code-line line-add"><span class="line-num">353</span><span class="line-prefix">+</span><span>  final List&lt;ShoppingAttachmentDto&gt; attachments;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">367</span><span class="line-prefix"> </span><span>  // ... itemBuilder 内</span></div>
+            <div class="code-line line-del"><span class="line-num">373</span><span class="line-prefix">-</span><span>                  imageUrl: att.imageUrl as String,</span></div>
+            <div class="code-line line-del"><span class="line-num">374</span><span class="line-prefix">-</span><span>                  onDelete: () =&gt; onDeleteAttachment(att.id as int),</span></div>
+            <div class="code-line line-add"><span class="line-num">373</span><span class="line-prefix">+</span><span>                  imageUrl: att.imageUrl,</span></div>
+            <div class="code-line line-add"><span class="line-num">374</span><span class="line-prefix">+</span><span>                  onDelete: () =&gt; onDeleteAttachment(att.id),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span><code>as String</code> / <code>as int</code> キャストは実行時例外のリスクがある。型を確定させることでコンパイル時に安全性を保証する。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC9 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC9</div>
+        <div class="ac-text">image_pickerで画像を1枚ずつ追加できる（Presigned URL経由でS3にアップロード）</div>
+        <div class="ac-screen detail">詳細画面</div>
+      </div>
+      <div class="ac-body">
+        <p><code>ShoppingItemDetailNotifier.addImage()</code> で Presigned URL発行 → S3 PUT → metadata登録 → 一覧再取得の4ステップを実行。アップロード完了後に自動でリストを更新する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_notifier.dart（addImage）</span>
+            <span class="diff-stat">既存実装を維持</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">162</span><span class="line-prefix"> </span><span>  Future&lt;void&gt; addImage({</span></div>
+            <div class="code-line line-ctx"><span class="line-num">163</span><span class="line-prefix"> </span><span>    required Uint8List bytes,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">164</span><span class="line-prefix"> </span><span>    required String fileName,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">165</span><span class="line-prefix"> </span><span>  }) async {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">173</span><span class="line-prefix"> </span><span>      final uploadUrlResponse = await attachRepo.createUploadUrl(...);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">178</span><span class="line-prefix"> </span><span>      await attachRepo.uploadToS3(...);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">184</span><span class="line-prefix"> </span><span>      await attachRepo.createAttachment(...);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">194</span><span class="line-prefix"> </span><span>      final attachments = await attachRepo.listAttachments(itemId: ...);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">197</span><span class="line-prefix"> </span><span>      state = state.copyWith(attachments: attachments);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">198</span><span class="line-prefix"> </span><span>  }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC10 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC10</div>
+        <div class="ac-text">「このアイテムを削除」ボタンで確認ダイアログ後にアイテムを削除し、リスト画面に戻る</div>
+        <div class="ac-screen detail">詳細画面</div>
+      </div>
+      <div class="ac-body">
+        <p>削除ボタンは <code>state.isNotPurchased</code> が <code>true</code> の時のみ表示（未購入・かご中のみ）。確認ダイアログで「削除」を選択すると <code>deleteItem()</code> が実行され、<code>isDeleted</code> フラグが立つ。Page 側の <code>ref.listen</code> が検知して自動で前画面に戻る。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_notifier.dart（deleteItem）</span>
+            <span class="diff-stat">+3 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">147</span><span class="line-prefix"> </span><span>  Future&lt;void&gt; deleteItem() async {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">148</span><span class="line-prefix"> </span><span>    // ...</span></div>
+            <div class="code-line line-ctx"><span class="line-num">157</span><span class="line-prefix"> </span><span>    } catch (_) {</span></div>
+            <div class="code-line line-del"><span class="line-num">158</span><span class="line-prefix">-</span><span>      state = state.copyWith(errorMessage: '削除に失敗しました');</span></div>
+            <div class="code-line line-add"><span class="line-num">158</span><span class="line-prefix">+</span><span>      state = state.copyWith(errorMessage: 'shoppingDetailDeleteError');</span></div>
+            <div class="code-line line-ctx"><span class="line-num">159</span><span class="line-prefix"> </span><span>    }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>エラーメッセージをi18nキー名で管理し、Page側で <code>_resolveErrorMessage(l10n, key)</code> を呼んでローカライズする設計。Notifier が l10n に依存しなくて済む。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC11 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC11</div>
+        <div class="ac-text">テストカバレッジ ≥95%（Notifier・ウィジェットテスト）</div>
+        <div class="ac-screen" style="background:#fdf4ff; color:#7e22ce;">テスト</div>
+      </div>
+      <div class="ac-body">
+        <p>Notifier・Repository・ウィジェットテストをTDDで実装。ウィジェットテストでは <code>ShoppingItemNewState</code> の <code>const</code> → 非 <code>const</code> コンストラクタへの変更を反映し、フェイクNotifierの初期状態設定を修正。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>test/features/shopping/presentation/shopping_item_new/shopping_item_new_page_test.dart</span>
+            <span class="diff-stat">+3 / -3</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">29</span><span class="line-prefix">-</span><span>    return const ShoppingItemNewState(isSubmitting: true);</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>    return ShoppingItemNewState(isSubmitting: true);</span></div>
+            <div class="code-line line-del"><span class="line-num">42</span><span class="line-prefix">-</span><span>    return const ShoppingItemNewState(name: 'テスト品');</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>    return ShoppingItemNewState(name: 'テスト品');</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span><code>ShoppingItemNewState</code> のコンストラクタを <code>const</code> から通常コンストラクタに変更した（enumのデフォルト値を初期化子リストで設定するため）。既存テストのフェイクNotifierも合わせて修正。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- レビュー指摘対応まとめ -->
+    <div style="background: #fafaf5; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px;">
+      <div style="font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">コードレビュー指摘対応まとめ（4コミット）</div>
+      <div style="font-size: 13px; color: #374151;">
+        <div style="margin-bottom: 8px; display: flex; gap: 8px; align-items: flex-start;">
+          <span style="font-size: 10px; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-weight: 600; flex-shrink: 0;">fix 1</span>
+          <span>マジックストリング（<code>'0'</code>/<code>'1'</code>/<code>'2'</code>）を <code>PurchaseLocationType</code>/<code>FavoriteFlag</code>/<code>ShoppingItemStatus</code> enum に置換</span>
+        </div>
+        <div style="margin-bottom: 8px; display: flex; gap: 8px; align-items: flex-start;">
+          <span style="font-size: 10px; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-weight: 600; flex-shrink: 0;">fix 2</span>
+          <span><code>List&lt;dynamic&gt;</code> 型の明示 → <code>List&lt;ShoppingAttachmentDto&gt;</code> に修正（型安全性向上）</span>
+        </div>
+        <div style="margin-bottom: 8px; display: flex; gap: 8px; align-items: flex-start;">
+          <span style="font-size: 10px; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-weight: 600; flex-shrink: 0;">fix 3</span>
+          <span>Page → Repository 直接呼び出しを Page → Notifier → Repository に修正（依存方向違反の是正）。<code>ref.watch</code> をハンドラ内で使用していた箇所を <code>ref.read</code> に修正</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <span style="font-size: 10px; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-weight: 600; flex-shrink: 0;">fix 4</span>
+          <span>ハードコードの日本語エラーメッセージをi18nキー名に変更し、i18nファイルに <code>shoppingDetailItemNotFound</code> 等5キーを追加</span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>【作成】品名を入力して「登録する」をタップすると買い物リストにアイテムが追加されること</strong>
+          <span>品名必須チェック（空の場合は登録ボタンが無効化されていること）。登録成功後にリスト画面に戻ること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>【作成・画像】カメラまたはギャラリーから画像を選択してサムネイルが表示されること</strong>
+          <span>サムネイル表示後に「削除」で解除できること。登録ボタンタップで画像付きアイテムが作成されること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>【作成・履歴】「過去の購入から選ぶ」ボトムシートで品目を選ぶとフォームに反映されること</strong>
+          <span>期間フィルタ（30日/90日/1年）で一覧が絞り込まれること。購入場所フィルタも正しく機能すること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>【作成・お気に入り】「お気に入りから選ぶ」ボトムシートでアイテムを選ぶとフォームに反映されること</strong>
+          <span>品名・購入場所フィルタが機能すること。お気に入りが0件の場合に空メッセージが表示されること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>【詳細】アイテムをタップすると詳細画面が開き、内容を編集して「保存」できること</strong>
+          <span>保存後にリスト画面の内容も更新されていること（買い物リスト画面に戻ってリロードする）。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>【詳細・ステータス】ステップUIをタップするとステータスが変わること</strong>
+          <span>「未購入」→「かご」→「購入済み」の順にタップ。「購入済み」では「このアイテムを削除」ボタンが非表示になっていること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">7</div>
+        <div class="verify-content">
+          <strong>【詳細・画像】詳細画面で画像を追加・削除できること</strong>
+          <span>追加後にサムネイルが横スクロールリストに表示されること。削除確認ダイアログが出ること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">8</div>
+        <div class="verify-content">
+          <strong>【詳細・削除】「このアイテムを削除」で確認ダイアログが出てアイテムを削除できること</strong>
+          <span>削除後に買い物リスト画面に戻り、削除したアイテムがリストから消えていること。</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>shopping_item_new_state.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>コンストラクタを非const化、storeType/favoriteのデフォルト値を enum 経由に変更</td>
+      </tr>
+      <tr>
+        <td><code>shopping_item_new_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>fetchHistorySuggestions / fetchFavorites メソッド追加（依存方向修正）、エラーメッセージをi18nキー名に変更</td>
+      </tr>
+      <tr>
+        <td><code>shopping_item_new_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>履歴・お気に入り取得をNotifier経由に修正、StoreTypeSelectorのマジックストリング廃止、お気に入りSwitch値をenum経由に変更</td>
+      </tr>
+      <tr>
+        <td><code>shopping_item_detail_state.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>currentStoreType/currentFavoriteのデフォルト値を enum 経由に変更、isNotPurchasedを ShoppingItemStatus enum 経由に変更</td>
+      </tr>
+      <tr>
+        <td><code>shopping_item_detail_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ref.watch → ref.read 修正、並行取得を順次取得に変更（型安全化）、favorite比較をenum経由に変更、エラーメッセージをi18nキー名に変更、item未発見エラーをi18nキー名に変更</td>
+      </tr>
+      <tr>
+        <td><code>shopping_item_detail_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>_AttachmentsSectionの型をList&lt;dynamic&gt;→List&lt;ShoppingAttachmentDto&gt;に修正、_resolveErrorMessage関数追加（i18nキー解決）、お気に入りSwitch値をenum経由に変更</td>
+      </tr>
+      <tr>
+        <td><code>app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>エラーメッセージi18nキー5件追加（shoppingDetailItemNotFound / shoppingDetailLoadError / shoppingDetailSaveError / shoppingDetailDeleteError / shoppingNewSubmitError）</td>
+      </tr>
+      <tr>
+        <td><code>shopping_item_new_page_test.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>フェイクNotifierの初期状態を非constコンストラクタに変更（コンパイルエラー修正）</td>
+      </tr>
+      <tr>
+        <td>buy い物リスト画面（shopping_list_page.dart）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>Sprint 33実装済み。遷移先URLのみ変更（Sprint 34以前に実施済み）</td>
+      </tr>
+      <tr>
+        <td>バックエンド・データベース</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>APIは既に実装済み。モバイル側の実装のみ</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

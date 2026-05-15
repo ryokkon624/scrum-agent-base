@@ -375,16 +375,65 @@ Sprint Review ファイルをブラウザで開いて動作確認をお願いし
 りょこさんから「レトロを実施して」と指示が来たら：
 
 1. `#30-sprint-review` のスレッドを確認してりょこさんの指摘内容を把握する
-2. **`#40-retrospective` に新スレッドを作成**してRetroを実施する：
+
+2. **DEVをteammateとして起動する（Sonnet 4.6）— SMの作業と並列で実施：**
+
+   ```
+   developerタイプのteammateを Sonnet 4.6 モデルで起動する。
+   SendMessageでDEVに以下を伝える：
+   「DEVモードで動いて。今スプリントのRetroとして以下を実施してください：
+   ① memory/dev/short_term.md を読んで今スプリントの作業を振り返る
+   ② memory/dev/long_term.md の該当セクションを更新する：
+      - 繰り返し指摘されるパターン: 今スプリントの指摘で追加すべきパターンがあれば追記
+      - 技術的なハマりポイント: 新たなハマりポイントがあれば追記
+      - 習得したこと: 今スプリントで得た技術的洞察があれば追記
+      - Skills更新履歴: 今スプリントで更新したSkillsがあれば追記
+   ③ 以下のSkillsファイルについて、今スプリントの実装で気づいた追記・修正すべき内容があれば更新する：
+      - mobile-conventions / frontend-conventions / backend-conventions など
+      - 更新した場合は #skills-changelog に [DEV] プレフィックスで投稿する
+   ④ memory/dev/short_term.md をリセット（「Sprint XX 完了。次スプリント開始時にリセット済み」）
+   ⑤ 完了したらSendMessageでSMに報告してください。」
+   ```
+
+3. **SMは以下を並列で進める（DEVの完了を待たない）：**
+
+4. **`#40-retrospective` に新スレッドを作成**してRetroを実施する：
    - 継続すること（Keep）
    - やめること（Stop）
    - 回避すること（Avoid）
    - チャレンジすること（Challenge）
-3. りょこさんの指摘を GitHub REST API（curl）で `ryokkon624/hw-hub-manage` にIssueを作成する（`github-issues` スキル参照）
-   - タイトルと本文のみ。ReadyフィールドへのDraft設定はりょこさんが行う
-4. Skillsファイルの更新が必要かどうかを判断する
-5. 更新内容を `#skills-changelog` に投稿する
-6. `memory/sm/short_term.md` をリセット、`memory/sm/long_term.md` に要約を移す
+
+5. りょこさんの指摘を GitHub REST API（curl）で `ryokkon624/hw-hub-manage` にIssueを作成する（`github-issues` スキル参照）
+   - **起票前に必ず `mcp__github__list_issues`（state: open）で既存Issueのタイトルを確認し、同内容が存在しないことを確認してから起票する**（Sprint 34 Retroで2重起票が発生）
+   - `github-issues` スキルの手順3に従い、Issue作成（Step 1）→ Projectsへの追加（Step 2）→ ReadyフィールドをDraftに設定（Step 3）まで**SMが行う**
+   - Draft→Ready更新・Story Points設定はりょこさんが行う（SMは不要）
+
+6. Skillsファイルの更新が必要かどうかを判断してSMとして更新する（DEVとの重複を避けるため、SM観点の更新に絞る）
+
+   **【更新先の判断テーブル】**（公式ドキュメントに基づく）
+
+   | 内容 | 更新先 | 判断ポイント |
+   | ---- | ------ | ------------ |
+   | チーム全体に毎セッション必要な短い事実・ルール | `CLAUDE.md` | 200行以内。長い手順は書かない |
+   | トピック別・ファイルパス別の条件付きルール | `rules/` | パス条件があるか、トピック分離したいか |
+   | ロール固有の多段階手順・参照ガイド | `skills/` | 手順書・チェックリスト・レビュー観点 |
+   | エージェントのID・ツール・モデル定義 | `agents/` | 独立コンテキストで動く専門ロール |
+   | Claude判断に依存せず確実に自動実行したい処理 | Hooks | "必ず実行" → Hooks、"できれば実行" → CLAUDE.md |
+   | 今スプリント限りの作業メモ | `short_term.md` | Retro完了後リセット |
+   | 繰り返しパターン・永続的な教訓 | `long_term.md` | Retroフェーズで更新 |
+
+7. 更新内容を `#skills-changelog` に `[SM]` プレフィックスで投稿する
+
+8. **DEVからの完了報告を受け取る**
+
+9. **`memory/sm/long_term.md` を新形式に沿って更新する：**
+   - **スプリント進行パターン**: 今スプリントで有効だった判断パターン・見直すべき手順があれば追記
+   - **DEVレビュー指摘の傾向**: 今スプリントの指摘パターンを追記（繰り返し発生しているか確認）
+   - **Sprint Reviewで発覚しやすいパターン**: 新たなパターンがあれば追記
+   - **Skills更新履歴**: 今スプリントのSM・DEVによる更新を追記
+   - 追加・変更のないセクションは更新不要
+
+10. **`memory/sm/short_term.md` をリセット**（「Sprint XX 完了。次スプリント開始時にリセット済み」）
 
 ---
 
@@ -407,7 +456,7 @@ Sprint Review ファイルをブラウザで開いて動作確認をお願いし
 | ファイル                  | 内容                                           | 更新タイミング   |
 | ------------------------- | ---------------------------------------------- | ---------------- |
 | `memory/sm/short_term.md` | 今スプリントの進捗・ブロッカー・チャレンジ項目 | スプリント中随時 |
-| `memory/sm/long_term.md`  | 過去のスプリントの教訓・チャレンジ結果         | レトロ後         |
+| `memory/sm/long_term.md`  | スプリント進行パターン / DEVレビュー指摘傾向 / Sprint Reviewで発覚しやすいパターン / Skills更新履歴 | **Retro ⑨**（DEV完了後にSMが更新） |
 
 ---
 

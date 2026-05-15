@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 35 Review — #94 削除ダイアログのボタンを押してもアイテムが削除されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-screen { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; position: relative; }
+  .mock-screen-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-field { padding: 4px 0; font-size: 12px; color: #374151; border-bottom: 1px solid #f0f0f0; }
+  .mock-field:last-of-type { border-bottom: none; margin-bottom: 8px; }
+  .mock-label { font-size: 10px; color: #9ca3af; }
+  .mock-delete-btn { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; border: 1px solid #fca5a5; color: #b91c1c; background: #fef2f2; display: inline-block; margin-top: 4px; }
+  .mock-delete-btn-hidden { font-size: 11px; color: #9ca3af; font-style: italic; margin-top: 4px; }
+  .mock-dialog-overlay { background: rgba(0,0,0,0.08); border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .mock-dialog { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 12px; }
+  .mock-dialog-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #1a1a1a; }
+  .mock-dialog-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .mock-btn-cancel { font-size: 10px; padding: 3px 8px; border-radius: 3px; border: 1px solid #e5e5e5; color: #6b7280; background: white; }
+  .mock-btn-delete { font-size: 10px; padding: 3px 8px; border-radius: 3px; border: none; color: #b91c1c; background: #fef2f2; font-weight: 700; }
+  .mock-result-bad { font-size: 11px; color: #b91c1c; margin-top: 8px; font-style: italic; }
+  .mock-result-good { font-size: 11px; color: #166534; margin-top: 8px; font-style: italic; }
+  .mock-status-badge { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 700; }
+  .mock-status-basket { background: #eff6ff; color: #1d4ed8; }
+  .mock-status-unpurchased { background: #f0fdf4; color: #166534; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .cause-body ul { font-size: 13px; color: #4b5563; padding-left: 16px; }
+  .cause-body li { margin-bottom: 6px; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 35 Review · Bug Fix</div>
+  <h1>#94 — 買い物アイテム詳細画面で削除ダイアログのボタンを押しても<br>アイテムが削除されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 35</span>
+    <span class="badge badge-issue">#94</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">詳細画面</div>
+          <div class="mock-field"><span class="mock-label">名前</span><br>牛乳</div>
+          <div class="mock-field"><span class="mock-label">ステータス</span><br>
+            <span class="mock-status-basket">かご</span>
+          </div>
+          <span class="mock-delete-btn">このアイテムを削除</span>
+          <!-- かご状態でも削除ボタンが表示されてしまう（AC3違反） -->
+        </div>
+        <div class="mock-dialog-overlay">
+          <div class="mock-dialog">
+            <div class="mock-dialog-title">このアイテムを削除しますか？この操作は取り消せません。</div>
+            <div class="mock-dialog-actions">
+              <span class="mock-btn-cancel">キャンセル</span>
+              <span class="mock-btn-delete">このアイテムを削除</span>
+            </div>
+          </div>
+        </div>
+        <div class="mock-result-bad">→ ボタンをタップしても削除されない。詳細画面が閉じてしまう。かご状態でも削除ボタンが表示されている（AC3違反）。</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">詳細画面</div>
+          <div class="mock-field"><span class="mock-label">名前</span><br>牛乳</div>
+          <div class="mock-field"><span class="mock-label">ステータス</span><br>
+            <span class="mock-status-basket">かご</span>
+          </div>
+          <span class="mock-delete-btn-hidden">削除ボタンは表示されない</span>
+        </div>
+        <div style="margin-top:8px; background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px; font-size: 12px; color: #6b7280;">
+          未購入（status=0）の場合のみ削除ボタンが表示される<br>
+          ダイアログの「削除」を押すとアイテムが削除され、リスト画面に戻る
+        </div>
+        <div class="mock-result-good">→ かご状態では削除ボタンが非表示。未購入時はダイアログ操作が正常に動作する。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">2つのバグが同居（go_router の context ミスマッチ + isNotPurchased getter の誤条件）</span>
+      </div>
+      <div class="cause-body">
+        <p><strong>バグ1: go_router 環境での Navigator.pop context ミスマッチ</strong></p>
+        <p><code>_confirmDeleteItem</code> 内の <code>AlertDialog</code> で <code>builder: (_) =&gt;</code> とダイアログの BuildContext を捨て、actions の <code>Navigator.pop(context, ...)</code> を外側 (<code>_DetailBodyState</code>) の context で呼んでいた。go_router 環境では外側 context の <code>Navigator.pop</code> を呼ぶと、ダイアログではなく詳細画面ルート自体が pop されてしまう（「メイン画面が買い物リストに遷移」）。ダイアログは閉じないため <code>showDialog</code> の <code>await</code> が完了せず、<code>deleteItem</code> が呼ばれない。</p>
+        <p><strong>バグ2: isNotPurchased getter にかご状態が含まれていた（AC3違反）</strong></p>
+        <table class="mismatch-table">
+          <tr>
+            <th>ステータス</th>
+            <th>isNotPurchased（修正前）</th>
+            <th>isNotPurchased（修正後）</th>
+            <th>削除ボタンの正しい状態</th>
+          </tr>
+          <tr>
+            <td>未購入（status='0'）</td>
+            <td class="match">true</td>
+            <td class="match">true</td>
+            <td>表示</td>
+          </tr>
+          <tr>
+            <td>かご（status='1'）</td>
+            <td class="mismatch">true（バグ）</td>
+            <td class="match">false</td>
+            <td>非表示</td>
+          </tr>
+          <tr>
+            <td>購入済み（status='9'）</td>
+            <td class="match">false</td>
+            <td class="match">false</td>
+            <td>非表示</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_state.dart</span>
+        <span class="diff-stat">+2 / -2</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">46</span><span class="line-prefix"> </span><span>  /// 未購入ステータスかどうか（削除ボタン表示制御用）</span></div>
+        <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>  /// #94: 未購入（notPurchased）のときのみ true。かご（inBasket）は含まない</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>  bool get isNotPurchased =&gt;</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>      item?.status == ShoppingItemStatus.notPurchased.code ||</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>      item?.status == ShoppingItemStatus.inBasket.code;</span></div>
+        <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>  bool get isNotPurchased =&gt;</span></div>
+        <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>      item?.status == ShoppingItemStatus.notPurchased.code;</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>getter 名 <code>isNotPurchased</code> は「未購入かどうか」を意味するため、かご（<code>inBasket</code>）を含むのは命名と実態が乖離していた。修正後は名前と実装が一致している。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart（_confirmDeleteItem）</span>
+        <span class="diff-stat">+3 / -4</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">194</span><span class="line-prefix"> </span><span>  Future&lt;void&gt; _confirmDeleteItem(BuildContext context) async {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">195</span><span class="line-prefix"> </span><span>    final l10n = AppLocalizations.of(context);</span></div>
+        <div class="code-line line-add"><span class="line-num">196</span><span class="line-prefix">+</span><span>    // #94: dialogContextを使ってダイアログ自体をpopする</span></div>
+        <div class="code-line line-ctx"><span class="line-num">197</span><span class="line-prefix"> </span><span>    final confirmed = await showDialog&lt;bool&gt;(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">198</span><span class="line-prefix"> </span><span>      context: context,</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>      builder: (_) =&gt; AlertDialog(</span></div>
+        <div class="code-line line-add"><span class="line-num">199</span><span class="line-prefix">+</span><span>      builder: (dialogContext) =&gt; AlertDialog(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">200</span><span class="line-prefix"> </span><span>        content: Text(l10n.shoppingDetailDeleteConfirm),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">201</span><span class="line-prefix"> </span><span>        actions: [</span></div>
+        <div class="code-line line-ctx"><span class="line-num">202</span><span class="line-prefix"> </span><span>          TextButton(</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>            onPressed: () =&gt; Navigator.pop(context, false),</span></div>
+        <div class="code-line line-add"><span class="line-num">203</span><span class="line-prefix">+</span><span>            onPressed: () =&gt; Navigator.pop(dialogContext, false),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">207</span><span class="line-prefix"> </span><span>          TextButton(</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>            onPressed: () =&gt; Navigator.pop(context, true),</span></div>
+        <div class="code-line line-add"><span class="line-num">208</span><span class="line-prefix">+</span><span>            onPressed: () =&gt; Navigator.pop(dialogContext, true),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">212</span><span class="line-prefix"> </span><span>        ],</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>go_router 環境では <code>showDialog</code> の <code>builder</code> に渡されるダイアログ専用の <code>BuildContext</code>（<code>dialogContext</code>）でのみ <code>Navigator.pop</code> が正しくダイアログを閉じる。外側の <code>context</code> を使うと go_router が詳細画面のルートをポップしてしまう。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">ダイアログの削除確認ボタンを押下するとアイテムが削除される</div>
+      </div>
+      <div class="ac-body"><code>dialogContext</code> でダイアログをポップすることで <code>showDialog</code> の <code>await</code> が正常に完了し、<code>deleteItem</code> が呼ばれるようになった。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">削除後、買い物リスト画面に戻りアイテムが一覧から消えている</div>
+      </div>
+      <div class="ac-body">削除成功後に <code>isDeleted = true</code> になり、Page 側の <code>ref.listen</code> で <code>context.pop()</code> が呼ばれて一覧画面に戻る。<code>ShoppingListNotifier.deleteItem</code> がローカル state からもアイテムを除外するため即時反映される。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">ステータスが「かご」または「購入済み」の場合、削除ボタンは表示されない（未購入時のみ表示）</div>
+      </div>
+      <div class="ac-body"><code>isNotPurchased</code> getter を <code>notPurchased.code</code> のみ <code>true</code> に修正。かご（inBasket）・購入済み（purchased）は <code>false</code> を返すため削除ボタンが表示されなくなった。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>未購入のアイテムの詳細画面で「このアイテムを削除」ボタンが表示されること</strong>
+          <span>ステータスが「未購入」のアイテム詳細を開いて削除ボタンが見えるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>かご・購入済みステータスのアイテム詳細では削除ボタンが表示されないこと</strong>
+          <span>ステータスを「かご」や「購入済み」に変更した後、削除ボタンが消えているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>削除確認ダイアログで「このアイテムを削除」をタップするとアイテムが削除され一覧に戻ること</strong>
+          <span>削除後に買い物リスト画面へ戻り、削除したアイテムが表示されていないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>削除確認ダイアログで「キャンセル」をタップすると詳細画面に留まること</strong>
+          <span>キャンセル後に詳細画面がそのまま表示されており、アイテムが削除されていないことを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>go_router 環境での <code>AlertDialog</code> の context ミスマッチは気づきにくいバグ。同種の問題を防ぐためにウィジェットテストと単体テストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_detail_state_test.dart（新規）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">isNotPurchased: 未購入=true / かご=false / 購入済み=false の全パターンを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_detail_page_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">かごステータスで削除ボタンが表示されないこと（AC3）を確認するテストを修正</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_detail_page_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">go_router環境でダイアログの削除ボタンをタップするとdeleteItemが呼ばれ、詳細画面がpopされることを検証（#94）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

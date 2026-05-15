@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 35 Review — #88 スワイプ購入済み後に購入済みタブへ即時反映されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-card { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-card-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+  .mock-tab { font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid #e5e5e5; color: #6b7280; background: white; }
+  .mock-tab-active { background: #1a56db; color: white; border-color: #1a56db; }
+  .mock-tab-purchased-active { background: #059669; color: white; border-color: #059669; }
+  .mock-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
+  .mock-item:last-child { border-bottom: none; }
+  .mock-item-name { color: #1a1a1a; }
+  .mock-empty { color: #9ca3af; font-size: 12px; text-align: center; padding: 8px 0; }
+  .mock-badge-bad { background: #fef2f2; color: #b91c1c; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+  .mock-badge-good { background: #f0fdf4; color: #166534; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+  .mock-swipe-hint { font-size: 10px; color: #6b7280; margin-top: 6px; font-style: italic; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #ef4444; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 35 Review · Bug Fix</div>
+  <h1>#88 — 買い物リスト画面でスワイプ購入済みにした直後、<br>「購入済み」タブにアイテムが表示されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 35</span>
+    <span class="badge badge-issue">#88</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">買い物リスト</div>
+          <div class="mock-tabs">
+            <span class="mock-tab mock-tab-purchased-active">購入済み</span>
+          </div>
+          <div class="mock-empty">表示なし（空）</div>
+        </div>
+        <div class="mock-swipe-hint">かごタブで「牛乳」をスワイプ購入済みにした直後 → 購入済みタブが空のまま。アプリ再起動後は表示される。</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">買い物リスト</div>
+          <div class="mock-tabs">
+            <span class="mock-tab mock-tab-purchased-active">購入済み</span>
+          </div>
+          <div class="mock-item">
+            <span class="mock-item-name">牛乳</span>
+            <span class="mock-badge-good">購入済み</span>
+          </div>
+        </div>
+        <div class="mock-swipe-hint">かごタブでスワイプ直後に購入済みタブへ切り替えると即時表示される。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">purchasedItems getter の条件と _copyItemWithStatus の更新内容のミスマッチ</span>
+      </div>
+      <div class="cause-body">
+        <p><code>shopping_list_state.dart</code> の <code>purchasedItems</code> getter は <code>status == '9'</code> かつ <code>purchasedAt != null</code> の両方を要求している。一方、<code>shopping_list_notifier.dart</code> の <code>markPurchased</code> / <code>bulkPurchase</code> は <code>_copyItemWithStatus</code> でステータスを '9' に変えるが、<code>purchasedAt</code> は元の値（最初は <code>null</code>）をそのまま保持していた。</p>
+        <p>そのため購入済みタブの getter フィルタを通らず画面に表示されない。未購入↔かごの操作は <code>purchasedAt</code> を条件にしないため即時反映される。アプリ再起動後はサーバーから <code>purchasedAt</code> 付きで返ってくるため表示される。</p>
+        <table class="mismatch-table">
+          <tr>
+            <th>操作</th>
+            <th>status</th>
+            <th>purchasedAt（修正前）</th>
+            <th></th>
+            <th>purchasedItems getter の判定</th>
+          </tr>
+          <tr>
+            <td>スワイプ購入済み</td>
+            <td class="code match">'9'</td>
+            <td class="code mismatch">null のまま</td>
+            <td class="arrow-cell">→</td>
+            <td class="mismatch">除外（nullはfalse）</td>
+          </tr>
+          <tr>
+            <td>アプリ再起動後</td>
+            <td class="code match">'9'</td>
+            <td class="code match">サーバーから返る</td>
+            <td class="arrow-cell">→</td>
+            <td class="match">表示される</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_list_notifier.dart</span>
+        <span class="diff-stat">+13 / -9</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">222</span><span class="line-prefix"> </span><span>  /// ShoppingItemDto は immutable で copyWith がないため、新しいインスタンスを作成する</span></div>
+        <div class="code-line line-add"><span class="line-num">223</span><span class="line-prefix">+</span><span>  /// [purchasedAt]: 購入済みに変更する際は現在時刻を渡す。未購入/かごに戻す際は null を渡す</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>  ShoppingItemDto _copyItemWithStatus(ShoppingItemDto item, String status) {</span></div>
+        <div class="code-line line-add"><span class="line-num">224</span><span class="line-prefix">+</span><span>  ShoppingItemDto _copyItemWithStatus(</span></div>
+        <div class="code-line line-add"><span class="line-num">225</span><span class="line-prefix">+</span><span>    ShoppingItemDto item,</span></div>
+        <div class="code-line line-add"><span class="line-num">226</span><span class="line-prefix">+</span><span>    String status, {</span></div>
+        <div class="code-line line-add"><span class="line-num">227</span><span class="line-prefix">+</span><span>    required String? purchasedAt,</span></div>
+        <div class="code-line line-add"><span class="line-num">228</span><span class="line-prefix">+</span><span>  }) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">229</span><span class="line-prefix"> </span><span>    return ShoppingItemDto(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">235</span><span class="line-prefix"> </span><span>      status: status,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">236</span><span class="line-prefix"> </span><span>      favorite: item.favorite,</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>      purchasedAt: item.purchasedAt,</span></div>
+        <div class="code-line line-add"><span class="line-num">237</span><span class="line-prefix">+</span><span>      purchasedAt: purchasedAt,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">238</span><span class="line-prefix"> </span><span>      createdAt: item.createdAt,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">239</span><span class="line-prefix"> </span><span>      hasImage: item.hasImage,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">240</span><span class="line-prefix"> </span><span>    );</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>purchasedAt</code> を <code>required</code> named parameter にすることで、呼び出し側で明示的に値を渡す必要があり、nullのまま渡してしまうミスを防げるようになっている。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>shopping_list_notifier.dart（markPurchased・bulkPurchase の呼び出し側）</span>
+        <span class="diff-stat">+4 / -2</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">86</span><span class="line-prefix"> </span><span>      // #88: purchasedAt を現在時刻にセットすることで purchasedItems getter が即時反映される</span></div>
+        <div class="code-line line-add"><span class="line-num">87</span><span class="line-prefix">+</span><span>      final now = DateTime.now().toIso8601String();</span></div>
+        <div class="code-line line-ctx"><span class="line-num">88</span><span class="line-prefix"> </span><span>      final updatedItems = current.items.map((item) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">89</span><span class="line-prefix"> </span><span>        if (item.shoppingItemId == shoppingItemId) {</span></div>
+        <div class="code-line line-del"><span class="line-num">   </span><span class="line-prefix">-</span><span>          return _copyItemWithStatus(item, '9');</span></div>
+        <div class="code-line line-add"><span class="line-num">90</span><span class="line-prefix">+</span><span>          return _copyItemWithStatus(item, '9', purchasedAt: now);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">91</span><span class="line-prefix"> </span><span>        }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">92</span><span class="line-prefix"> </span><span>        return item;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">93</span><span class="line-prefix"> </span><span>      }).toList();</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>未購入へ戻す（<code>moveBackToUnpurchased</code>）・かごへ戻す（<code>moveToBasket</code>）では <code>purchasedAt: null</code> を渡し、<code>purchasedItems</code> getter から確実に外れるようにした。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">かごタブでスワイプして購入済みにした直後、購入済みタブにアイテムが即時表示される</div>
+      </div>
+      <div class="ac-body"><code>markPurchased</code> で <code>purchasedAt: DateTime.now().toIso8601String()</code> をセットするため、スワイプ直後から <code>purchasedItems</code> getter に含まれるようになった。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">アプリ再起動なしで反映が確認できる</div>
+      </div>
+      <div class="ac-body">ローカルの state を直接更新する楽観的更新パターンのため、APIレスポンスを待たずに画面に即時反映される。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">未購入→かご・かご→未購入の既存スワイプ動作はリグレッションしない</div>
+      </div>
+      <div class="ac-body"><code>moveToBasket</code> / <code>moveBackToUnpurchased</code> に <code>purchasedAt: null</code> を明示的に渡すことで、かごから未購入に戻した際も <code>purchasedItems</code> に混入しないことを確認。既存のテストも引き続きグリーン。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>かごタブでアイテムをスワイプ購入済みにした直後、購入済みタブに表示されること</strong>
+          <span>アプリ再起動なしで「購入済み」タブに切り替えると該当アイテムが表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「まとめて購入済み」ボタンでまとめて処理した場合も同様に即時反映されること</strong>
+          <span>かごに複数アイテムを入れ、まとめて購入済みにした直後に購入済みタブで全件表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>購入済みから未購入に戻したとき、購入済みタブからアイテムが消えること</strong>
+          <span>購入済みアイテムを「未購入に戻す」スワイプ後、購入済みタブから即時消えるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>未購入→かご・かご→未購入の操作が従来通り動作すること</strong>
+          <span>既存のスワイプ操作がデグレしていないか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>今回の根本原因は「getterの絞り込み条件（status AND purchasedAt）と楽観的更新の更新内容が一致していなかったこと」。同種のバグを防ぐために以下のテストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_list_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">markPurchased後はpurchasedItemsに即時含まれること（purchasedAtがセットされること）</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_list_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">bulkPurchase後はpurchasedItemsに即時含まれること（複数件）</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_list_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">moveBackToUnpurchased後はpurchasedAtがクリアされpurchasedItemsから外れること</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

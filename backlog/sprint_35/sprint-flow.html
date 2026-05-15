@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スプリントフロー全体図</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: #1a2332; font-size: 14px; }
+
+/* ===== HEADER ===== */
+.page-header { background: #1e293b; color: #f8fafc; padding: 24px 32px; }
+.page-header h1 { font-size: 1.3rem; font-weight: 700; }
+.page-header p  { color: #94a3b8; font-size: 0.85rem; margin-top: 4px; }
+
+/* ===== LEGEND ===== */
+.legend { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 32px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.dot-ryoko   { background: #a855f7; }
+.dot-sm      { background: #22c55e; }
+.dot-devopus { background: #f59e0b; }
+.dot-devson  { background: #3b82f6; }
+.dot-rev     { background: #ec4899; }
+.dot-mem     { background: #ef4444; border: 2px solid #fecaca; border-radius: 3px; }
+
+/* ===== MAIN LAYOUT ===== */
+.main { padding: 24px 32px; max-width: 1300px; margin: 0 auto; }
+
+/* ===== PHASE BLOCK ===== */
+.phase { margin-bottom: 8px; }
+.phase-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 8px 8px 0 0;
+  font-weight: 700; font-size: 0.9rem; cursor: pointer;
+}
+.phase-body { border: 1px solid; border-top: none; border-radius: 0 0 8px 8px; background: #fff; overflow: hidden; }
+
+/* phase colors */
+.phase-planning .phase-header   { background: #ecfdf5; color: #064e3b; border: 1px solid #a7f3d0; }
+.phase-planning .phase-body     { border-color: #a7f3d0; }
+.phase-devplan  .phase-header   { background: #fffbeb; color: #78350f; border: 1px solid #fde68a; }
+.phase-devplan  .phase-body     { border-color: #fde68a; }
+.phase-devimpl  .phase-header   { background: #eff6ff; color: #1e3a5f; border: 1px solid #bfdbfe; }
+.phase-devimpl  .phase-body     { border-color: #bfdbfe; }
+.phase-review   .phase-header   { background: #fdf4ff; color: #581c87; border: 1px solid #e9d5ff; }
+.phase-review   .phase-body     { border-color: #e9d5ff; }
+.phase-pr       .phase-header   { background: #f0fdfa; color: #134e4a; border: 1px solid #a7f3d0; }
+.phase-pr       .phase-body     { border-color: #a7f3d0; }
+.phase-revhtml  .phase-header   { background: #fff7ed; color: #7c2d12; border: 1px solid #fdba74; }
+.phase-revhtml  .phase-body     { border-color: #fdba74; }
+.phase-sprev    .phase-header   { background: #fef9c3; color: #713f12; border: 1px solid #fde047; }
+.phase-sprev    .phase-body     { border-color: #fde047; }
+.phase-retro    .phase-header   { background: #fef2f2; color: #7f1d1d; border: 1px solid #fca5a5; }
+.phase-retro    .phase-body     { border-color: #fca5a5; }
+
+/* ===== SWIMLANE TABLE ===== */
+.swim-table { width: 100%; border-collapse: collapse; }
+.swim-table th {
+  background: #f8fafc; padding: 8px 14px; text-align: left; font-size: 0.78rem;
+  font-weight: 700; border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+  color: #475569;
+}
+.swim-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; line-height: 1.5; }
+.swim-table tr:last-child td { border-bottom: none; }
+
+/* actor column colors */
+.col-ryoko { border-left: 3px solid #a855f7; background: #faf5ff; }
+.col-sm    { border-left: 3px solid #22c55e; background: #f0fdf4; }
+.col-devopus { border-left: 3px solid #f59e0b; background: #fffbeb; }
+.col-devson  { border-left: 3px solid #3b82f6; background: #eff6ff; }
+.col-rev   { border-left: 3px solid #ec4899; background: #fdf2f8; }
+.col-none  { background: #fafafa; color: #94a3b8; font-style: italic; text-align: center; }
+
+/* actor badge */
+.actor { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-size: 0.8rem; white-space: nowrap; }
+.actor .dot { width: 8px; height: 8px; }
+
+/* ===== MEMORY UPDATE TAGS ===== */
+.mem-tag { display: inline-block; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 700; margin: 2px 2px 0 0; }
+.skill-tag { display: inline-block; background: #fdf4ff; color: #7e22ce; border: 1px solid #e9d5ff; border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 700; margin: 2px 2px 0 0; }
+.gap-tag { display: inline-block; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 700; margin: 2px 2px 0 0; }
+.ok-tag  { display: inline-block; background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 700; margin: 2px 2px 0 0; }
+.wait-tag { display: inline-block; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 600; margin: 2px 2px 0 0; }
+
+/* steps */
+.step-num { display: inline-block; width: 20px; height: 20px; border-radius: 50%; text-align: center; line-height: 20px; font-size: 0.72rem; font-weight: 700; margin-right: 4px; flex-shrink: 0; }
+.step-wrap { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 4px; }
+.step-text { flex: 1; }
+
+ul.steps { list-style: none; padding: 0; }
+ul.steps li { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; font-size: 0.85rem; }
+ul.steps li::before { content: "→"; color: #94a3b8; flex-shrink: 0; margin-top: 1px; }
+
+/* repeat badge */
+.loop-badge { background: #7c3aed; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; margin-left: 6px; }
+
+/* ===== ANALYSIS SECTION ===== */
+.analysis { background: #fff; border-radius: 12px; padding: 24px; margin-top: 32px; border: 1px solid #e2e8f0; }
+.analysis h2 { font-size: 1.05rem; font-weight: 700; color: #1a2332; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #8b5cf6; }
+
+.update-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 700px) { .update-grid { grid-template-columns: 1fr; } }
+
+.update-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+.update-card-header { padding: 10px 14px; font-weight: 700; font-size: 0.85rem; }
+.update-card-body { padding: 14px; }
+
+.update-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+.update-file { font-size: 0.78rem; font-family: monospace; background: #f1f5f9; border-radius: 4px; padding: 2px 6px; flex-shrink: 0; }
+.update-detail { font-size: 0.83rem; color: #334155; }
+.update-when { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+
+.problem-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 14px; margin-top: 16px; }
+.problem-box h3 { font-size: 0.9rem; font-weight: 700; color: #c2410c; margin-bottom: 8px; }
+
+.propose-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-top: 16px; }
+.propose-box h3 { font-size: 0.9rem; font-weight: 700; color: #15803d; margin-bottom: 8px; }
+
+table.diff-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+table.diff-table th { background: #f8fafc; padding: 6px 10px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569; }
+table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-align: top; }
+.before-col { color: #991b1b; }
+.after-col  { color: #15803d; }
+.td-gray { background: #f8fafc; color: #94a3b8; text-align: center; font-size: 0.75rem; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>スプリントフロー全体図 — 誰が・いつ・何をするか</h1>
+  <p>developer-workflow / scrum-master-workflow / sprint-review-prep スキルをもとに整理</p>
+</div>
+
+<div class="legend">
+  <span style="font-size:0.8rem;font-weight:700;color:#475569">凡例：</span>
+  <div class="legend-item"><div class="dot dot-ryoko"></div>りょこさん</div>
+  <div class="legend-item"><div class="dot dot-sm"></div>SM</div>
+  <div class="legend-item"><div class="dot dot-devopus"></div>DEV（Opus 4.7 / 計画）</div>
+  <div class="legend-item"><div class="dot dot-devson"></div>DEV（Sonnet 4.6 / 実装）</div>
+  <div class="legend-item"><div class="dot dot-rev"></div>Reviewer ×3（convention / security / performance）</div>
+  <div class="legend-item"><div class="dot dot-mem" style="width:14px;height:14px;border-radius:3px"></div>
+    <span class="mem-tag">mem更新</span><span class="skill-tag">skill更新</span><span class="gap-tag">GAP</span> タグ</div>
+</div>
+
+<div class="main">
+
+<!-- ===== PHASE 1: PLANNING ===== -->
+<div class="phase phase-planning">
+  <div class="phase-header">
+    <span style="font-size:1.1rem">①</span> Planning
+    <span style="font-weight:400;font-size:0.82rem;color:#065f46">りょこさんが「Planning開始して」と指示したとき</span>
+  </div>
+  <div class="phase-body">
+    <table class="swim-table">
+      <tr>
+        <th style="width:140px">担当</th>
+        <th>やること</th>
+        <th style="width:200px">更新するファイル・成果物</th>
+      </tr>
+      <tr>
+        <td class="col-sm"><div class="actor"><div class="dot dot-sm"></div>SM</div></td>
+        <td>
+          <ul class="steps">
+            <li>memory/sm/short_term.md・long_term.md を読む</li>
+            <li>GitHub から対象 Issue のBodyを取得（bug ラベル確認）</li>
+            <li>スプリントゴールを策定し、リスク・チャレンジを整理</li>
+            <li>#10-planning フォーラムに Planning 完了を投稿</li>
+            <li>#20-sprint に「作業スレッド」を新規作成</li>
+          </ul>
+        </td>
+        <td>
+          <span class="mem-tag">sm/short_term.md（読む）</span><br>
+          <code style="font-size:0.78rem">backlog/sprint_XX/sprint_backlog.md</code>（作成）<br>
+          <span class="ok-tag">Discord #10-planning</span><br>
+          <span class="ok-tag">Discord #20-sprint スレッド作成</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>りょこさん</div></td>
+        <td>Planning 内容を確認する（承認は不要・暗黙的に次フェーズへ）</td>
+        <td class="td-gray">—</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PHASE 2: DEV PLANNING ===== -->
+<div class="phase phase-devplan">
+  <div class="phase-header">
+    <span style="font-size:1.1rem">②</span> DEV 計画フェーズ
+    <span style="font-weight:400;font-size:0.82rem;color:#92400e">Opus 4.7 で起動 — SM が Agent 起動</span>
+  </div>
+  <div class="phase-body">
+    <table class="swim-table">
+      <tr>
+        <th style="width:140px">担当</th>
+        <th>やること</th>
+        <th style="width:200px">更新するファイル・成果物</th>
+      </tr>
+      <tr>
+        <td class="col-devopus"><div class="actor"><div class="dot dot-devopus"></div>DEV（Opus）</div></td>
+        <td>
+          <ul class="steps">
+            <li>memory/dev/short_term.md を読む</li>
+            <li style="color:#991b1b"><strong>前スプリントの内容があれば → long_term.md に要約して追記 → short_term.md をリセット</strong></li>
+            <li>memory/dev/long_term.md を読む</li>
+            <li>sprint_backlog.md を読む</li>
+            <li>bug ラベルの Issue はコードを調査して根本原因を特定</li>
+            <li>実装方針を short_term.md に記録</li>
+            <li>りょこさんに実装方針を提示し、承認を得る</li>
+            <li>承認後：bug Issue の Body（原因・改修方針）を GitHub 上で更新</li>
+            <li>#20-sprint 作業スレッドに承認済み実装方針を投稿</li>
+            <li>SM に SendMessage → 停止</li>
+          </ul>
+        </td>
+        <td>
+          <span class="mem-tag">dev/short_term.md（リセット）</span><br>
+          <span class="mem-tag">dev/long_term.md（前Sprint分追記）</span><br>
+          <span class="mem-tag">dev/short_term.md（今Sprint方針記録）</span><br>
+          <span class="ok-tag">GitHub Issue Body 更新（bug）</span><br>
+          <span class="ok-tag">Discord #20-sprint 投稿</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>りょこさん</div></td>
+        <td>実装方針を確認して承認する（または修正指示）</td>
+        <td class="td-gray">—</td>
+      </tr>
+      <tr>
+        <td class="col-sm"><div class="actor"><div class="dot dot-sm"></div>SM</div></td>
+        <td>DEV から報告が届いたら、Sonnet 4.6 で DEV を再起動する</td>
+        <td class="td-gray">—</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PHASE 3: DEV IMPL ===== -->
+<div class="phase phase-devimpl">
+  <div class="phase-header">
+    <span style="font-size:1.1rem">③</span> DEV 実装フェーズ
+    <span style="font-weight:400;font-size:0.82rem;color:#1e3a5f">Sonnet 4.6 で再起動 — SM が Agent 起動</span>
+  </div>
+  <div class="phase-body">
+    <table class="swim-table">
+      <tr>
+        <th style="width:140px">担当</th>
+        <th>やること</th>
+        <th style="width:200px">更新するファイル・成果物</th>
+      </tr>
+      <tr>
+        <td class="col-devson"><div class="actor"><div class="dot dot-devson"></div>DEV（Sonnet）</div></td>
+        <td>
+          <ul class="steps">
+            <li>memory/dev/short_term.md を読んで実装方針を確認</li>
+            <li>TaskCreate で実装タスクを作成（Issue単位/AC単位）</li>
+            <li>#20-sprint 作業スレッドに作業開始を投稿</li>
+            <li>TDD（RED → GREEN → REFACTOR）で実装</li>
+            <li>format / analyze / test をすべてグリーンに</li>
+            <li>sprint_backlog.md の AC を全部 [x] に更新</li>
+            <li>commit → git push</li>
+            <li>#20-sprint 作業スレッドに完了報告を投稿</li>
+            <li>short_term.md に進捗・ハマりポイントを記録</li>
+            <li>SM に SendMessage → 停止</li>
+          </ul>
+        </td>
+        <td>
+          <span class="mem-tag">dev/short_term.md（進捗・ハマり記録）</span><br>
+          <code style="font-size:0.78rem">sprint_backlog.md</code>（AC チェック更新）<br>
+          <span class="ok-tag">git commit / push</span><br>
+          <span class="ok-tag">Discord #20-sprint 投稿</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PHASE 4: REVIEW ===== -->
+<div class="phase phase-review">
+  <div class="phase-header">
+    <span style="font-size:1.1rem">④</span> コードレビュー
+    <span style="font-weight:400;font-size:0.82rem;color:#581c87">3つのレビュアーを並列起動。指摘があれば ③ に戻る</span>
+    <span class="loop-badge">繰り返しあり</span>
+  </div>
+  <div class="phase-body">
+    <table class="swim-table">
+      <tr>
+        <th style="width:140px">担当</th>
+        <th>やること</th>
+        <th style="width:200px">更新するファイル・成果物</th>
+      </tr>
+      <tr>
+        <td class="col-sm"><div class="actor"><div class="dot dot-sm"></div>SM</div></td>
+        <td>
+          <ul class="steps">
+            <li>convention / security / performance の3つを並列で Background 起動</li>
+            <li>既存ブランチ継続の場合: <code>git show --name-only</code> でスコープ判定済み変更ファイルをレビュアーに伝える</li>
+            <li>全員の報告が揃ったら指摘を集約</li>
+            <li>指摘がスコープ内か判定（スコープ外は対応不要と明示）</li>
+            <li>スコープ内の指摘あり → #20-sprint に指摘まとめを投稿 → DEV 再起動（③ に戻る）</li>
+            <li>全員「指摘なし」 → 次フェーズへ</li>
+          </ul>
+        </td>
+        <td>
+          <span class="ok-tag">Discord #20-sprint 投稿（指摘まとめ）</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="col-rev"><div class="actor"><div class="dot dot-rev"></div>Reviewer ×3（並列）</div></td>
+        <td>
+          <ul class="steps">
+            <li>git diff でコード変更を確認</li>
+            <li>各観点（規約 / セキュリティ / パフォーマンス）でレビュー</li>
+            <li>#20-sprint 作業スレッドに結果を投稿</li>
+            <li>SM に SendMessage で報告</li>
+          </ul>
+        </td>
+        <td>
+          <span class="ok-tag">Discord #20-sprint 投稿</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PHASE 5: PR ===== -->
+<div class="phase phase-pr">
+  <div class="phase-header">
+    <span style="font-size:1.1rem">⑤</span> PR 作成・更新
+    <span style="font-weight:400;font-size:0.82rem;color:#134e4a">全レビュアー「指摘なし」確認後</span>
+  </div>
+  <div class="phase-body">
+    <table class="swim-table">
+      <tr>
+        <th style="width:140px">担当</th>
+        <th>やること</th>
+        <th style="width:200px">更新するファイル・成果物</th>
+      </tr>
+      <tr>
+        <td class="col-sm"><div class="actor"><div class="dot dot-sm"></div>SM</div></td>
+        <td>
+          <ul class="steps">
+            <li><strong>新規ブランチ</strong>: GitHub REST API で PR を新規作成（<code>closes #N</code> を含める）</li>
+            <li><strong>既存ブランチ継続</strong>: 既存 PR の body に Sprint 分の <code>closes #N</code> を追記（PATCH）</li>
+            <li>#20-sprint 作業スレッドに PR URL を投稿</li>
+          </ul>
+        </td>
+        <td>
+          <span class="ok-tag">GitHub PR 作成/更新</span><br>
+          <span class="ok-tag">Discord #20-sprint 投稿</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PHASE 6: SPRINT REVIEW HTML ===== -->
+<div class="phase phase-revhtml">
+  <div class="phase-header">
+    <span style="font-size:1.1rem">⑥</span> Sprint Review HTML 生成
+    <span style="font-weight:400;font-size:0.82rem;color:#7c2d12">SM が DEV（Sonnet）を起動</span>
+  </div>
+  <div class="phase-body">
+    <table class="swim-table">
+      <tr>
+        <th style="width:140px">担当</th>
+        <th>やること</th>
+        <th style="width:200px">更新するファイル・成果物</th>
+      </tr>
+      <tr>
+        <td class="col-devson"><div class="actor"><div class="dot dot-devson"></div>DEV（Sonnet）</div></td>
+        <td>
+          <ul class="steps">
+            <li>sprint-review-prep スキルを参照</li>
+            <li>GitHub Issue の Body・git diff を読んでコード変更を把握</li>
+            <li>bug テンプレートまたは feature/refactor テンプレートを選択して HTML 生成</li>
+            <li>SM に SendMessage でファイルパスを報告</li>
+          </ul>
+        </td>
+        <td>
+          <code style="font-size:0.78rem">backlog/sprint_XX/review-#N.html</code>（生成）
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PHASE 7: SPRINT REVIEW ===== -->
+<div class="phase phase-sprev">
+  <div class="phase-header">
+    <span style="font-size:1.1rem">⑦</span> Sprint Review
+    <span style="font-weight:400;font-size:0.82rem;color:#713f12">SM が投稿後に停止 → りょこさんの確認待ち</span>
+  </div>
+  <div class="phase-body">
+    <table class="swim-table">
+      <tr>
+        <th style="width:140px">担当</th>
+        <th>やること</th>
+        <th style="width:200px">更新するファイル・成果物</th>
+      </tr>
+      <tr>
+        <td class="col-sm"><div class="actor"><div class="dot dot-sm"></div>SM</div></td>
+        <td>
+          <ul class="steps">
+            <li>#30-sprint-review に新スレッドを作成して投稿（AC達成状況・レビュー結果・PR URL・HTML パス）</li>
+            <li><strong>ここで Claude Code を停止して待つ</strong></li>
+          </ul>
+        </td>
+        <td>
+          <span class="ok-tag">Discord #30-sprint-review</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>りょこさん</div></td>
+        <td>
+          <ul class="steps">
+            <li>review-#N.html をブラウザで開いて動作確認</li>
+            <li>指摘があれば #30-sprint-review スレッドにコメント</li>
+            <li>確認完了後に Claude Code を再起動して「Retro して」と指示</li>
+          </ul>
+        </td>
+        <td class="td-gray">—</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PHASE 8: RETRO ===== -->
+<div class="phase phase-retro">
+  <div class="phase-header">
+    <span style="font-size:1.1rem">⑧</span> Retrospective
+    <span style="font-weight:400;font-size:0.82rem;color:#7f1d1d">りょこさんから「Retro して」と指示されたとき</span>
+  </div>
+  <div class="phase-body">
+    <table class="swim-table">
+      <tr>
+        <th style="width:140px">担当</th>
+        <th>やること</th>
+        <th style="width:200px">更新するファイル・成果物</th>
+      </tr>
+      <tr>
+        <td class="col-sm"><div class="actor"><div class="dot dot-sm"></div>SM</div></td>
+        <td>
+          <ul class="steps">
+            <li>#30-sprint-review スレッドでりょこさんの指摘を確認</li>
+            <li>#40-retrospective に新スレッドを作成して Retro を実施（Keep / Stop / Avoid / Challenge）</li>
+            <li>りょこさんの指摘を GitHub Issue として起票 → Projects 追加 → Draft 設定</li>
+            <li>Skills ファイルの更新要否を判断 → 更新 → #skills-changelog に投稿</li>
+            <li>sm/short_term.md をリセット、sm/long_term.md に要約を追記</li>
+          </ul>
+        </td>
+        <td>
+          <span class="ok-tag">Discord #40-retrospective</span><br>
+          <span class="ok-tag">GitHub Issue 起票</span><br>
+          <span class="skill-tag">Skills 更新（必要な場合）</span><br>
+          <span class="ok-tag">Discord #skills-changelog</span><br>
+          <span class="mem-tag">sm/short_term.md（リセット）</span><br>
+          <span class="mem-tag">sm/long_term.md（追記）</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== ANALYSIS SECTION ===== -->
+<div class="analysis">
+  <h2>メモリ・スキル更新タイミングの整理と課題</h2>
+
+  <div class="update-grid">
+
+    <!-- SM -->
+    <div class="update-card">
+      <div class="update-card-header" style="background:#f0fdf4;color:#064e3b">
+        <div class="actor"><div class="dot dot-sm" style="width:10px;height:10px"></div>SM — メモリ更新タイミング</div>
+      </div>
+      <div class="update-card-body">
+        <div class="update-row">
+          <span class="update-file">sm/short_term.md</span>
+          <div>
+            <div class="update-detail">スプリント中：随時更新（進捗・ブロッカー・チャレンジ）</div>
+            <div class="update-detail" style="margin-top:4px">Retro完了後：<strong>リセット</strong></div>
+          </div>
+        </div>
+        <div class="update-row">
+          <span class="update-file">sm/long_term.md</span>
+          <div>
+            <div class="update-detail">Retro完了後：今スプリントの教訓を追記</div>
+          </div>
+        </div>
+        <div class="update-row">
+          <span class="update-file">Skills ファイル</span>
+          <div>
+            <div class="update-detail">Retro フェーズで SM が判断して更新</div>
+          </div>
+        </div>
+        <div style="margin-top:8px"><span class="ok-tag">✅ 開始（Planning）〜終了（Retro）まで一貫してSMが担う。更新タイミングが明確。</span></div>
+      </div>
+    </div>
+
+    <!-- DEV -->
+    <div class="update-card">
+      <div class="update-card-header" style="background:#fffbeb;color:#78350f">
+        <div class="actor"><div class="dot dot-devopus" style="width:10px;height:10px"></div>DEV — メモリ更新タイミング（現状）</div>
+      </div>
+      <div class="update-card-body">
+        <div class="update-row">
+          <span class="update-file">dev/short_term.md</span>
+          <div>
+            <div class="update-detail">計画フェーズ開始時：前スプリント分をlong_termへ移してリセット</div>
+            <div class="update-detail" style="margin-top:4px">実装フェーズ中：進捗・ハマりポイントを随時記録</div>
+          </div>
+        </div>
+        <div class="update-row">
+          <span class="update-file">dev/long_term.md</span>
+          <div>
+            <div class="update-detail">次スプリント計画フェーズ開始時に前スプリントの short_term を要約して追記</div>
+          </div>
+        </div>
+        <div class="update-row">
+          <span class="update-file">Skills ファイル</span>
+          <div>
+            <div class="update-detail" style="color:#991b1b"><strong>更新タイミングが未定義。実際には更新されていない。</strong></div>
+          </div>
+        </div>
+        <div style="margin-top:8px"><span class="gap-tag">⚠️ DEVは自分で振り返る専用フェーズがない。long_termへの移行は「次スプリント開始時」のため、学びが薄まる可能性がある。</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEM -->
+  <div class="problem-box">
+    <h3>⚠️ 現状の課題（DEV）</h3>
+    <table class="diff-table" style="margin-top:8px">
+      <tr><th>課題</th><th>詳細</th></tr>
+      <tr>
+        <td style="white-space:nowrap">① 振り返りのタイミングがずれている</td>
+        <td>DEVの long_term.md 更新は「次スプリント開始時」。Sprint 35 の学びは Sprint 36 を開始するときに初めて記録される。その時点では詳細な文脈（何でハマったか・なぜそのパターンを選んだか）が薄れている。</td>
+      </tr>
+      <tr>
+        <td>② Skills 更新が SM 任せ</td>
+        <td>DEVが実装中に「これは規約化すべきだ」と気づいても、それをSMに伝えるフローがない。Retroでも SM が自分で判断するだけで、DEVの現場知識が反映されにくい。</td>
+      </tr>
+      <tr>
+        <td>③ セルフチェックがない</td>
+        <td>long_term.md に「繰り返し指摘を受けるパターン」が書いてあっても、DEVがコミット前に参照するトリガーがない。結果、Sprint 34 で指摘されたマジックストリングが Sprint 35 でも発生。</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- PROPOSAL -->
+  <div class="propose-box">
+    <h3>✅ 提案：DEV フローへの追加ステップ</h3>
+    <table class="diff-table" style="margin-top:8px">
+      <tr><th style="width:30%">追加ポイント</th><th class="before-col" style="width:35%">現状（Before）</th><th class="after-col">提案（After）</th></tr>
+      <tr>
+        <td>実装完了後（SendMessage 前）</td>
+        <td class="before-col">そのまま SM に報告して停止</td>
+        <td class="after-col">
+          短い振り返りステップを追加：<br>
+          ① 今スプリントで学んだこと・ハマりポイントを short_term.md に「振り返りメモ」として記録<br>
+          ② Skills に追記すべきことがあれば SM への報告に含める
+        </td>
+      </tr>
+      <tr>
+        <td>developer-workflow のチェックリスト</td>
+        <td class="before-col">フォーマット / analyze / test のみ</td>
+        <td class="after-col">
+          「繰り返し指摘パターン」チェック項目を追加：<br>
+          □ マジックストリング（enum .code 未使用）<br>
+          □ catch (_) {} 握りつぶし<br>
+          □ i18n ハードコード<br>
+          □ 一覧 Provider invalidate 漏れ
+        </td>
+      </tr>
+      <tr>
+        <td>dev/long_term.md の構成</td>
+        <td class="before-col">Sprint サマリー（成果テーブル + 習得したこと）</td>
+        <td class="after-col">
+          ① コミット前セルフチェック（先頭に配置）<br>
+          ② 技術的ハマりポイント（現状維持）<br>
+          ③ 習得したこと（技術的洞察のみ・成果テーブル削除）
+        </td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+</div>
+</body>
+</html>

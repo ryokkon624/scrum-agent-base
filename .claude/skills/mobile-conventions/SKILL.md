@@ -175,6 +175,25 @@ Column(
 - グローバルに参照する Provider は `{feature}_providers.dart` または `core/di/providers.dart` に置く
 - `ref.watch` は build メソッド内のみ。ハンドラ内では `ref.read` を使う
 
+### IndexedStack 配下の一覧画面における invalidate（重要）
+
+`StatefulShellRoute.indexedStack` 配下では、一覧画面ウィジェットが `IndexedStack` で保持されるため `AutoDispose` が破棄されず古い state が残る。
+
+**詳細・作成画面で一覧の内容が変わる操作（追加・削除・ステータス変更）を行った場合は、一覧画面に戻る前に必ず一覧 Provider を explicit に invalidate すること。**
+
+```dart
+// Page 側の ref.listen や操作コールバックで invalidate する
+ref.invalidate(shoppingListNotifierProvider);
+```
+
+対象となる操作パターン:
+- アイテム追加後（作成画面 submit 成功時）
+- アイテム削除後（詳細画面 deleteItem 成功時）
+- ステータス変更後（詳細画面 updateStatus 成功時）
+- お気に入り操作後（詳細画面 toggleFavorite 成功時）
+
+> **背景（Sprint 35）**: 追加後・お気に入り操作後の反映漏れを Sprint 35 で修正したが、ステータス変更後の invalidate が漏れており Sprint Review で指摘された（#107）。削除後の反映も同様（#108）。
+
 ---
 
 ## 5. ナビゲーション（go_router）
@@ -202,6 +221,29 @@ Column(
 
 - 認証トークンの付与・リフレッシュは `AuthInterceptor` で一元管理する
 
+### エラーハンドリングルール
+
+- **`catch (_) {}` でエラーを握りつぶしてはならない**（Sprint 34 Review で指摘）。必ず以下のいずれかを行うこと：
+  - `rethrow` でそのまま上位に伝播する
+  - `AppException` サブクラスに変換して `throw` する
+- 握りつぶしが発生するとException発生時の原因調査に時間を要するため、必ずエラーを伝播させること
+
+```dart
+// NG: エラーを握りつぶす
+} catch (_) {}
+
+// OK: rethrow
+} catch (e) {
+  rethrow;
+}
+
+// OK: AppException に変換
+} on DioException catch (e) {
+  if (e.error is AppException) throw e.error!;
+  throw NetworkException(e.message ?? 'Network error');
+}
+```
+
 ---
 
 ## 7. テスト方針（flutter_test + mockito）
@@ -214,6 +256,22 @@ Column(
 | Notifier | **必須** | 各操作の状態遷移（成功・エラー） |
 | Page（ウィジェット） | **必須** | 主要な表示確認・ユーザー操作のゴールデンパス |
 | 自動生成ファイル（`.g.dart` / `.mocks.dart`） | **不要** | 除外対象 |
+
+### Repository impl テスト時のモック構造確認（重要）
+
+Repository のモックを作成する前に、バックエンドの実際の API レスポンス構造を必ず確認すること。
+
+- **ラッパー形式 `{"items": [...]}` か、フラットなリスト `[...]` かを確認する**
+- バックエンドの `@RestApi` / Controller の戻り値型・レスポンスクラスを `hw-hub-backend` で確認する
+- モックを誤った構造で作成すると、テストが通過してもランタイムで `ClassCastException` が発生する（Sprint 33 で発生）
+
+```dart
+// NG: フラットリストをレスポンスとしてモック
+when(mockDio.get(...)).thenAnswer((_) async => Response(data: [{"id": 1, ...}], ...));
+
+// OK: ラッパー形式を確認してモック
+when(mockDio.get(...)).thenAnswer((_) async => Response(data: {"items": [{"id": 1, ...}]}, ...));
+```
 
 ### ウィジェットテストのヘルパー
 

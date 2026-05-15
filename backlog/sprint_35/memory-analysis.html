@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>long_term.md 分析レポート — Sprint 35</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: #1a2332; line-height: 1.6; padding: 32px 16px; }
+  .container { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; font-weight: 700; color: #1a2332; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 40px; }
+  h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid; }
+  h3 { font-size: 1rem; font-weight: 700; margin: 16px 0 8px; }
+  p { margin-bottom: 12px; color: #334155; font-size: 0.95rem; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .section-label { font-size: 0.75rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 12px; }
+  /* role tags */
+  .tag-dev { background: #dbeafe; color: #1e40af; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-right: 6px; }
+  .tag-sm  { background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-right: 6px; }
+  /* status chips */
+  .chip-keep  { background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .chip-waste { background: #fee2e2; color: #991b1b; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .chip-add   { background: #fef9c3; color: #854d0e; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  /* tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 16px; }
+  th { background: #f8fafc; text-align: left; padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569; }
+  td { padding: 8px 12px; border: 1px solid #e2e8f0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  /* alert box */
+  .alert { border-left: 4px solid; padding: 14px 16px; border-radius: 0 8px 8px 0; margin-bottom: 16px; }
+  .alert-red    { border-color: #ef4444; background: #fef2f2; color: #7f1d1d; }
+  .alert-yellow { border-color: #f59e0b; background: #fffbeb; color: #78350f; }
+  .alert-blue   { border-color: #3b82f6; background: #eff6ff; color: #1e3a5f; }
+  .alert-green  { border-color: #22c55e; background: #f0fdf4; color: #14532d; }
+  /* code block */
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; font-size: 0.82rem; overflow-x: auto; margin-bottom: 12px; line-height: 1.5; }
+  code { background: #f1f5f9; color: #0f172a; padding: 1px 6px; border-radius: 4px; font-size: 0.85rem; }
+  /* grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+  /* section headers */
+  .dev-header { color: #1e40af; border-bottom-color: #3b82f6; }
+  .sm-header  { color: #166534; border-bottom-color: #22c55e; }
+  .summary-header { color: #7c3aed; border-bottom-color: #8b5cf6; }
+  /* arrow */
+  .arrow { font-size: 1.2rem; text-align: center; padding: 8px 0; color: #94a3b8; }
+  /* review pattern */
+  .review-row td:first-child { font-weight: 600; }
+  .badge-repeat { background: #fee2e2; color: #991b1b; padding: 1px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; margin-left: 6px; }
+  .badge-once   { background: #f1f5f9; color: #475569; padding: 1px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; margin-left: 6px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>long_term.md 分析レポート</h1>
+  <p class="subtitle">Sprint 35 Retrospective — DEV・SM それぞれの長期記憶の役割と改善案</p>
+
+  <!-- ===== OVERVIEW ===== -->
+  <div class="card">
+    <h2 class="summary-header">前提：long_term.md の目的</h2>
+    <p>long_term.md は <strong>「次の自分が同じミスを繰り返さず、より速く正確に動くための手掛かり」</strong> を蓄積する場所。</p>
+    <div class="grid-2">
+      <div>
+        <div class="section-label" style="color:#1e40af">DEV の用途</div>
+        <ul style="padding-left:18px;font-size:0.9rem;color:#334155">
+          <li>技術的なハマりポイントと解決策</li>
+          <li>繰り返し指摘を受けるパターン</li>
+          <li>テスト・実装で躓きやすい罠</li>
+        </ul>
+      </div>
+      <div>
+        <div class="section-label" style="color:#166534">SM の用途</div>
+        <ul style="padding-left:18px;font-size:0.9rem;color:#334155">
+          <li>スプリント進行上の判断パターン</li>
+          <li>レビュー傾向の把握（DEV への注意喚起）</li>
+          <li>Skillsの更新履歴</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert alert-yellow" style="margin-top:16px">
+      <strong>現状の問題：</strong> 両ファイルとも「何をやったか（成果）」の記録に偏りすぎており、<br>
+      「次にどう動くべきか（行動変容）」につながる情報が不足している。
+    </div>
+  </div>
+
+  <!-- ===== DEV SECTION ===== -->
+  <div class="card">
+    <h2 class="dev-header"><span class="tag-dev">DEV</span> long_term.md 分析</h2>
+
+    <h3>✅ 有効な情報（残すべき）</h3>
+    <table>
+      <tr><th style="width:35%">セクション</th><th>理由</th></tr>
+      <tr><td>技術的なハマりポイント（AWS/BE/FE）</td><td>次のスプリントでも即座に参照できる actionable な事実。特に「mybatisGenerator 実行前に rm -rf」「S3 PUT に AuthInterceptor を通さない」などは忘れたら必ずハマる</td></tr>
+      <tr><td>各 Sprint の「で習得したこと」の<strong>技術的洞察</strong></td><td>実装パターン・設計判断の根拠が凝縮されている。特に Sprint 30 の AuthUser 設計、Sprint 34 の FamilyNotifier パターンは再利用頻度が高い</td></tr>
+    </table>
+
+    <h3>❌ 無駄な情報（削減を検討）</h3>
+    <table>
+      <tr><th style="width:35%">セクション</th><th>理由</th></tr>
+      <tr>
+        <td>Sprint サマリー表の「成果」列<br><span style="font-size:0.8rem;color:#64748b">例: 「ShoppingListTabBar.vue 新規作成」「3タブ（未購入/かご/購入済み）実装」</span></td>
+        <td>これは git log や sprint_backlog.md で確認できる情報。DEV が次回参照しても行動は変わらない。<br><strong>16スプリント分の成果テーブルが long_term.md のトークンを大量消費している。</strong></td>
+      </tr>
+      <tr>
+        <td>Sprint 番号と完了日の見出し</td>
+        <td>「Sprint 13 サマリー（2026-04-30完了）」という時系列管理は不要。技術知識に時制はない。</td>
+      </tr>
+    </table>
+
+    <h3 style="color:#991b1b">🚨 最重要：追加すべき情報（繰り返し指摘パターン）</h3>
+    <div class="alert alert-red">
+      <strong>りょこさんの指摘通り、マジックストリングが Sprint 34 と Sprint 35 の両方で指摘されている。</strong><br>
+      DEV が次スプリント開始時に参照できる「自己チェックリスト」として定義する。
+    </div>
+
+    <p>過去スプリントのレビュー指摘を整理すると：</p>
+    <table class="review-row">
+      <tr><th style="width:30%">指摘パターン</th><th style="width:20%">発生スプリント</th><th>対象ファイル傾向</th></tr>
+      <tr>
+        <td>マジックストリング（enum未使用）<span class="badge-repeat">2回</span></td>
+        <td>Sprint 34, <strong>35</strong></td>
+        <td>Notifier（status値・favoriteFlag値）。<code>ShoppingItemStatus.xxx.code</code> を使うべきところで <code>'0'</code> <code>'1'</code> <code>'9'</code> を直書き</td>
+      </tr>
+      <tr>
+        <td>i18n ハードコード<span class="badge-repeat">2回</span></td>
+        <td>Sprint 33, 34</td>
+        <td>Page・Widget 内の文字列リテラル</td>
+      </tr>
+      <tr>
+        <td><code>catch (_) {}</code> 握りつぶし<span class="badge-repeat">2回</span></td>
+        <td>Sprint 34 (規約化), 35</td>
+        <td>Notifier の catch ブロック。<code>rethrow</code> または <code>AppException</code> 変換が必要</td>
+      </tr>
+      <tr>
+        <td>全幅表示 <code>width: double.infinity</code> 漏れ<span class="badge-once">1回</span></td>
+        <td>Sprint 31</td>
+        <td>Dismissible 内の Container</td>
+      </tr>
+      <tr>
+        <td>一覧 Provider の invalidate 漏れ<span class="badge-once">1回</span></td>
+        <td>Sprint 35 Review</td>
+        <td>詳細・作成画面からの操作後（削除・ステータス変更・追加）</td>
+      </tr>
+    </table>
+
+    <h3>提案する新セクション構成</h3>
+    <pre>
+# DEV 長期記憶
+
+## ⚠️ コミット前セルフチェック（レビュー出し前に必ず確認）
+
+### 繰り返し指摘されるパターン（過去実績あり）
+
+| チェック項目 | 詳細 | 発生スプリント |
+|---|---|---|
+| □ マジックストリングを使っていないか | status値（'0','1','9'）は ShoppingItemStatus.xxx.code で参照 | Sprint 34, 35 |
+| □ catch (_) {} でエラーを握りつぶしていないか | rethrow または AppException 変換 | Sprint 34, 35 |
+| □ i18n ハードコードがないか | 文字列リテラルはすべて ARB 経由 | Sprint 33, 34 |
+| □ IndexedStack 配下で一覧 Provider を invalidate しているか | 追加・削除・ステータス変更後は ref.invalidate | Sprint 35 Review |
+
+## 技術的なハマりポイント（現状維持）
+...
+
+## 習得したこと（技術的洞察のみ・成果テーブルは不要）
+...</pre>
+  </div>
+
+  <!-- ===== SM SECTION ===== -->
+  <div class="card">
+    <h2 class="sm-header"><span class="tag-sm">SM</span> long_term.md 分析</h2>
+
+    <h3>✅ 有効な情報（残すべき）</h3>
+    <table>
+      <tr><th style="width:35%">セクション</th><th>理由</th></tr>
+      <tr><td>教訓（各スプリントの「何がうまくいったか・何が課題か」）</td><td>スプリント進行の判断に直結する。「計画フェーズでOopus 4.7で根本原因調査」「既存ブランチ継続時はスコープ判定が必要」など、次回のSMが同じ判断を迷わずできる</td></tr>
+      <tr><td>Skills更新履歴（何を・なぜ追記したか）</td><td>Skillsが「なぜそのルールになったか」の背景を保持。ルールの意図が失われると形骸化する</td></tr>
+    </table>
+
+    <h3>❌ 無駄な情報（削減を検討）</h3>
+    <table>
+      <tr><th style="width:35%">セクション</th><th>理由</th></tr>
+      <tr>
+        <td>Issue番号・PR URL・ブランチ名</td>
+        <td>GitHub の git history・PR 一覧で検索可能。SMが将来参照しても行動は変わらない。</td>
+      </tr>
+      <tr>
+        <td>具体的な数値（テスト件数・カバレッジ%）</td>
+        <td>「375テストグリーン」という情報は次スプリントで参照しても何も変わらない。Skillsのルール（≥95%）を守ったという確認にしかならない。</td>
+      </tr>
+      <tr>
+        <td>スプリントゴールの再掲</td>
+        <td>sprint_backlog.md に書いてある。long_term.md に複製する必要なし。</td>
+      </tr>
+    </table>
+
+    <h3>追加すべき情報</h3>
+    <div class="alert alert-blue">
+      SMのlong_termは「スプリントの記録」ではなく「スプリント進行の判断ガイダンス」として機能させるべき。
+    </div>
+    <table>
+      <tr><th style="width:35%">追加すべき項目</th><th>内容例</th></tr>
+      <tr>
+        <td>レビュー指摘の傾向サマリー</td>
+        <td>「モバイルスプリントではマジックストリング・i18nハードコードが繰り返し指摘される。DEV起動時に注意喚起するか、self-checkを義務付ける」</td>
+      </tr>
+      <tr>
+        <td>既存ブランチ継続時の運用ルール</td>
+        <td>「git show --name-only でスコープ判定する手順は必須。レビュアーへの指示にも範囲を明示すること（Sprint 35で有効性確認）」</td>
+      </tr>
+      <tr>
+        <td>Sprint Review で発覚しやすいパターン</td>
+        <td>「詳細画面からの操作後の一覧反映漏れが3スプリント連続で Sprint Review 指摘の原因（#82, #107, #108）」</td>
+      </tr>
+    </table>
+
+    <h3>提案する新セクション構成</h3>
+    <pre>
+# SM 長期記憶
+
+## スプリント進行パターン（判断ガイダンス）
+
+### Planning
+- bug Sprint でも計画フェーズは Opus 4.7 で丁寧に根本原因調査する（Sprint 35 実績）
+- 既存ブランチ継続時は、DEV起動メッセージにブランチ名を明示する
+
+### レビュー
+- 既存ブランチ継続時は `git show --name-only` でスコープ判定してからレビュアーに指示する
+- レビュアーへの指示に「スコープ外ファイルは指摘不要」と明記する（Sprint 20, 35 で発生）
+
+## DEV レビュー指摘の傾向
+- マジックストリング: Sprint 34, 35 で繰り返し指摘。DEV起動時に注意喚起推奨
+- i18n ハードコード: Sprint 33, 34 で発生
+- catch 握りつぶし: Sprint 34 で規約化、Sprint 35 で再発
+
+## Sprint Reviewで発覚しやすいパターン
+- 詳細画面からの操作後の一覧反映漏れ（#82, #107, #108）→ モバイル詳細画面実装時は必ずACに含める
+
+## Skills更新履歴
+| Sprint | 更新内容 | 理由 |
+|--------|---------|------|
+| Sprint 33 | mobile-conventions: Repositoryモック構造確認ルール追記 | ClassCastException 実績 |
+| Sprint 34 | mobile-conventions: catch握りつぶし禁止ルール追記 | レビュー指摘 |
+| Sprint 35 | mobile-conventions: IndexedStack invalidate ルール追記 | Sprint Review指摘 #107/#108 |</pre>
+  </div>
+
+  <!-- ===== ACTIONABLE SUMMARY ===== -->
+  <div class="card">
+    <h2 class="summary-header">今すぐやれること・提案</h2>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-label" style="color:#1e40af">DEV — 優先度高</div>
+        <div class="alert alert-blue" style="margin-bottom:8px">
+          <strong>① 「コミット前セルフチェック」セクションを long_term.md の先頭に追加</strong><br>
+          マジックストリング・i18n・catch握りつぶし・invalidate漏れを箇条書きでまとめる。
+          DEVが計画フェーズ完了時に必ず読む位置に置く。
+        </div>
+        <div class="alert alert-yellow">
+          <strong>② Sprint サマリー表の「成果」列を削除</strong><br>
+          「習得したこと」の bullet のみ残す形にリファクタ。
+          トークン使用量を大幅削減できる（推定 40%削減）。
+        </div>
+      </div>
+      <div>
+        <div class="section-label" style="color:#166534">SM — 優先度高</div>
+        <div class="alert alert-green" style="margin-bottom:8px">
+          <strong>③ 「DEV レビュー指摘の傾向」セクションを追加</strong><br>
+          SMがDEV起動時にこのセクションを見て、計画フェーズで注意喚起できるようにする。
+        </div>
+        <div class="alert alert-yellow">
+          <strong>④ Issue番号・PR URL・ブランチ名を削除</strong><br>
+          スプリントの「成果」ではなく「教訓」に絞り込む。
+          SMのlong_termをコンパクトに保つ。
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:16px">developer-workflow スキルへの追記も検討</h3>
+    <p>セルフチェックを DEV の <strong>行動フロー（developer-workflow スキル）</strong> の「作業完了時チェックリスト」に組み込む方が確実。long_term.md はモデルが毎回読むとは限らないため、スキルに書いた方が漏れがなくなる。</p>
+    <pre>
+### 作業完了時（チェックリストへ追加案）
+- [ ] マジックストリングを使っていないか（status値・flag値はenumの.codeを使う）
+- [ ] catch (_) {} でエラーを握りつぶしていないか（rethrow または AppException 変換）
+- [ ] i18n ハードコードがないか
+- [ ] IndexedStack 配下で一覧 Provider を invalidate しているか（追加・削除・ステータス変更後）</pre>
+  </div>
+
+</div>
+</body>
+</html>

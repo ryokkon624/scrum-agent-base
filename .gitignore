@@ -6,3 +6,6 @@ webhook-channel/node_modules/
 
 # Playwright MCP ユーザーデータ（ブラウザセッション・クッキー）
 .playwright-mcp/
+
+# Claude Codeハーネス自動生成ファイル
+build/
