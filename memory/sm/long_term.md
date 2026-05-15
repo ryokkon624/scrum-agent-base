@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-14
+**最終更新**: 2026-05-15
 
 ---
 
@@ -32,6 +32,7 @@
 
 - 既存ブランチ継続時は `git show --name-only [コミットハッシュ...]` で今スプリントの変更ファイルを特定してから、レビュアーへの指示にコミット範囲（`git diff <sprint-start-commit>^...HEAD`）を明示する
 - レビュアーへの指示に「スコープ外ファイルは指摘不要」と明記する（Sprint 20, 35 で誤指摘発生）
+- **reviewer起動前に `git diff --name-only` で変更ファイル一覧をSMが取得し、プロンプトに含める**（Sprint 36でconvention-reviewerがWindows環境でgit実行できず、後から提供する必要が生じた）
 - 指摘対応後は必ず再レビューを実施してから Sprint Review に進む。省略禁止
 - 横展開確認でスコープ外問題を発見した場合は即 Issue 化する
 
@@ -50,15 +51,15 @@
 |---|---|---|
 | マジックストリング（enum未使用） | Sprint 34, 35 | status/flag値を `'0'`/`'1'` で直接比較。`core/models/` の生成済みenum を使う |
 | i18n ハードコード | Sprint 33, 34 | 日本語・英語文字列をウィジェットに直書き |
-| `catch (_) {}` 握りつぶし | Sprint 34（規約化）, 35（再発） | rethrow または AppException 変換が必要 |
-| IndexedStack invalidate 漏れ | Sprint 35 Review | 詳細・作成画面からの操作後に一覧 Provider を invalidate していない |
+| `catch (_) {}` 握りつぶし | Sprint 34（規約化）, 35（再発） | rethrow または AppException 変換が必要。ただし Notifier 層は catch → errorMessage 格納が正解（Sprint 36 で規約を層別化） |
+| IndexedStack invalidate 漏れ | Sprint 35 Review, Sprint 36 | 詳細・作成画面からの操作後に一覧 Provider を invalidate していない。#93/#107/#108 で3回修正。詳細画面実装時の標準チェック項目 |
 
 ---
 
 ## Sprint Review で発覚しやすいパターン
 
 - **APIレスポンスデシリアライズバグ**: テストがモックで通過していても、実APIのレスポンス形状が異なるとランタイムでクラッシュ（Sprint 33）。mobile-conventions にモック構造確認ルールを追記済み
-- **詳細画面からの操作後の一覧反映漏れ**: 削除/ステータス変更/追加後に一覧が更新されない（#82, #107, #108）。モバイル詳細画面実装時は必ずACに「一覧の反映」を含める
+- **詳細画面からの操作後の一覧反映漏れ**: 削除/ステータス変更/追加後に一覧が更新されない（#82, #107, #108）。`ref.invalidate(shoppingListNotifierProvider)` 追加が標準修正パターン。モバイル詳細画面実装時は必ずACに「一覧の反映」を含める
 - **視覚的AC（幅・配置）の目視未確認**: シミュレーターまたはウィジェットテストで確認しないとSprint Reviewで指摘される（Sprint 31）
 - **DEVのスコープクリープ**: ACに明記されていない動作を自己判断で含めることがある。計画フェーズでACが曖昧な箇所を事前確認する
 
@@ -84,3 +85,5 @@
 | Sprint 34 | mobile-conventions | catch握りつぶし禁止ルール追記 | レビュー指摘（エラーを `catch (_) {}` で無視） |
 | Sprint 34 | scrum-master-workflow | Retro起票前の既存Issue確認を必須化 | Sprint 34で重複起票が発生 |
 | Sprint 35 | mobile-conventions | IndexedStack配下の invalidate ルール追記 | Sprint Review指摘（#107/#108） |
+| Sprint 36 | mobile-conventions | エラーハンドリングルールにNotifier層パターンを追加 | convention-reviewerの誤検知（catch→errorMessage格納をNG判定）を受け、層別パターンを明示 |
+| Sprint 36 | scrum-master-workflow | reviewer起動前の変更ファイル一覧事前取得ステップを追加 | convention-reviewerがWindows環境でgit実行できず再対応が必要になった実績 |

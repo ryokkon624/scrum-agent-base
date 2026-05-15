@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-14
+**最終更新**: 2026-05-15
 
 ---
 
@@ -115,6 +115,7 @@
 - AC違反の動作を既存テストが「正」として通過させていた場合、DEV・reviewer・SM誰も気づかない。Sprint Review HTML生成時にACとコードを対応させる作業が再発防止の機能を果たす
 - `isNotPurchased` のような否定ゲッターは「対象ステータスのみ true」に限定する。他ステータスを含めない設計が直感的
 - web SP版とモバイルでデザインが異なると Sprint Review で指摘されやすい。specに明記がない要素は hw-hub-frontend の SP版を参照する
+- Notifier 層のエラーハンドリングは `on AppException catch (e)` でメッセージを state に格納し、予期しない例外は汎用メッセージを格納する（空ボディの `catch (_) {}` は禁止。rethrow は Riverpod に吸収されるだけで UI に反映されない）（Sprint 36 で確立・横展開完了）
 
 ### hw-hub-backend
 
@@ -136,3 +137,4 @@
 | Sprint 33 | mobile-conventions | Repositoryモック構造確認ルール追記       | ClassCastException 実績（ラッパー形式を未確認でモック）                     |
 | Sprint 34 | mobile-conventions | catch握りつぶし禁止ルール追記            | レビュー指摘（エラーを `catch (_) {}` で無視）                              |
 | Sprint 35 | mobile-conventions | IndexedStack配下の invalidate ルール追記 | Sprint Review指摘（#107/#108）                                              |
+| Sprint 36 | mobile-conventions | Notifier層エラーハンドリングパターン追記 | #99 全 Notifier への AppSnackBar 横展開で確立（`on AppException → state 格納`） |

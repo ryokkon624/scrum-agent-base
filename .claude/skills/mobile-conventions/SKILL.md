@@ -223,24 +223,33 @@ ref.invalidate(shoppingListNotifierProvider);
 
 ### エラーハンドリングルール
 
-- **`catch (_) {}` でエラーを握りつぶしてはならない**（Sprint 34 Review で指摘）。必ず以下のいずれかを行うこと：
-  - `rethrow` でそのまま上位に伝播する
-  - `AppException` サブクラスに変換して `throw` する
-- 握りつぶしが発生するとException発生時の原因調査に時間を要するため、必ずエラーを伝播させること
+- **`catch (_) {}` でエラーを握りつぶしてはならない**（Sprint 34 Review で指摘）。コンテキストに応じて以下のいずれかを行うこと：
+  - **Repository / Service 層**: `rethrow` または `AppException` サブクラスに変換して `throw`
+  - **Notifier 層**: `on AppException catch (e)` でメッセージを state に格納し、予期しない例外は汎用メッセージを格納する（rethrow しない）。空ボディの `catch (_) {}` は引き続き禁止
 
 ```dart
-// NG: エラーを握りつぶす
+// NG: エラーを握りつぶす（空ボディ）
 } catch (_) {}
 
-// OK: rethrow
+// NG: 意味のない rethrow（Riverpod に吸収されるだけで UI に反映されない）
+} catch (_) { rethrow; }
+
+// OK（Repository層）: rethrow
 } catch (e) {
   rethrow;
 }
 
-// OK: AppException に変換
+// OK（Repository層）: AppException に変換
 } on DioException catch (e) {
   if (e.error is AppException) throw e.error!;
   throw NetworkException(e.message ?? 'Network error');
+}
+
+// OK（Notifier層）: state に格納して UI へ通知（Sprint 36 で確立）
+} on AppException catch (e) {
+  state = AsyncData(current.copyWith(errorMessage: e.message));
+} catch (_) {
+  state = AsyncData(current.copyWith(errorMessage: 'errorUnexpected'));
 }
 ```
 

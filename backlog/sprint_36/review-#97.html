@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 36 Review — #97 買い物アイテム追加画面でお気に入りから選んだ際に、メモ欄が更新されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-screen { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-screen-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-field { margin-bottom: 10px; }
+  .mock-field-label { font-size: 11px; color: #6b7280; margin-bottom: 3px; }
+  .mock-field-value { background: white; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px 8px; font-size: 12px; color: #1a1a1a; min-height: 28px; }
+  .mock-field-value-bad { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
+  .mock-field-value-good { border-color: #86efac; background: #f0fdf4; color: #166534; }
+  .mock-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; margin-bottom: 8px; }
+  .mock-badge-action { background: #e0f2fe; color: #0369a1; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .cause-body code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #374151; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #ef4444; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+  .ac-body code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #374151; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 36 Review · Bug Fix</div>
+  <h1>#97 — 買い物アイテム追加画面でお気に入りから選んだ際に、<br>メモ欄が更新されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 36</span>
+    <span class="badge badge-issue">#97</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">買い物アイテム追加</div>
+          <div class="mock-badge mock-badge-action">お気に入りから選択後</div>
+          <div class="mock-field">
+            <div class="mock-field-label">アイテム名</div>
+            <div class="mock-field-value">牛乳</div>
+          </div>
+          <div class="mock-field">
+            <div class="mock-field-label">購入場所</div>
+            <div class="mock-field-value">スーパー</div>
+          </div>
+          <div class="mock-field">
+            <div class="mock-field-label">メモ</div>
+            <div class="mock-field-value mock-field-value-bad">（前の入力内容が残ったまま）</div>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">買い物アイテム追加</div>
+          <div class="mock-badge mock-badge-action">お気に入りから選択後</div>
+          <div class="mock-field">
+            <div class="mock-field-label">アイテム名</div>
+            <div class="mock-field-value">牛乳</div>
+          </div>
+          <div class="mock-field">
+            <div class="mock-field-label">購入場所</div>
+            <div class="mock-field-value">スーパー</div>
+          </div>
+          <div class="mock-field">
+            <div class="mock-field-label">メモ</div>
+            <div class="mock-field-value mock-field-value-good">お気に入りのメモが反映される</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">setFromFavorite / setFromHistory で memo フィールドが copyWith に含まれていなかった</span>
+      </div>
+      <div class="cause-body">
+        <p><code>shopping_item_new_notifier.dart</code> の <code>setFromFavorite</code> / <code>setFromHistory</code> は、<code>copyWith</code> で <code>name</code> / <code>storeType</code> / <code>sourceShoppingItemId</code> のみをセットしていた。<code>memo</code> フィールドが含まれていないため、お気に入り・購入履歴に紐づくメモが一切反映されず、メモ欄は前の入力内容のまま残っていた。</p>
+        <table class="mismatch-table">
+          <tr>
+            <th>フィールド</th>
+            <th>修正前の setFromFavorite</th>
+            <th></th>
+            <th>修正後</th>
+          </tr>
+          <tr>
+            <td>name</td>
+            <td class="code match">copyWith に含む</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">変更なし</td>
+          </tr>
+          <tr>
+            <td>storeType</td>
+            <td class="code match">copyWith に含む</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">変更なし</td>
+          </tr>
+          <tr>
+            <td>sourceShoppingItemId</td>
+            <td class="code match">copyWith に含む</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">変更なし</td>
+          </tr>
+          <tr>
+            <td>memo</td>
+            <td class="code mismatch">copyWith に含まない（漏れ）</td>
+            <td class="arrow-cell">+</td>
+            <td class="code match">memo: item.memo ?? '' を追加</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_item_new/shopping_item_new_notifier.dart</span>
+        <span class="diff-stat">+2 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">67</span><span class="line-prefix"> </span><span>  /// 過去履歴から選択: name / storeType / sourceShoppingItemId / memo をセット</span></div>
+        <div class="code-line line-ctx"><span class="line-num">68</span><span class="line-prefix"> </span><span>  void setFromHistory(ShoppingItemHistorySuggestionDto suggestion) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">69</span><span class="line-prefix"> </span><span>    state = state.copyWith(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">70</span><span class="line-prefix"> </span><span>      name: suggestion.name,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">71</span><span class="line-prefix"> </span><span>      storeType: suggestion.storeType ?? state.storeType,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">72</span><span class="line-prefix"> </span><span>      sourceShoppingItemId: suggestion.sourceShoppingItemId,</span></div>
+        <div class="code-line line-add"><span class="line-num">73</span><span class="line-prefix">+</span><span>      memo: suggestion.memo ?? '',</span></div>
+        <div class="code-line line-ctx"><span class="line-num">74</span><span class="line-prefix"> </span><span>    );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">75</span><span class="line-prefix"> </span><span>  }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">76</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">77</span><span class="line-prefix"> </span><span>  /// お気に入りから選択: name / storeType / sourceShoppingItemId / memo をセット</span></div>
+        <div class="code-line line-ctx"><span class="line-num">78</span><span class="line-prefix"> </span><span>  void setFromFavorite(ShoppingItemDto item) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">79</span><span class="line-prefix"> </span><span>    state = state.copyWith(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">80</span><span class="line-prefix"> </span><span>      name: item.name,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">81</span><span class="line-prefix"> </span><span>      storeType: item.storeType ?? state.storeType,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">82</span><span class="line-prefix"> </span><span>      sourceShoppingItemId: item.shoppingItemId,</span></div>
+        <div class="code-line line-add"><span class="line-num">83</span><span class="line-prefix">+</span><span>      memo: item.memo ?? '',</span></div>
+        <div class="code-line line-ctx"><span class="line-num">84</span><span class="line-prefix"> </span><span>    );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">85</span><span class="line-prefix"> </span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>メモがない場合は <code>memo ?? ''</code> で空文字をセットし、以前の入力内容を確実に消す。<code>ShoppingItemDto</code> / <code>ShoppingItemHistorySuggestionDto</code> 両方に <code>memo</code> フィールドが存在することを確認済み。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">お気に入りからメモなしのアイテムを選択すると、メモ欄が空欄に更新される</div>
+      </div>
+      <div class="ac-body"><code>memo: item.memo ?? ''</code> により、メモが null の場合は空文字がセットされ、メモ欄が空欄になる。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">お気に入りからメモありのアイテムを選択すると、メモ欄が選択アイテムのメモで更新される</div>
+      </div>
+      <div class="ac-body"><code>memo: item.memo ?? ''</code> により、メモが存在する場合はそのままメモ欄に反映される。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">購入履歴からの選択時も同様にメモ欄が正しく更新される</div>
+      </div>
+      <div class="ac-body"><code>setFromHistory</code> にも同様の修正を適用。<code>memo: suggestion.memo ?? ''</code> でメモなしは空欄、メモありは選択履歴のメモで更新される。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">他の入力欄（アイテム名・購入場所等）の更新動作はリグレッションしない</div>
+      </div>
+      <div class="ac-body"><code>name</code> / <code>storeType</code> / <code>sourceShoppingItemId</code> の <code>copyWith</code> 引数はそのまま維持。変更はメモフィールドの追加のみ。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>お気に入りにメモがあるアイテムを選択すると、メモ欄にそのメモが表示されること</strong>
+          <span>追加画面で「お気に入りから選択」後、メモ欄に選択したアイテムのメモが自動入力されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>お気に入りにメモがないアイテムを選択すると、メモ欄が空欄になること</strong>
+          <span>事前にメモを入力した状態でメモなしのお気に入りを選択し、メモ欄がクリアされるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>購入履歴から選択した場合も同様にメモが反映されること</strong>
+          <span>「購入履歴から選択」でもメモ欄が正しく更新されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>アイテム名・購入場所の反映が引き続き正常に動作すること</strong>
+          <span>お気に入り/履歴選択後、アイテム名と購入場所も正しく反映されているか確認（デグレなし）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>Notifier の <code>setFromXxx</code> 系メソッドでフィールドを追加した際に、<code>copyWith</code> に含め忘れることを防ぐためのテストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_new_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">お気に入りにメモがあるアイテムを選択するとメモ欄が更新されることを確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_new_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">お気に入りにメモがないアイテムを選択するとメモ欄が空欄になることを確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_new_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">購入履歴からの選択でもメモが正しく更新されることを確認するテストを追加</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 36 Review — #99 共通エラー通知インフラが全Notifierで利用されていない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-screen { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; position: relative; overflow: hidden; }
+  .mock-screen-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-list-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+  .mock-list-item:last-of-type { border-bottom: none; }
+  .mock-item-name { font-size: 12px; color: #374151; }
+  .mock-item-action { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; background: #e0f2fe; color: #0369a1; }
+  .mock-silence { font-size: 11px; color: #9ca3af; margin-top: 10px; font-style: italic; text-align: center; }
+  .mock-snackbar { background: #dc2626; color: white; font-size: 11px; font-weight: 600; padding: 8px 12px; border-radius: 4px; margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+  .mock-snackbar-icon { font-size: 14px; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .cause-body code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #374151; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 20px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+  .scope-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 8px 12px; border: 1px solid #e5e5e5; vertical-align: top; }
+  .scope-table .code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .scope-applied { color: #166534; font-weight: 700; }
+  .scope-excluded { color: #6b7280; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+  .ac-body code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #374151; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 36 Review · Bug Fix</div>
+  <h1>#99 — 共通エラー通知インフラが実装済みにも関わらず、<br>hw-hub-mobile全体の各Notifierで利用されていない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 36</span>
+    <span class="badge badge-issue">#99</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">買い物リスト / マイタスク</div>
+          <div class="mock-list-item"><span class="mock-item-name">牛乳</span><span class="mock-item-action">かごに入れる</span></div>
+          <div class="mock-list-item"><span class="mock-item-name">シャンプー</span><span class="mock-item-action">購入済みに</span></div>
+          <div class="mock-list-item"><span class="mock-item-name">本</span></div>
+          <div class="mock-silence">API エラー発生 → 無言で失敗（通知なし）</div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">買い物リスト / マイタスク</div>
+          <div class="mock-list-item"><span class="mock-item-name">牛乳</span><span class="mock-item-action">かごに入れる</span></div>
+          <div class="mock-list-item"><span class="mock-item-name">シャンプー</span><span class="mock-item-action">購入済みに</span></div>
+          <div class="mock-list-item"><span class="mock-item-name">本</span></div>
+          <div class="mock-snackbar"><span class="mock-snackbar-icon">!</span><span>通信エラーが発生しました</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">catch ブロックが rethrow のみで、ユーザー通知まで実装されていなかった</span>
+      </div>
+      <div class="cause-body">
+        <p><code>AppSnackBar</code>（<code>core/ui/app_snack_bar.dart</code>）・<code>AppException</code>（<code>core/network/app_exception.dart</code>）の共通エラー通知インフラは実装済みだった。しかし <code>catch (_) {}</code> の握りつぶし修正時に、これらのインフラの存在を把握せず <code>rethrow</code> で対応したため、ユーザー通知までの実装が未完了となっていた。</p>
+        <p>Notifier 末端での <code>rethrow</code> は Riverpod に吸収されるだけで UI には反映されない。そのため API エラーが発生しても画面に何も表示されず、操作が無言で失敗する状態だった。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <p style="font-size:13px;color:#4b5563;margin-bottom:16px;">対象 Notifier 全てに同じパターンを適用した。<code>shopping_item_detail_notifier.dart</code> のリファレンス実装を全 feature に横展開。</p>
+
+    <!-- 対象スコープ表 -->
+    <table class="scope-table" style="margin-bottom:20px;">
+      <tr>
+        <th>ファイル</th>
+        <th>対応</th>
+        <th>変更内容</th>
+      </tr>
+      <tr>
+        <td class="code">shopping_list_notifier.dart</td>
+        <td class="scope-applied">対応</td>
+        <td>catch(_){rethrow} 6箇所 → AppException 捕捉 + errorMessage 格納</td>
+      </tr>
+      <tr>
+        <td class="code">shopping_item_detail_notifier.dart</td>
+        <td class="scope-applied">対応</td>
+        <td>catch(_){} 握りつぶし 4箇所 → AppException 捕捉 + errorMessage 格納</td>
+      </tr>
+      <tr>
+        <td class="code">my_tasks_notifier.dart</td>
+        <td class="scope-applied">対応</td>
+        <td>catch(_){} 握りつぶし 3箇所 → AppException 捕捉 + errorMessage 格納</td>
+      </tr>
+      <tr>
+        <td class="code">shopping_list_page.dart</td>
+        <td class="scope-applied">対応</td>
+        <td>ref.listen で errorMessage 監視 + AppSnackBar.showError() 追加</td>
+      </tr>
+      <tr>
+        <td class="code">my_tasks_page.dart</td>
+        <td class="scope-applied">対応</td>
+        <td>ref.listen で errorMessage 監視 + AppSnackBar.showError() 追加</td>
+      </tr>
+      <tr>
+        <td class="code">shopping_list_state.dart</td>
+        <td class="scope-applied">対応</td>
+        <td>errorMessage フィールド追加（センチネル方式 copyWith）</td>
+      </tr>
+      <tr>
+        <td class="code">my_tasks_state.dart</td>
+        <td class="scope-applied">対応</td>
+        <td>errorMessage フィールド追加（センチネル方式 copyWith）</td>
+      </tr>
+      <tr>
+        <td class="code">home_notifier.dart</td>
+        <td class="scope-excluded">対象外</td>
+        <td>AsyncNotifier で .when(error:) によりエラー表示済み</td>
+      </tr>
+      <tr>
+        <td class="code">auth 系 Notifier</td>
+        <td class="scope-excluded">対象外</td>
+        <td>既に AppException 捕捉 + ref.listen 実装済み</td>
+      </tr>
+    </table>
+
+    <!-- Notifier 側パターン diff (shopping_list_notifier 代表) -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_list_notifier.dart（moveToBasket 代表）</span>
+        <span class="diff-stat">+2 / -1 ×6箇所</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">65</span><span class="line-prefix"> </span><span>      state = AsyncData(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">66</span><span class="line-prefix"> </span><span>        current.copyWith(items: List.unmodifiable(updatedItems)),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">67</span><span class="line-prefix"> </span><span>      );</span></div>
+        <div class="code-line line-add"><span class="line-num">68</span><span class="line-prefix">+</span><span>    } on AppException catch (e) {</span></div>
+        <div class="code-line line-add"><span class="line-num">69</span><span class="line-prefix">+</span><span>      state = AsyncData(current.copyWith(errorMessage: e.message));</span></div>
+        <div class="code-line line-ctx"><span class="line-num">70</span><span class="line-prefix"> </span><span>    } catch (_) {</span></div>
+        <div class="code-line line-del"><span class="line-num">71</span><span class="line-prefix">-</span><span>      rethrow;</span></div>
+        <div class="code-line line-add"><span class="line-num">71</span><span class="line-prefix">+</span><span>      state = AsyncData(current.copyWith(errorMessage: 'errorUnexpected'));</span></div>
+        <div class="code-line line-ctx"><span class="line-num">72</span><span class="line-prefix"> </span><span>    }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>AppException</code> は API エラーで throw される既知の例外。メッセージをそのまま state に格納する。予期しない例外は <code>'errorUnexpected'</code>（i18n キー）を格納し、Page 側でローカライズして表示する。</span>
+      </div>
+    </div>
+
+    <!-- Page 側パターン diff (shopping_list_page 代表) -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shopping/presentation/shopping_list_page.dart</span>
+        <span class="diff-stat">+8 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">22</span><span class="line-prefix"> </span><span>    final shoppingAsync = ref.watch(shoppingListNotifierProvider);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">23</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>    // 操作エラー時にAppSnackBarで通知する</span></div>
+        <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>    ref.listen(shoppingListNotifierProvider, (prev, next) {</span></div>
+        <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>      final errorMessage = next.valueOrNull?.errorMessage;</span></div>
+        <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      if (errorMessage != null &amp;&amp; prev?.valueOrNull?.errorMessage == null) {</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>        AppSnackBar.showError(_resolveErrorMessage(l10n, errorMessage));</span></div>
+        <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>      }</span></div>
+        <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>    });</span></div>
+        <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">32</span><span class="line-prefix"> </span><span>    return Scaffold(</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>prev?.valueOrNull?.errorMessage == null</code> の比較で「新たにエラーが発生した瞬間」だけ SnackBar を表示する。同じエラーが繰り返し表示されることを防ぐリファレンス実装パターン。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">意味のない try { ... } catch (_) { rethrow; } が hw-hub-mobile全体から除去されている</div>
+      </div>
+      <div class="ac-body">対象 Notifier（<code>shopping_list_notifier.dart</code> / <code>my_tasks_notifier.dart</code>）の全 catch ブロックから <code>rethrow</code> を除去し、errorMessage 格納に置き換えた。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">各Notifierの catchブロックで AppException を捕捉し、errorMessage に格納している</div>
+      </div>
+      <div class="ac-body">対象 Notifier 全てに <code>on AppException catch (e) { state = AsyncData(current.copyWith(errorMessage: e.message)); }</code> を追加した。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">予期しない Exception は汎用エラーメッセージを errorMessage としてstateに格納している</div>
+      </div>
+      <div class="ac-body">汎用 <code>catch (_)</code> ブロックで <code>state = AsyncData(current.copyWith(errorMessage: 'errorUnexpected'))</code> を設定。Page 側で i18n に変換して表示する。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">各Pageで errorMessage を ref.listen で監視し、変化時に AppSnackBar.showError() を呼んでいる</div>
+      </div>
+      <div class="ac-body"><code>shopping_list_page.dart</code> / <code>my_tasks_page.dart</code> の両方に <code>ref.listen</code> による errorMessage 監視と <code>AppSnackBar.showError()</code> の呼び出しを追加した。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">対象は hw-hub-mobile 全体（shopping / task / household / その他全feature）</div>
+      </div>
+      <div class="ac-body">shopping / task の両 feature に対応。household 系・auth 系は既に対応済みのため対象外。<code>home_notifier.dart</code> は <code>.when(error:)</code> で表示済みのため対象外。全 feature への横展開を完了した。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>買い物リスト画面でネットワークが切れた状態で操作（かごに入れる等）すると、赤いSnackBarが表示されること</strong>
+          <span>機内モード等でネットワークを切った状態で操作し、エラー通知が画面下部に表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>マイタスク画面でネットワークが切れた状態でタスク完了操作をすると、赤いSnackBarが表示されること</strong>
+          <span>マイタスク画面でも同様にエラー通知が表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>通常時（ネットワーク正常）の操作でSnackBarが不要に表示されないこと</strong>
+          <span>正常操作時にエラーSnackBarが誤表示されないか確認（デグレなし）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>各 Notifier テストにエラー時 errorMessage 格納ケースを追加した。次回以降の実装でも同パターンが守られているかテストで検証できる。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_list_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">各操作（moveToBasket / markPurchased 等）で AppException 発生時に errorMessage が格納されることを確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">shopping_item_detail_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">toggleFavorite / updateStatus / addImage / deleteAttachment で AppException 発生時に errorMessage が格納されることを確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">my_tasks_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">completeTask / skipTask / bulkCompletePastTasks で AppException 発生時に errorMessage が格納されることを確認するテストを追加</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
