@@ -175,6 +175,25 @@ Column(
 - グローバルに参照する Provider は `{feature}_providers.dart` または `core/di/providers.dart` に置く
 - `ref.watch` は build メソッド内のみ。ハンドラ内では `ref.read` を使う
 
+### IndexedStack 配下の一覧画面における invalidate（重要）
+
+`StatefulShellRoute.indexedStack` 配下では、一覧画面ウィジェットが `IndexedStack` で保持されるため `AutoDispose` が破棄されず古い state が残る。
+
+**詳細・作成画面で一覧の内容が変わる操作（追加・削除・ステータス変更）を行った場合は、一覧画面に戻る前に必ず一覧 Provider を explicit に invalidate すること。**
+
+```dart
+// Page 側の ref.listen や操作コールバックで invalidate する
+ref.invalidate(shoppingListNotifierProvider);
+```
+
+対象となる操作パターン:
+- アイテム追加後（作成画面 submit 成功時）
+- アイテム削除後（詳細画面 deleteItem 成功時）
+- ステータス変更後（詳細画面 updateStatus 成功時）
+- お気に入り操作後（詳細画面 toggleFavorite 成功時）
+
+> **背景（Sprint 35）**: 追加後・お気に入り操作後の反映漏れを Sprint 35 で修正したが、ステータス変更後の invalidate が漏れており Sprint Review で指摘された（#107）。削除後の反映も同様（#108）。
+
 ---
 
 ## 5. ナビゲーション（go_router）

@@ -1,6 +1,7 @@
 ---
 name: convention-reviewer
 description: コーディング規約観点のレビュアー。DEVの実装完了後にSMから起動される。フロントエンド・バックエンド・モバイルの規約を参照してレビューする。
+model: claude-haiku-4-5-20251001
 tools: Read, Glob, Grep, mcp__discord__discord_login, mcp__discord__discord_reply_to_forum
 skills:
   - discord-operations
