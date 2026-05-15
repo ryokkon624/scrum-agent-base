@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 38 Review — #109 main_shellのナビゲーションバーラベルがi18n未対応</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* Phone mock */
+  .mock-phone { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+  .mock-screen { padding: 16px; min-height: 100px; background: #ffffff; }
+  .mock-screen-title { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+  .mock-screen-sub { font-size: 11px; color: #9ca3af; }
+  .mock-navbar { background: #ffffff; border-top: 1px solid #e5e5e5; padding: 8px 0 4px; }
+  .mock-nav-items { display: flex; justify-content: space-around; }
+  .mock-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
+  .mock-nav-icon { width: 22px; height: 22px; border-radius: 11px; }
+  .mock-nav-icon.active { background: #d1fae5; }
+  .mock-nav-icon.inactive { background: #f3f4f6; }
+  .mock-nav-label { font-size: 9px; font-weight: 600; }
+  .mock-nav-label.bad { color: #b91c1c; background: #fef2f2; padding: 1px 3px; border-radius: 2px; }
+  .mock-nav-label.good { color: #374151; }
+  .mock-nav-label.active-good { color: #059669; font-weight: 700; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* Mismatch table */
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* ARB key table */
+  .arb-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+  .arb-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .arb-table td { padding: 8px 12px; border: 1px solid #e5e5e5; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .arb-table tr:hover td { background: #f9fafb; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 38 Review &middot; Bug Fix</div>
+  <h1>#109 &mdash; main_shellのナビゲーションバーラベルが<br>i18n未対応</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 38</span>
+    <span class="badge badge-issue">#109</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-phone">
+          <div class="mock-screen">
+            <div class="mock-screen-title">ホーム</div>
+            <div class="mock-screen-sub">ナビゲーションバーのラベルは...</div>
+          </div>
+          <div class="mock-navbar">
+            <div class="mock-nav-items">
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon active"></div>
+                <div class="mock-nav-label bad">ホーム</div>
+              </div>
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon inactive"></div>
+                <div class="mock-nav-label bad">家事分担</div>
+              </div>
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon inactive"></div>
+                <div class="mock-nav-label bad">タスク</div>
+              </div>
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon inactive"></div>
+                <div class="mock-nav-label bad">買い物</div>
+              </div>
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon inactive"></div>
+                <div class="mock-nav-label bad">設定</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:#b91c1c;">日本語文字列がコードにハードコードされているため、言語設定を変えても変わらない</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-phone">
+          <div class="mock-screen">
+            <div class="mock-screen-title">Home</div>
+            <div class="mock-screen-sub">英語ロケールで表示</div>
+          </div>
+          <div class="mock-navbar">
+            <div class="mock-nav-items">
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon active"></div>
+                <div class="mock-nav-label active-good">Home</div>
+              </div>
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon inactive"></div>
+                <div class="mock-nav-label good">Board</div>
+              </div>
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon inactive"></div>
+                <div class="mock-nav-label good">Tasks</div>
+              </div>
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon inactive"></div>
+                <div class="mock-nav-label good">Shopping</div>
+              </div>
+              <div class="mock-nav-item">
+                <div class="mock-nav-icon inactive"></div>
+                <div class="mock-nav-label good">Settings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:#166534;">AppLocalizationsから取得するため、言語設定に応じたラベルが表示される</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="title">NavigationDestination の label に日本語文字列がハードコードされていた</span>
+      </div>
+      <div class="cause-body">
+        <p><code>lib/features/shell/main_shell.dart</code> の各 <code>NavigationDestination</code> の <code>label</code> パラメータに、<code>AppLocalizations</code> を経由せず日本語文字列リテラルが直接書かれていた。アプリの他のテキストは <code>AppLocalizations.of(context)</code> 経由で管理されているが、ナビゲーションバーのラベルのみ対応が漏れていた。</p>
+
+        <table class="mismatch-table">
+          <tr>
+            <th>ナビゲーション</th>
+            <th>修正前（ハードコード）</th>
+            <th>修正後（AppLocalizations）</th>
+          </tr>
+          <tr>
+            <td>ホーム</td>
+            <td class="code mismatch">'ホーム'（文字列リテラル）</td>
+            <td class="code match">l10n.shellNavHome</td>
+          </tr>
+          <tr>
+            <td>家事分担</td>
+            <td class="code mismatch">'家事分担'（文字列リテラル）</td>
+            <td class="code match">l10n.shellNavHousework</td>
+          </tr>
+          <tr>
+            <td>タスク</td>
+            <td class="code mismatch">'タスク'（文字列リテラル）</td>
+            <td class="code match">l10n.shellNavTasks</td>
+          </tr>
+          <tr>
+            <td>買い物</td>
+            <td class="code mismatch">'買い物'（文字列リテラル）</td>
+            <td class="code match">l10n.shellNavShopping</td>
+          </tr>
+          <tr>
+            <td>設定</td>
+            <td class="code mismatch">'設定'（文字列リテラル）</td>
+            <td class="code match">l10n.shellNavSettings</td>
+          </tr>
+        </table>
+
+        <p style="font-size:12px;color:#6b7280;">Sprint 37 コードレビュー（convention-reviewer）で検出。他画面の i18n 対応後もナビゲーションバーだけ未対応のまま残っていた。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/shell/main_shell.dart</span>
+        <span class="diff-stat">+7 / -5</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num"> 2</span><span class="line-prefix"> </span><span>import 'package:flutter/material.dart';</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 3</span><span class="line-prefix"> </span><span>import 'package:go_router/go_router.dart';</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 4</span><span class="line-prefix"> </span><span>import '../../app_router.dart';</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 5</span><span class="line-prefix"> </span><span>import '../../core/theme/app_color_scheme.dart';</span></div>
+        <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>import '../../l10n/app_localizations.dart';</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 7</span><span class="line-prefix"> </span><span>import 'widgets/household_indicator_bar.dart';</span></div>
+        <div class="code-line line-ctx"><span class="line-num">24</span><span class="line-prefix"> </span><span>    final colors = Theme.of(context).extension&lt;AppColorScheme&gt;()!;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">25</span><span class="line-prefix"> </span><span>    final hideIndicator = _shouldHideIndicator(context);</span></div>
+        <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>    final l10n = AppLocalizations.of(context);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">45</span><span class="line-prefix"> </span><span>              NavigationDestination(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">46</span><span class="line-prefix"> </span><span>                icon: const Icon(Icons.home_outlined),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">47</span><span class="line-prefix"> </span><span>                selectedIcon: Icon(Icons.home, color: colors.primary),</span></div>
+        <div class="code-line line-del"><span class="line-num">48</span><span class="line-prefix">-</span><span>                label: 'ホーム',</span></div>
+        <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>                label: l10n.shellNavHome,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">49</span><span class="line-prefix"> </span><span>              ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">50</span><span class="line-prefix"> </span><span>              NavigationDestination(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">51</span><span class="line-prefix"> </span><span>                icon: const Icon(Icons.assignment_outlined),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">52</span><span class="line-prefix"> </span><span>                selectedIcon: Icon(Icons.assignment, color: colors.primary),</span></div>
+        <div class="code-line line-del"><span class="line-num">53</span><span class="line-prefix">-</span><span>                label: '家事分担',</span></div>
+        <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>                label: l10n.shellNavHousework,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">54</span><span class="line-prefix"> </span><span>              ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">55</span><span class="line-prefix"> </span><span>              NavigationDestination(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">56</span><span class="line-prefix"> </span><span>                icon: const Icon(Icons.check_circle_outline),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">57</span><span class="line-prefix"> </span><span>                selectedIcon: Icon(Icons.check_circle, color: colors.primary),</span></div>
+        <div class="code-line line-del"><span class="line-num">58</span><span class="line-prefix">-</span><span>                label: 'タスク',</span></div>
+        <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>                label: l10n.shellNavTasks,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">59</span><span class="line-prefix"> </span><span>              ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">60</span><span class="line-prefix"> </span><span>              NavigationDestination(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">61</span><span class="line-prefix"> </span><span>                icon: const Icon(Icons.shopping_cart_outlined),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">62</span><span class="line-prefix"> </span><span>                selectedIcon: Icon(Icons.shopping_cart, color: colors.primary),</span></div>
+        <div class="code-line line-del"><span class="line-num">63</span><span class="line-prefix">-</span><span>                label: '買い物',</span></div>
+        <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>                label: l10n.shellNavShopping,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">64</span><span class="line-prefix"> </span><span>              ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">65</span><span class="line-prefix"> </span><span>              NavigationDestination(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">66</span><span class="line-prefix"> </span><span>                icon: const Icon(Icons.settings_outlined),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">67</span><span class="line-prefix"> </span><span>                selectedIcon: Icon(Icons.settings, color: colors.primary),</span></div>
+        <div class="code-line line-del"><span class="line-num">68</span><span class="line-prefix">-</span><span>                label: '設定',</span></div>
+        <div class="code-line line-add"><span class="line-num">68</span><span class="line-prefix">+</span><span>                label: l10n.shellNavSettings,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">69</span><span class="line-prefix"> </span><span>              ),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>i18n キーのインポートパスは <code>package:flutter_gen/gen_l10n/</code> ではなく、プロジェクト規約に従い相対パス <code>../../l10n/app_localizations.dart</code> を使用している。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/l10n/app_ja.arb / app_en.arb / app_es.arb</span>
+        <span class="diff-stat">+6 / -0（各ファイル）</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">23</span><span class="line-prefix"> </span><span>  "navShopping": "買い物",</span></div>
+        <div class="code-line line-ctx"><span class="line-num">24</span><span class="line-prefix"> </span><span>  "navSettings": "設定",</span></div>
+        <div class="code-line line-ctx"><span class="line-num">25</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>  "shellNavHome": "ホーム",</span></div>
+        <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>  "shellNavHousework": "家事分担",</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>  "shellNavTasks": "タスク",</span></div>
+        <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>  "shellNavShopping": "買い物",</span></div>
+        <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>  "shellNavSettings": "設定",</span></div>
+        <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">32</span><span class="line-prefix"> </span><span>  "pageTitleHome": "ホーム",</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>既存の <code>navShopping</code> 等とは別に、ナビゲーションバー専用のキーとして <code>shellNav*</code> プレフィックスで追加した。英語版では <code>shellNavHousework: "Board"</code> として、Web版の表記に合わせた。</span>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:#4b5563;margin-top:4px;">追加したARBキーと各言語の対応表：</p>
+    <table class="arb-table">
+      <tr>
+        <th>キー</th>
+        <th>日本語（ja）</th>
+        <th>英語（en）</th>
+        <th>スペイン語（es）</th>
+      </tr>
+      <tr>
+        <td>shellNavHome</td>
+        <td>ホーム</td>
+        <td>Home</td>
+        <td>Inicio</td>
+      </tr>
+      <tr>
+        <td>shellNavHousework</td>
+        <td>家事分担</td>
+        <td>Board</td>
+        <td>Tareas</td>
+      </tr>
+      <tr>
+        <td>shellNavTasks</td>
+        <td>タスク</td>
+        <td>Tasks</td>
+        <td>Mis tareas</td>
+      </tr>
+      <tr>
+        <td>shellNavShopping</td>
+        <td>買い物</td>
+        <td>Shopping</td>
+        <td>Compras</td>
+      </tr>
+      <tr>
+        <td>shellNavSettings</td>
+        <td>設定</td>
+        <td>Settings</td>
+        <td>Ajustes</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">NavigationDestinationの各labelがAppLocalizationsのキーを参照している</div>
+      </div>
+      <div class="ac-body">5つの <code>NavigationDestination</code> すべての <code>label</code> を <code>l10n.shellNavXxx</code> に置き換えた。文字列リテラルは残っていない。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">ARBファイル（app_ja.arb / app_en.arb）にナビゲーションラベルのキーが追加されている</div>
+      </div>
+      <div class="ac-body"><code>shellNavHome</code> / <code>shellNavHousework</code> / <code>shellNavTasks</code> / <code>shellNavShopping</code> / <code>shellNavSettings</code> の5キーを ja・en・es の3ファイルに追加した。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">現在の表示テキスト（ホーム・家事分担・タスク・買い物・設定）が変わらない</div>
+      </div>
+      <div class="ac-body">ARBキーの日本語値を既存ハードコード文字列と同一にしたため、日本語での見た目は変わらない。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>日本語設定でナビゲーションバーのラベルが表示されること</strong>
+          <span>「ホーム」「家事分担」「タスク」「買い物」「設定」が表示されるか確認（見た目は変わっていないはず）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>各タブへのナビゲーションが正常に動作すること</strong>
+          <span>ラベルをタップして各画面に遷移できるか確認（デグレ確認）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>ナビゲーションバーラベルが i18n 対応されていることを検証するウィジェットテストを新規追加した。ロケールを切り替えた場合に日本語文字列が表示されないことをアサートすることで、将来ハードコードに戻るリグレッションを防ぐ。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/shell/main_shell_i18n_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">日本語ロケールで5つのラベルがすべて表示されることを確認するウィジェットテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/shell/main_shell_i18n_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">英語ロケールで日本語ラベル（「ホーム」等）が表示されないことを確認（ハードコードでないことの証明）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

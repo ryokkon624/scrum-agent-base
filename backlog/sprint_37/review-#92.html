@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 37 Review — #92 購入済みタブの件数バッジを削除</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #eff6ff; color: #1d4ed8; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* タブバーモックUI */
+  .tab-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .tab-mock-container { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .tab-mock-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .mock-tab-bar { display: flex; border-bottom: 1px solid #e5e5e5; }
+  .mock-tab { flex: 1; text-align: center; padding: 8px 4px; font-size: 12px; color: #888; position: relative; }
+  .mock-tab.active { color: #10b981; border-bottom: 2px solid #10b981; margin-bottom: -1px; font-weight: 600; }
+  .mock-badge { display: inline-block; background: #10b981; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: bold; margin-left: 3px; vertical-align: middle; }
+  .mock-badge.inactive { background: #e5e5e5; color: #888; }
+
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 37 Review</div>
+  <h1>#92 — 購入済みタブの件数バッジを非表示にし、<br>Web SP版と統一する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 37</span>
+    <span class="badge badge-issue">#92</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>購入済みタブに件数バッジが表示されていたが、Web SP版では購入済みタブに件数バッジを表示していない。「購入済みは最終到着地なので何件あっても重要ではない」というUX上の考え方から、Web版と統一するために非表示にすることにした。</p>
+    </div>
+    <div class="tab-comparison">
+      <div class="tab-mock-container">
+        <div class="tab-mock-title">改修前（購入済みにもバッジ）</div>
+        <div class="mock-tab-bar">
+          <div class="mock-tab">未購入 <span class="mock-badge inactive">5</span></div>
+          <div class="mock-tab">かご <span class="mock-badge inactive">3</span></div>
+          <div class="mock-tab active">購入済み <span class="mock-badge">12</span></div>
+        </div>
+      </div>
+      <div class="tab-mock-container">
+        <div class="tab-mock-title">改修後（購入済みはバッジなし）</div>
+        <div class="mock-tab-bar">
+          <div class="mock-tab">未購入 <span class="mock-badge inactive">5</span></div>
+          <div class="mock-tab">かご <span class="mock-badge inactive">3</span></div>
+          <div class="mock-tab active">購入済み</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">購入済みタブのタブラベル横に件数バッジが表示されない</div>
+      </div>
+      <div class="ac-body">
+        <p><code>_TabItem</code> に <code>showCount: bool = true</code> パラメータを追加し、件数バッジの表示条件を <code>count &gt; 0</code> から <code>showCount &amp;&amp; count &gt; 0</code> に変更した。<code>ShoppingTabBar</code> から購入済みタブのみ <code>showCount: false</code> を渡す。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/shopping_tab_bar.dart（showCount追加）</span>
+            <span class="diff-stat">+12 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">44</span><span class="line-prefix"> </span><span>          _TabItem(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">45</span><span class="line-prefix"> </span><span>            label: l10n.shoppingTabPurchased,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">46</span><span class="line-prefix"> </span><span>            count: purchasedCount,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">47</span><span class="line-prefix"> </span><span>            isActive: activeTab == ShoppingTab.purchased,</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>            showCount: false, // #92: 購入済みタブは件数バッジを非表示</span></div>
+            <div class="code-line line-ctx"><span class="line-num">49</span><span class="line-prefix"> </span><span>            onTap: () =&gt; onTabChanged(ShoppingTab.purchased),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">50</span><span class="line-prefix"> </span><span>          ),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-ctx"><span class="line-num">61</span><span class="line-prefix"> </span><span>    required this.isActive,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">62</span><span class="line-prefix"> </span><span>    required this.onTap,</span></div>
+            <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>    this.showCount = true,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">64</span><span class="line-prefix"> </span><span>  });</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">69</span><span class="line-prefix">+</span><span>  /// false のとき件数バッジを非表示にする（購入済みタブ用）</span></div>
+            <div class="code-line line-add"><span class="line-num">70</span><span class="line-prefix">+</span><span>  final bool showCount;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-del"><span class="line-num">104</span><span class="line-prefix">-</span><span>              if (count &gt; 0) ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">104</span><span class="line-prefix">+</span><span>              if (showCount &amp;&amp; count &gt; 0) ...[</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>デフォルト値を <code>true</code> にしているため、既存の未購入・かごタブは <code>showCount</code> を指定しなくても件数バッジが表示され続ける。既存コードへの影響ゼロ。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">未購入・かごタブの件数バッジは引き続き表示される（リグレッションなし）</div>
+      </div>
+      <div class="ac-body">
+        <p>未購入・かごタブの <code>_TabItem</code> には <code>showCount: true</code> を明示的に渡した（デフォルト値と同じだが意図を明示する目的）。テストで未購入・かごタブのバッジ表示を確認している。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/shopping_tab_bar.dart（未購入・かごに showCount: true を明示）</span>
+            <span class="diff-stat">+2 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span>          _TabItem(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">32</span><span class="line-prefix"> </span><span>            label: l10n.shoppingTabUnpurchased,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">33</span><span class="line-prefix"> </span><span>            count: unpurchasedCount,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">34</span><span class="line-prefix"> </span><span>            isActive: activeTab == ShoppingTab.unpurchased,</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>            showCount: true,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">36</span><span class="line-prefix"> </span><span>            onTap: () =&gt; onTabChanged(ShoppingTab.unpurchased),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">37</span><span class="line-prefix"> </span><span>          ),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>          _TabItem(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">39</span><span class="line-prefix"> </span><span>            label: l10n.shoppingTabBasket,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">40</span><span class="line-prefix"> </span><span>            count: basketCount,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">41</span><span class="line-prefix"> </span><span>            isActive: activeTab == ShoppingTab.basket,</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>            showCount: true,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">43</span><span class="line-prefix"> </span><span>            onTap: () =&gt; onTabChanged(ShoppingTab.basket),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">44</span><span class="line-prefix"> </span><span>          ),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>購入済みタブのラベル横に件数バッジが表示されないこと</strong>
+          <span>何件の購入済みアイテムがあっても、タブに数字が出ないこと</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>未購入タブのラベル横に件数バッジが引き続き表示されること</strong>
+          <span>未購入アイテムが1件以上あればバッジで件数が表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>かごタブのラベル横に件数バッジが引き続き表示されること</strong>
+          <span>かごに1件以上あればバッジで件数が表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>アクティブなタブのバッジ色が緑、非アクティブは灰色になっていること</strong>
+          <span>未購入・かごタブのバッジ色がタブのアクティブ状態に連動していること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>shopping_tab_bar.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>_TabItem に showCount パラメータ追加・購入済みタブに showCount: false を渡す</td>
+      </tr>
+      <tr>
+        <td><code>swipeable_shopping_card.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>このIssueの変更対象外</td>
+      </tr>
+      <tr>
+        <td><code>purchased_tab.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>このIssueの変更対象外（#90・#95で変更済み）</td>
+      </tr>
+      <tr>
+        <td><code>unpurchased_tab.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>このIssueの変更対象外</td>
+      </tr>
+      <tr>
+        <td><code>basket_tab.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>このIssueの変更対象外</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

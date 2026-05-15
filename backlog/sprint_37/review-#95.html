@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 37 Review — #95 買い物リスト画面のプルリフレッシュを修正</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-feature { background: #eff6ff; color: #1d4ed8; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* ウィジェットツリー比較 */
+  .tree-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .tree-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .tree-box.before { border-color: #fca5a5; }
+  .tree-box.after { border-color: #86efac; }
+  .tree-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .tree-node { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: #374151; padding: 2px 0 2px 16px; border-left: 1px solid #e5e5e5; }
+  .tree-node.root { padding-left: 0; border-left: none; font-weight: 700; }
+  .tree-node.highlight-bad { color: #ef4444; font-weight: 600; }
+  .tree-node.highlight-good { color: #22c55e; font-weight: 600; }
+  .tree-node.missing { color: #ef4444; text-decoration: line-through; }
+  .tree-arrow { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: #888; padding: 1px 0 1px 8px; }
+
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 37 Review</div>
+  <h1>#95 — 買い物リスト画面で下スワイプしても<br>データが更新されない問題を修正</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 37</span>
+    <span class="badge badge-issue">#95</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 問題 -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>買い物リスト画面（未購入・かご・購入済みタブ）で下スワイプ（プルリフレッシュ）をしてもデータが更新されなかった。ホーム画面では同じ操作が正常に機能しており、買い物画面だけ実装が漏れていた。</p>
+    </div>
+
+    <!-- 原因分析 -->
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">RefreshIndicator が一切ラップされていなかった</span>
+      </div>
+      <div class="cause-body">
+        <p>各タブの <code>ListView</code> が <code>RefreshIndicator</code> でラップされておらず、プルジェスチャーが物理スクロール（<code>AlwaysScrollableScrollPhysics</code>）すら設定されていなかった。アイテム0件の場合は <code>Center</code>（スクロール不可）を返していたため、下スワイプ自体ができなかった。</p>
+      </div>
+    </div>
+
+    <div class="tree-comparison">
+      <div class="tree-box before">
+        <div class="tree-title">修正前（RefreshIndicator なし）</div>
+        <div class="tree-node root">Expanded</div>
+        <div class="tree-arrow">&#9492; </div>
+        <div class="tree-node highlight-bad">Center (0件時)</div>
+        <div class="tree-node highlight-bad">ListView.builder (件数あり)</div>
+        <div class="tree-arrow">  &#9492;</div>
+        <div class="tree-node missing">RefreshIndicator: なし</div>
+        <div class="tree-node missing">AlwaysScrollablePhysics: なし</div>
+      </div>
+      <div class="tree-box after">
+        <div class="tree-title">修正後（RefreshIndicator 追加）</div>
+        <div class="tree-node root">Expanded</div>
+        <div class="tree-arrow">&#9492; </div>
+        <div class="tree-node highlight-good">RefreshIndicator</div>
+        <div class="tree-arrow">  &#9492;</div>
+        <div class="tree-node highlight-good">ListView (0件時: AlwaysScrollable)</div>
+        <div class="tree-node highlight-good">ListView.builder (件数あり: AlwaysScrollable)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">買い物リスト画面で下スワイプするとデータが最新状態に更新される</div>
+      </div>
+      <div class="ac-body">
+        <p>3つのタブ（未購入・かご・購入済み）の <code>ListView</code> をそれぞれ <code>RefreshIndicator</code> でラップし、<code>onRefresh</code> で <code>ref.invalidate(shoppingListNotifierProvider)</code> を呼ぶことでデータを再取得する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/unpurchased_tab.dart</span>
+            <span class="diff-stat">+10 / -5</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>        Expanded(</span></div>
+            <div class="code-line line-del"><span class="line-num">39</span><span class="line-prefix">-</span><span>          child: items.isEmpty</span></div>
+            <div class="code-line line-del"><span class="line-num">40</span><span class="line-prefix">-</span><span>              ? Center(child: Text(l10n.shoppingEmptyUnpurchased, ...))</span></div>
+            <div class="code-line line-del"><span class="line-num">41</span><span class="line-prefix">-</span><span>              : ListView.builder(</span></div>
+            <div class="code-line line-del"><span class="line-num">42</span><span class="line-prefix">-</span><span>                  itemCount: items.length,</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>          child: RefreshIndicator(</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>            onRefresh: () async =&gt; ref.invalidate(shoppingListNotifierProvider),</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>            child: items.isEmpty</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>                ? ListView(</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>                    physics: const AlwaysScrollableScrollPhysics(),</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>                    children: [SizedBox(height: 200, child: Center(child: Text(l10n.shoppingEmptyUnpurchased, ...)))]</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>                  )</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>                : ListView.builder(</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>                    physics: const AlwaysScrollableScrollPhysics(),</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>                    itemCount: items.length,</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>0件の場合は <code>Center</code>（スクロール不可）ではなく <code>ListView + AlwaysScrollableScrollPhysics</code> を使うことで、アイテムがなくてもプルリフレッシュが機能する。ホーム画面の実装と同じパターン。</span>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/basket_tab.dart</span>
+            <span class="diff-stat">+10 / -5</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">55</span><span class="line-prefix"> </span><span>        Expanded(</span></div>
+            <div class="code-line line-del"><span class="line-num">56</span><span class="line-prefix">-</span><span>          child: items.isEmpty</span></div>
+            <div class="code-line line-del"><span class="line-num">57</span><span class="line-prefix">-</span><span>              ? Center(child: Text(l10n.shoppingEmptyBasket, ...))</span></div>
+            <div class="code-line line-del"><span class="line-num">58</span><span class="line-prefix">-</span><span>              : ListView.builder(itemCount: items.length, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>          child: RefreshIndicator(</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>            onRefresh: () async =&gt; ref.invalidate(shoppingListNotifierProvider),</span></div>
+            <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>            child: items.isEmpty</span></div>
+            <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>                ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [...])</span></div>
+            <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>                : ListView.builder(physics: const AlwaysScrollableScrollPhysics(), ...),</span></div>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/purchased_tab.dart（#90の実装と同時に対応）</span>
+            <span class="diff-stat">+3 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">109</span><span class="line-prefix"> </span><span>    return RefreshIndicator(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">110</span><span class="line-prefix"> </span><span>      onRefresh: () async =&gt; ref.invalidate(shoppingListNotifierProvider),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">111</span><span class="line-prefix"> </span><span>      child: listContent,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">112</span><span class="line-prefix"> </span><span>    );</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>PurchasedTab</code> は #90 で <code>ConsumerWidget</code> に変更済みのため、<code>ref.invalidate</code> を呼ぶことができる。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">更新中はローディングインジケーターが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>Flutter 標準の <code>RefreshIndicator</code> ウィジェットが <code>onRefresh</code> の Future 完了まで自動でローディングスピナーを表示する。追加実装不要。</p>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">ホーム画面のプルリフレッシュ動作はリグレッションしない</div>
+      </div>
+      <div class="ac-body">
+        <p>変更対象は買い物リスト画面の3タブのみ。ホーム画面（<code>home_page.dart</code>）は変更していない。既存テストで確認済み。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>未購入タブで下スワイプするとリストが再読み込みされること</strong>
+          <span>ローディングスピナーが一瞬表示されてから最新データが反映されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>かごタブで下スワイプするとリストが再読み込みされること</strong>
+          <span>未購入タブと同様の動作になっていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>購入済みタブで下スワイプするとリストが再読み込みされること</strong>
+          <span>3タブすべてでプルリフレッシュが機能すること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>各タブにアイテムが0件のとき（空状態）でもプルリフレッシュができること</strong>
+          <span>「アイテムがありません」等の空表示状態でも下スワイプが反応すること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>ホーム画面でもプルリフレッシュが引き続き正常に動作すること</strong>
+          <span>ホーム画面のリグレッションがないことの確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>unpurchased_tab.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ListView を RefreshIndicator でラップ・0件時に AlwaysScrollableScrollPhysics を追加</td>
+      </tr>
+      <tr>
+        <td><code>basket_tab.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ListView を RefreshIndicator でラップ・0件時に AlwaysScrollableScrollPhysics を追加</td>
+      </tr>
+      <tr>
+        <td><code>purchased_tab.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>#90実装と同時に RefreshIndicator を追加・ConsumerWidget へ変更</td>
+      </tr>
+      <tr>
+        <td><code>home_page.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>このIssueの変更対象外（既存のプルリフレッシュ実装は維持）</td>
+      </tr>
+      <tr>
+        <td><code>shopping_list_notifier.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>このIssueの変更対象外（invalidate はProviderContainerレベルで処理済み）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

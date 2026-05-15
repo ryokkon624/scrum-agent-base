@@ -28,7 +28,8 @@
 | --------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------- |
 | マジックストリング（status/flag値を `'0'`/`'1'` で直接比較）    | 34, 35         | `core/models/` の生成済み enum（`ShoppingItemStatus.xxx.code`）を使う         |
 | `catch (_) {}` でエラーを握りつぶし                             | 34, 35         | `rethrow` または `AppException` に変換                                        |
-| i18n ハードコード（日本語・英語文字列をウィジェット内に直書き） | 33, 34         | ARB ファイルに定義して `AppLocalizations.of(context).key` を使う              |
+| i18n ハードコード（日本語・英語文字列をウィジェット内に直書き） | 33, 34, 37, 38 | ARB ファイルに定義して `AppLocalizations.of(context).key` を使う（`features/shell` の BottomNavigationBar ラベルも例外なく適用）|
+| `items.map()` で生成するウィジェットに `key` 未設定 | 38 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
 | IndexedStack 配下で一覧 Provider の invalidate 漏れ             | 35             | 詳細・作成画面での追加/削除/ステータス変更後に `ref.invalidate(一覧Provider)` |
 
 ### hw-hub-backend
@@ -70,6 +71,7 @@
 - AssigneeUserId フィルタ忘れ注意: バックエンドが全世帯員分を返す画面ではフロント側フィルタが必要
 - `AuthUser` のような共有ドメインモデルは `lib/core/models/` 配下に置く（core→features 依存を作らないため）
 - `ServerException` などのカスタム例外が named パラメータ（`message:`）か positional かはテスト書き始める前に必ず確認する
+- `GoRouterState.of(context).matchedLocation` を `StatefulShellRoute.indexedStack` 配下の shell ウィジェット内で使って現在ルートを判定しようとしたとき、実機では sub-route のパスが反映されず HouseholdIndicatorBar の非表示ロジックが効かなかった（Sprint 37 #98、実害なしでOK判断）。shell route 配下での GoRouter state 参照は動作確認必須
 
 ### hw-hub-backend
 
@@ -116,6 +118,8 @@
 - `isNotPurchased` のような否定ゲッターは「対象ステータスのみ true」に限定する。他ステータスを含めない設計が直感的
 - web SP版とモバイルでデザインが異なると Sprint Review で指摘されやすい。specに明記がない要素は hw-hub-frontend の SP版を参照する
 - Notifier 層のエラーハンドリングは `on AppException catch (e)` でメッセージを state に格納し、予期しない例外は汎用メッセージを格納する（空ボディの `catch (_) {}` は禁止。rethrow は Riverpod に吸収されるだけで UI に反映されない）（Sprint 36 で確立・横展開完了）
+- `enableSwipe: bool = true` のようなオプションパラメータを既存ウィジェットに追加することで、後続 feature で同ウィジェットを「スワイプ無効カード」として再利用できる（Sprint 37 #90: SwipeableShoppingCard を purchased_tab でも流用）。既存 API を拡張することで UI 一貫性を維持しつつコードを共有する設計パターンとして有効
+- `items.map((item) => ...)` で生成するウィジェットには必ず `key: ValueKey(item.uniqueId)` を最外ウィジェットに付与すること。`Dismissible` はもともと `key` 必須だが、その外側の `Padding` にも同じ key を付けないとスワイプ後のリスト更新時にウィジェット状態が意図しない要素に紐づいたままになる（Sprint 38 レビュー指摘）
 
 ### hw-hub-backend
 
@@ -138,3 +142,5 @@
 | Sprint 34 | mobile-conventions | catch握りつぶし禁止ルール追記            | レビュー指摘（エラーを `catch (_) {}` で無視）                              |
 | Sprint 35 | mobile-conventions | IndexedStack配下の invalidate ルール追記 | Sprint Review指摘（#107/#108）                                              |
 | Sprint 36 | mobile-conventions | Notifier層エラーハンドリングパターン追記 | #99 全 Notifier への AppSnackBar 横展開で確立（`on AppException → state 格納`） |
+| Sprint 37 | （更新なし）       | —                                        | i18nハードコード禁止はすでに記載済みのため Skill 更新不要（long_term.md の繰り返し指摘パターンに 37 を追記）|
+| Sprint 38 | mobile-conventions | `items.map()` の key 付与ルール追記      | レビュー指摘（スワイプリストで ValueKey 未設定によるウィジェット状態混乱）|

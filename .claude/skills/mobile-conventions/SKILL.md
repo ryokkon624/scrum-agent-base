@@ -160,6 +160,29 @@ Column(
 
 > **背景（Sprint 31 Retro）**: `swipeable_task_card.dart` のmarginを削除したが `width: double.infinity` を設定しなかったため、カード幅がタスク名に依存したままになりSprint Reviewで指摘された。
 
+### リスト生成時の key 付与（必須）
+
+`items.map((item) => ...)` でウィジェットを生成する際は、最外ウィジェットに必ず `key: ValueKey(item.uniqueId)` を付与すること。
+
+```dart
+// NG: key なし → スワイプ後のリスト更新でウィジェット状態が混乱する
+items.map((item) => Padding(
+  padding: const EdgeInsets.symmetric(vertical: 4),
+  child: SwipeableCard(item: item),
+)).toList()
+
+// OK: 最外ウィジェットに ValueKey を付与
+items.map((item) => Padding(
+  key: ValueKey(item.shoppingItemId),
+  padding: const EdgeInsets.symmetric(vertical: 4),
+  child: SwipeableCard(item: item),
+)).toList()
+```
+
+`Dismissible` は `key` が必須だが、その外側の `Padding` 等にも同じ key を付与しないと `setState` や `invalidate` 後にウィジェット状態が意図しない要素に紐づいたままになる。
+
+> **背景（Sprint 38 Review）**: `purchased_tab.dart` の `items.map()` で `Padding` に key を付与しておらず、スワイプ後のリスト更新時にウィジェット状態が混乱する可能性を指摘された。
+
 ---
 
 ## 4. 状態管理（Riverpod）
