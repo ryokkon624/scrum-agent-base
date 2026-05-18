@@ -97,3 +97,4 @@
 | Sprint 40 | mobile-conventions | Dismissibleスワイプ方向・Wrap折り返し・UserAvatar共通ウィジェットの3パターンを追加 | Sprint 39 Sprint Reviewで発覚したバグ（#110/#111/#112/#115）の修正で確立したパターンを規約化（DEV実施） |
 | Sprint 41 | mobile-conventions | テキストoverflow対応（必須）・table_calendar採用実績を追加 | Sprint 41 Sprint Reviewでスワイプモードカードのオーバーフロー指摘（#117）を受け規約化（DEV実施） |
 | Sprint 42 | mobile-conventions | Dismissibleスワイプ方向の背景事例にSprint 42 #116を追記・UserAvatar iconUrl:nullハードコード禁止ルールを強化 | 規約既存にもかかわらずSprint 40→42と同パターン再発。背景と禁止事項を強化（SM実施） |
+| Sprint 43 | mobile-conventions | StatefulWidget event handler内エラーハンドリングパターン追記（DEV）・バックエンドキー値とARBキー突き合わせ確認ルール追記（SM） | catch(_)握りつぶしがSprint 43でも2件発生・Sprint Review指摘#124（i18nキー不一致）を受けて追記 |

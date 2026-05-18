@@ -436,6 +436,7 @@ ref.invalidate(shoppingListNotifierProvider);
 - **`catch (_) {}` でエラーを握りつぶしてはならない**（Sprint 34 Review で指摘）。コンテキストに応じて以下のいずれかを行うこと：
   - **Repository / Service 層**: `rethrow` または `AppException` サブクラスに変換して `throw`
   - **Notifier 層**: `on AppException catch (e)` でメッセージを state に格納し、予期しない例外は汎用メッセージを格納する（rethrow しない）。空ボディの `catch (_) {}` は引き続き禁止
+  - **StatefulWidget の event handler 内**: `on AppException catch (e)` でメッセージを `setState` で保持して画面内に表示、それ以外は `AppSnackBar` で汎用通知を表示する
 
 ```dart
 // NG: エラーを握りつぶす（空ボディ）
@@ -460,6 +461,13 @@ ref.invalidate(shoppingListNotifierProvider);
   state = AsyncData(current.copyWith(errorMessage: e.message));
 } catch (_) {
   state = AsyncData(current.copyWith(errorMessage: 'errorUnexpected'));
+}
+
+// OK（StatefulWidget event handler内）: AppException はメッセージを setState で保持、その他は AppSnackBar で汎用通知（Sprint 43 で追加）
+} on AppException catch (e) {
+  setState(() => _errorMessage = e.message);
+} catch (_) {
+  AppSnackBar.showError(context, 'errorUnexpected');
 }
 ```
 
@@ -679,6 +687,27 @@ lcov --remove coverage/lcov.info $PATTERNS --ignore-errors unused --output-file 
 5. 各 Page で `AppLocalizations.of(context).キー名` を使う
 
 ハードコードの日本語・英語文字列は追加しないこと。
+
+### バックエンドからキー値を受け取って翻訳する機能の注意事項
+
+通知メッセージなど「バックエンドが文字列キーを返し、Flutter側でARBキーに変換して翻訳する」設計では、**計画フェーズでバックエンドが実際に返すキー値を確認し、Flutter ARBキーと突き合わせること**。
+
+```dart
+// Flutter は動的ARBキー参照ができないため、ディスパッチテーブルで変換する
+// notification_message_renderer.dart の例
+Map<String, String Function(AppLocalizations, Map<String, Object>)> get _table => {
+  'notifications.messages.yourTaskWasTaken.title': (l10n, p) =>
+      l10n.notificationsMessagesYourTaskWasTakenTitle(p['actorName'] as String),
+  // ...
+};
+```
+
+確認事項（計画フェーズ）:
+- バックエンドDBの実際のキー値（例: `t_notification.title_key` の値）
+- Flutter ARBキーとの命名規則の一致
+- `params` の型・キー名
+
+> **背景（Sprint 43 #124）**: バックエンドが返す `titleKey`/`bodyKey` の実データを未確認のままARBキーを定義したため、キーが不一致でi18nキーがそのまま表示された。
 
 ---
 

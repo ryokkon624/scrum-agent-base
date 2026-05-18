@@ -7,7 +7,12 @@
 
 ## 現在の状態
 
-Sprint 42 完了。次スプリント開始時にリセット済み。
+Sprint 43 完了。次スプリント開始時にリセット済み。
+
+## 引き継ぎ事項
+
+- Sprint 43 Sprint Review指摘: #124（通知ベルポップオーバーにi18nキーがそのまま表示）→ Issue起票・Projects追加・Draft設定済み。次スプリントで対応
+- `feature/119-mobile-notifications` PR #22 はりょこさんのマージ待ち
 
 ## 引き継ぎ事項
 

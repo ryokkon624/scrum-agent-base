@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-18
+**最終更新**: 2026-05-18（Sprint 43 Retro）
 
 ---
 
@@ -27,7 +27,7 @@
 | パターン                                                        | 発生スプリント | 対応                                                                          |
 | --------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------- |
 | マジックストリング（status/flag値を `'0'`/`'1'` で直接比較）    | 34, 35         | `core/models/` の生成済み enum（`ShoppingItemStatus.xxx.code`）を使う         |
-| `catch (_) {}` でエラーを握りつぶし                             | 34, 35         | `rethrow` または `AppException` に変換                                        |
+| `catch (_) {}` でエラーを握りつぶし                             | 34, 35, 43     | `rethrow` または `AppException` に変換。Notifier層は `on AppException catch (e)` で state に格納。StatefulWidget の event handler 内は AppSnackBar で汎用通知 |
 | i18n ハードコード（日本語・英語文字列をウィジェット内に直書き） | 33, 34, 37, 38 | ARB ファイルに定義して `AppLocalizations.of(context).key` を使う（`features/shell` の BottomNavigationBar ラベルも例外なく適用）|
 | `items.map()` で生成するウィジェットに `key` 未設定 | 38, 39 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
 | `build()` 内で重いループ・重複計算を毎フレーム実行 | 39 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`） |
@@ -76,6 +76,9 @@
 - `AuthUser` のような共有ドメインモデルは `lib/core/models/` 配下に置く（core→features 依存を作らないため）
 - `ServerException` などのカスタム例外が named パラメータ（`message:`）か positional かはテスト書き始める前に必ず確認する
 - `GoRouterState.of(context).matchedLocation` を `StatefulShellRoute.indexedStack` 配下の shell ウィジェット内で使って現在ルートを判定しようとしたとき、実機では sub-route のパスが反映されず HouseholdIndicatorBar の非表示ロジックが効かなかった（Sprint 37 #98、実害なしでOK判断）。shell route 配下での GoRouter state 参照は動作確認必須
+- `showDialog` ベースのポップオーバーで `barrierColor: transparent` を指定するとタップ外で閉じるが、`Navigator.pop` の引数は必ずダイアログの `BuildContext`（`builder: (dialogContext)` で受け取る）を使うこと。外側の `context` を使うと go_router 環境でページごと閉じる
+- `AppLifecycleObserver`（`WidgetsBindingObserver`）で `didChangeAppLifecycleState` を使う場合、`main.dart` で `WidgetsBinding.instance.addObserver(observer)` を呼ぶ際は `observer` のライフサイクル管理（`removeObserver`）も必ずセットで行うこと。Notifier の dispose で removeObserver しないとメモリリークになる
+- Flutter の `AppLocalizations` は動的なキー参照（`AppLocalizations.of(context)[key]`）をサポートしない。通知メッセージのような動的キーディスパッチが必要な場合は `Map<String, String Function(AppLocalizations, ...)>` 形式のテーブルを実装して switch/lookup する（`NotificationMessageRenderer` パターン）
 
 ### hw-hub-backend
 
@@ -132,6 +135,10 @@
 - `table_calendar` パッケージで読み取り専用カレンダーを実装する場合、`onDaySelected` を指定しない・`headerStyle` で formatButton と navigation を非表示にすることでタップ・月遷移を無効化できる。`focusedDay` と `selectedDayPredicate` だけを制御すれば対象日ハイライト表示が実現できる（Sprint 41 #114 SwipeDateCalendar）
 - スワイプモード中に「現在のカードの対象日」をカレンダーで可視化する場合、カレンダーウィジェット（`SwipeDateCalendar`）をカードとは独立した `Column` の要素として配置し、`targetDate` を props で受け取る設計にするとカード変更時の自動更新がシンプルになる（親が再描画するだけで focusedDay が更新される）
 - スワイプモード進捗を AppBar actions の小さなテキストから body 最上部の `headlineSmall`（24sp）中央寄せに変更すると、ユーザーが現在の進行状況を視認しやすくなる。共通の `SwipeProgressHeader` ウィジェットに切り出しておくと他のスワイプ型フローでも再利用できる（Sprint 41 #114 AC1）
+- `showDialog` + `barrierColor: Colors.transparent` + `Align` + `Padding` + `Material(elevation)` の組み合わせで「右上アンカーのポップオーバー UI」を実現できる。`StatefulDialog` で独自の state を持たせれば通知リストのような複雑な UI も showDialog ベースで実装可能（Sprint 43 #119）
+- 未読件数のような「全画面共通のグローバル状態」は `AsyncNotifier`（AutoDispose なし）で実装し、`refreshUnreadCount()` と `resetToZero()` の2メソッドのみ公開する設計がシンプル。バッジ表示上限（99+）はこの Notifier 側で計算して state に持たせる（Sprint 43 #119）
+- `WidgetsBindingObserver.didChangeAppLifecycleState` で `AppLifecycleState.resumed` を検知し、フォアグラウンド復帰時に未読件数を再取得するパターン。main.dart でトップレベルの `StatefulWidget` か専用の Observer クラスで実装する（Sprint 43 #119）
+- ARB の `AppLocalizations` は動的キー参照不可のため、通知メッセージのように titleKey/bodyKey が API から動的に返ってくる場合は `Map<String, String Function(AppLocalizations, Map<String, String>)>` のディスパッチテーブルを実装する。未知キーはキー文字列をそのまま fallback 表示する設計が Web 版と挙動一致（Sprint 43 #119 NotificationMessageRenderer）
 
 ### hw-hub-backend
 
@@ -159,3 +166,4 @@
 | Sprint 39 | mobile-conventions | `build()` 内の重い計算を Notifier 事前計算に移す指針を追記 | レビュー指摘（O(n×m) ループを build() 毎フレーム実行していた実績） |
 | Sprint 40 | mobile-conventions | Dismissible スワイプ方向修正パターン・Wrap折り返し・UserAvatar共通ウィジェットを追記 | Sprint 40 バグ修正（#115/#111/#112）で確立した設計パターン |
 | Sprint 41 | mobile-conventions | Overdue テキスト overflow 対応ルール・table_calendar 読み取り専用カレンダーパターンを追記 | Sprint 41 レビュー指摘（Overdue オーバーフロー）・#114 実装で確立 |
+| Sprint 43 | mobile-conventions | エラーハンドリングルールに StatefulWidget event handler 内パターンを追記 | #119 レビュー指摘（StatefulWidget 内での `catch (_) {}` 握りつぶし） |
