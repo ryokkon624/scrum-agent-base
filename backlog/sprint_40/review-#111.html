@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 40 Review — #111 メンバーサマリに全メンバーが表示されていない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-card { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-card-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-strip-horizontal { display: flex; gap: 8px; overflow: hidden; width: 180px; }
+  .mock-strip-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mock-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; background: #f3f4f6; border: 1px solid #e5e5e5; white-space: nowrap; }
+  .mock-chip-missing { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; background: #fef2f2; border: 1px dashed #fca5a5; color: #b91c1c; }
+  .mock-avatar { width: 16px; height: 16px; border-radius: 50%; background: #dbeafe; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: #1e40af; flex-shrink: 0; }
+  .overflow-hint { margin-top: 6px; font-size: 11px; color: #b91c1c; }
+  .nowrap-hint { margin-top: 6px; font-size: 11px; color: #166534; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .layout-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+  .layout-box { padding: 12px; border-radius: 8px; }
+  .layout-bad { background: #fef2f2; border: 1px solid #fca5a5; }
+  .layout-good { background: #f0fdf4; border: 1px solid #86efac; }
+  .layout-label { font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+  .layout-bad .layout-label { color: #b91c1c; }
+  .layout-good .layout-label { color: #166534; }
+  .layout-code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: #374151; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 40 Review · Bug Fix</div>
+  <h1>#111 — 家事割り当て画面のメンバーサマリに<br>全メンバーが表示されていない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 40</span>
+    <span class="badge badge-issue">#111</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">4名のおうち・メンバーサマリ</div>
+          <div class="mock-strip-horizontal">
+            <div class="mock-chip">
+              <span class="mock-avatar">未</span><span>未割当</span><span style="font-weight:700;">2</span>
+            </div>
+            <div class="mock-chip">
+              <span class="mock-avatar">A</span><span>Aさん</span><span style="font-weight:700;">3</span>
+            </div>
+            <div class="mock-chip">
+              <span class="mock-avatar">B</span><span>Bさん</span><span style="font-weight:700;">1</span>
+            </div>
+          </div>
+          <div class="overflow-hint">&#8594; Dさんが画面外に隠れて見えない</div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">4名のおうち・メンバーサマリ</div>
+          <div class="mock-strip-wrap">
+            <div class="mock-chip">
+              <span class="mock-avatar">未</span><span>未割当</span><span style="font-weight:700;">2</span>
+            </div>
+            <div class="mock-chip">
+              <span class="mock-avatar">A</span><span>Aさん</span><span style="font-weight:700;">3</span>
+            </div>
+            <div class="mock-chip">
+              <span class="mock-avatar">B</span><span>Bさん</span><span style="font-weight:700;">1</span>
+            </div>
+            <div class="mock-chip">
+              <span class="mock-avatar">C</span><span>Cさん</span><span style="font-weight:700;">2</span>
+            </div>
+            <div class="mock-chip">
+              <span class="mock-avatar">D</span><span>Dさん</span><span style="font-weight:700;">0</span>
+            </div>
+          </div>
+          <div class="nowrap-hint">全員が2段に折り返して表示される</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">水平スクロールListViewにより画面幅を超えたメンバーが不可視になっていた</span>
+      </div>
+      <div class="cause-body">
+        <p><code>member_summary_strip.dart</code> が <code>SizedBox(height: 72)</code> の中に <code>ListView(scrollDirection: Axis.horizontal)</code> を使っていた。この構造では横幅に収まらないチップは右にスクロールしなければ見えず、ユーザーが水平スクロールできることに気づかない場合、1名以上が欠けているように見える。</p>
+        <div class="layout-compare">
+          <div class="layout-box layout-bad">
+            <div class="layout-label">修正前（水平スクロール）</div>
+            <div class="layout-code">SizedBox(height: 72,<br>&nbsp;&nbsp;child: ListView(<br>&nbsp;&nbsp;&nbsp;&nbsp;scrollDirection: Axis.horizontal,<br>&nbsp;&nbsp;&nbsp;&nbsp;...<br>&nbsp;&nbsp;)<br>)</div>
+          </div>
+          <div class="layout-box layout-good">
+            <div class="layout-label">修正後（Wrap折り返し）</div>
+            <div class="layout-code">Padding(<br>&nbsp;&nbsp;padding: ...,<br>&nbsp;&nbsp;child: Wrap(<br>&nbsp;&nbsp;&nbsp;&nbsp;spacing: 8,<br>&nbsp;&nbsp;&nbsp;&nbsp;runSpacing: 8,<br>&nbsp;&nbsp;&nbsp;&nbsp;...<br>&nbsp;&nbsp;)<br>)</div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:#6b7280;">Web版SPモードはメンバーチップが画面幅に収まらない場合に2段で折り返して表示するデザインになっている。モバイルも同様のUIにすることで一貫性を保つ。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/widgets/member_summary_strip.dart</span>
+        <span class="diff-stat">+6 / -8</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">27</span><span class="line-prefix"> </span><span>    return</span></div>
+        <div class="code-line line-del"><span class="line-num">28</span><span class="line-prefix">-</span><span>      SizedBox(</span></div>
+        <div class="code-line line-del"><span class="line-num">29</span><span class="line-prefix">-</span><span>        height: 72,</span></div>
+        <div class="code-line line-del"><span class="line-num">30</span><span class="line-prefix">-</span><span>        child: ListView(</span></div>
+        <div class="code-line line-del"><span class="line-num">31</span><span class="line-prefix">-</span><span>          scrollDirection: Axis.horizontal,</span></div>
+        <div class="code-line line-del"><span class="line-num">32</span><span class="line-prefix">-</span><span>          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),</span></div>
+        <div class="code-line line-del"><span class="line-num">33</span><span class="line-prefix">-</span><span>          children: [</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>      Padding(</span></div>
+        <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),</span></div>
+        <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>        child: Wrap(</span></div>
+        <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>          spacing: 8,</span></div>
+        <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>          runSpacing: 8,</span></div>
+        <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>          children: [</span></div>
+        <div class="code-line line-ctx"><span class="line-num">34</span><span class="line-prefix"> </span><span>            _SummaryChip(...</span></div>
+        <div class="code-line line-ctx"><span class="line-num">  </span><span class="line-prefix"> </span><span>            ... // メンバーのチップ</span></div>
+        <div class="code-line line-ctx"><span class="line-num">63</span><span class="line-prefix"> </span><span>          ],</span></div>
+        <div class="code-line line-ctx"><span class="line-num">64</span><span class="line-prefix"> </span><span>        ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">65</span><span class="line-prefix"> </span><span>      );</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span><code>Wrap</code> ウィジェットは子ウィジェットが親の横幅に収まらなくなると自動的に次の行に折り返す。<code>spacing</code> でチップ間の水平間隔、<code>runSpacing</code> で行間の垂直間隔を指定している。固定高さ（<code>SizedBox(height: 72)</code>）が不要になり、メンバー数に応じて高さが自動調整される。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">メンバーサマリにおうちの全メンバーが表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>Wrap</code> に置き換えることで、全メンバーのチップが画面内に折り返して表示される。水平スクロールで隠れるメンバーがいなくなった。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">横幅に収まらない場合はWeb版SPモード同様に2段で表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>Wrap(spacing: 8, runSpacing: 8)</code> により、チップが横幅を超えると自動的に次の段に折り返す。Web版SPモードの2段表示と同じ動作になっている。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>4名以上のおうちで全員のチップが表示されること</strong>
+          <span>家事割り当て画面上部のメンバーサマリに「未割当」チップ＋全メンバーのチップが全て見えることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>メンバーが多い場合は2段以上に折り返して表示されること</strong>
+          <span>4〜5名のおうちでメンバーサマリが2行になって表示されるか確認（1行目に収まらないチップが2行目に表示される）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>2名程度の少人数のおうちでも正常に表示されること</strong>
+          <span>チップ数が少ない場合も1行で正常に表示されるか確認（デグレなし）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>4名以上の全メンバーが表示されること、およびWrapウィジェットが使用されていること（水平スクロールListViewではないこと）を確認するテストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/housework_assign/presentation/widgets/member_summary_strip_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">AC1: 4名のメンバーが全員表示されることをウィジェットテストで確認（水平スクロールでは1名欠ける問題の回帰防止）</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/housework_assign/presentation/widgets/member_summary_strip_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">AC2: Wrapウィジェットが使用されていること、ListView(水平スクロール)が使われていないことを確認</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

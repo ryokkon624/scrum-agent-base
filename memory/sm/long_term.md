@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-15（Sprint 38 Retro）
+**最終更新**: 2026-05-18（Sprint 40 Retro）
 
 ---
 
@@ -94,3 +94,4 @@
 | Sprint 37 | scrum-master-workflow | Sprint Review/RetroセクションにモバイルUI実機確認・Shellウィジェット制御の注意事項を追加（long_term.md） | #98でAC未達成がりょこさんの実機確認で初めて発覚した実績 |
 | Sprint 38 | mobile-conventions | リスト生成時のkey付与（必須）セクションを新規追加 | `items.map()`で生成するウィジェットに`ValueKey`が未設定で、performance-reviewerが指摘 |
 | Sprint 38 | scrum-master-workflow | reviewerの指摘検証ルール追記（long_term.md） | convention-reviewerが実装済みコードを誤指摘するケースが複数スプリントで継続発生 |
+| Sprint 40 | mobile-conventions | Dismissibleスワイプ方向・Wrap折り返し・UserAvatar共通ウィジェットの3パターンを追加 | Sprint 39 Sprint Reviewで発覚したバグ（#110/#111/#112/#115）の修正で確立したパターンを規約化（DEV実施） |

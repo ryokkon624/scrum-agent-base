@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-15
+**最終更新**: 2026-05-18
 
 ---
 
@@ -123,6 +123,9 @@
 - `items.map((item) => ...)` で生成するウィジェットには必ず `key: ValueKey(item.uniqueId)` を最外ウィジェットに付与すること。`Dismissible` はもともと `key` 必須だが、その外側の `Padding` にも同じ key を付けないとスワイプ後のリスト更新時にウィジェット状態が意図しない要素に紐づいたままになる（Sprint 38 レビュー指摘）
 - `build()` メソッド内で O(n×m) の集計や同一フィルタの複数回呼び出しを行うとフレームごとに無駄な計算が走る。タスク数カウントのような集計は Notifier の操作完了後（`_computeMemberTaskCounts()` 等）に一度だけ計算して `Map<int, int>` として state に持たせ、ウィジェットは `state.memberTaskCounts[memberId]` で参照するだけにするのがFlutter のパフォーマンスベストプラクティス（Sprint 39 レビュー指摘）
 - スワイプモード中にリストが動的に変化する場合、スワイプ開始時のタスク数スナップショット（`swipeTaskCount`）を state に持つことでスワイプモードの早期終了を防げる。完了件数のカウントは動的リストの長さではなくスナップショットとの差分で計算する設計が堅牢
+- `Dismissible` のスワイプ方向（左右どちらで何が起きるか）は `background`（startToEnd）と `secondaryBackground`（endToStart）の中身と、`confirmDismiss` の `direction == DismissDirection.startToEnd` 判定を対応させる必要がある。中身だけ入れ替えて判定を変え忘れると逆の操作が実行される（Sprint 40 #115 の根本原因）
+- 水平スクロールリスト（`ListView(scrollDirection: Axis.horizontal)`）をコンテナ高さ固定で実装すると画面外に項目が流れて非表示になる。項目を折り返して表示したい場合は `Wrap(spacing: 8, runSpacing: 8)` を使う。`SizedBox` の高さ固定も不要になり、コンテンツ量に応じて高さが伸縮する（Sprint 40 #111）
+- アイコンURL + イニシャルフォールバック + 未割当表示が必要なアバターは `core/ui/user_avatar.dart` に共通ウィジェットとして実装し、複数画面から参照する。iconUrl が null または読み込み失敗時はイニシャル（CircleAvatar + Text）で表示し、未割当は「未」ラベルを持つ別スタイルで表示する設計が Web 版と一致する（Sprint 40 #112）
 
 ### hw-hub-backend
 
@@ -148,3 +151,4 @@
 | Sprint 37 | （更新なし）       | —                                        | i18nハードコード禁止はすでに記載済みのため Skill 更新不要（long_term.md の繰り返し指摘パターンに 37 を追記）|
 | Sprint 38 | mobile-conventions | `items.map()` の key 付与ルール追記      | レビュー指摘（スワイプリストで ValueKey 未設定によるウィジェット状態混乱）|
 | Sprint 39 | mobile-conventions | `build()` 内の重い計算を Notifier 事前計算に移す指針を追記 | レビュー指摘（O(n×m) ループを build() 毎フレーム実行していた実績） |
+| Sprint 40 | mobile-conventions | Dismissible スワイプ方向修正パターン・Wrap折り返し・UserAvatar共通ウィジェットを追記 | Sprint 40 バグ修正（#115/#111/#112）で確立した設計パターン |

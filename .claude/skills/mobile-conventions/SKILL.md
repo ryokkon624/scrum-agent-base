@@ -160,6 +160,93 @@ Column(
 
 > **背景（Sprint 31 Retro）**: `swipeable_task_card.dart` のmarginを削除したが `width: double.infinity` を設定しなかったため、カード幅がタスク名に依存したままになりSprint Reviewで指摘された。
 
+### Dismissible のスワイプ方向とアクションの対応
+
+`Dismissible` で「左スワイプ」「右スワイプ」それぞれに異なるアクションを割り当てる場合、以下の3箇所を必ず一致させること。
+
+| 要素 | 役割 |
+|---|---|
+| `background` | startToEnd（右スワイプ）のアイコン・色 |
+| `secondaryBackground` | endToStart（左スワイプ）のアイコン・色 |
+| `confirmDismiss` の `direction` 判定 | `DismissDirection.startToEnd` で右スワイプのアクションを実行 |
+
+```dart
+Dismissible(
+  key: ValueKey(task.taskId),
+  background: _buildBackground(Colors.blue, Icons.person, Alignment.centerLeft),   // 右スワイプ
+  secondaryBackground: _buildBackground(Colors.red, Icons.delete, Alignment.centerRight), // 左スワイプ
+  confirmDismiss: (direction) async {
+    if (direction == DismissDirection.startToEnd) {
+      // 右スワイプのアクション（例: 自分にアサイン）
+      await ref.read(notifier).assignToMe(task.taskId);
+    } else {
+      // 左スワイプのアクション（例: 削除確認）
+      return await showDialog(...);
+    }
+    return false;
+  },
+  child: ...,
+)
+```
+
+> **背景（Sprint 40 #115）**: `background` と `secondaryBackground` の中身を正しく設定していたが、`confirmDismiss` の `direction` 判定が逆になっており、右スワイプで削除・左スワイプで担当者変更が実行されていた。中身と判定は常にセットで確認すること。
+
+### 折り返しレイアウト（Wrap）vs 水平スクロール（ListView）
+
+複数アイテムを横並びにする際、画面外に溢れる可能性がある場合は `Wrap` を使う。
+
+```dart
+// NG: 水平スクロール → 高さ固定 + スクロールで項目が画面外に流れて非表示になりやすい
+SizedBox(
+  height: 72,
+  child: ListView(
+    scrollDirection: Axis.horizontal,
+    children: items.map((item) => ItemChip(item: item)).toList(),
+  ),
+)
+
+// OK: Wrap → 折り返しで全項目が表示される。コンテンツ量に応じて高さが伸縮する
+Wrap(
+  spacing: 8,
+  runSpacing: 8,
+  children: items.map((item) => ItemChip(item: item)).toList(),
+)
+```
+
+使い分け:
+- 項目数が固定で少ない、または水平スクロールが UX 仕様として必要 → `ListView(scrollDirection: Axis.horizontal)`
+- 項目数が可変・増減する、または全項目を一覧で見せたい → `Wrap`
+
+> **背景（Sprint 40 #111）**: メンバーサマリを `SizedBox(height: 72) + ListView(scrollDirection: Axis.horizontal)` で実装していたため、メンバー数が増えると画面外に流れて非表示になっていた。`Wrap(spacing: 8, runSpacing: 8)` に変更することで全メンバーを折り返し表示できるようになった。
+
+### アバター表示（UserAvatar）共通ウィジェット
+
+ユーザーアイコンを表示する場合は `lib/core/ui/user_avatar.dart` の `UserAvatar` ウィジェットを使う。新しい機能でアイコン表示が必要になった場合も、新規作成せずこのウィジェットを参照すること。
+
+```dart
+// 通常のユーザーアバター（iconUrl があればアイコン表示、なければイニシャル）
+UserAvatar(
+  iconUrl: member.iconUrl,
+  displayName: member.nickname ?? member.displayName,
+  radius: 16,
+)
+
+// 未割当状態を表示する場合（丸い円に「未」ラベル）
+UserAvatar(
+  iconUrl: null,
+  displayName: null,  // null を渡すと「未」表示になる設計
+  radius: 16,
+)
+```
+
+実装パターン:
+- `iconUrl` が非 null → `CircleAvatar(backgroundImage: NetworkImage(iconUrl))` で表示
+- 読み込み失敗時 → `onError` フォールバックでイニシャル表示
+- `displayName` が null（未割当） → 「未」ラベルの円を表示（Web 版踏襲）
+- `displayName` が非 null（割当済み） → イニシャル（最初の1文字）を表示
+
+> **背景（Sprint 40 #112）**: 担当者バッジがテキストラベルのみで実装されており、アイコン表示に対応していなかった。`core/ui/user_avatar.dart` として共通ウィジェットを新規作成し、担当者バッジ・メンバーサマリの両方から参照する構成にした。
+
 ### リスト生成時の key 付与（必須）
 
 `items.map((item) => ...)` でウィジェットを生成する際は、最外ウィジェットに必ず `key: ValueKey(item.uniqueId)` を付与すること。

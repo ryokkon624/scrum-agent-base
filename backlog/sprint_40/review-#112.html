@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 40 Review — #112 担当者欄がアイコン表示になっていない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-card { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-card-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-task-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+  .mock-task-row:last-child { border-bottom: none; }
+  .mock-task-name { flex: 1; font-size: 13px; }
+  .mock-task-date { font-size: 11px; color: #9ca3af; }
+  .mock-badge-text-bad { background: #fef3c7; color: #b45309; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .mock-badge-text-unassigned { background: #fef3c7; color: #b45309; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .mock-avatar-md { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .mock-avatar-assigned { background: #dbeafe; color: #1e40af; }
+  .mock-avatar-unassigned { background: #fef3c7; color: #b45309; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  .new-file-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+  .new-file-label { font-size: 11px; font-weight: 700; color: #166534; margin-bottom: 4px; }
+  .new-file-desc { font-size: 13px; color: #374151; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 40 Review · Bug Fix</div>
+  <h1>#112 — 家事割り当て画面の担当者欄が<br>アイコン表示になっていない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 40</span>
+    <span class="badge badge-issue">#112</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">家事カード（担当者欄）</div>
+          <div class="mock-task-row">
+            <div>
+              <div style="font-size:13px;">洗濯物を畳む</div>
+              <div class="mock-task-date">2026-05-18</div>
+            </div>
+            <span class="mock-badge-text-unassigned">未割当</span>
+          </div>
+          <div class="mock-task-row">
+            <div>
+              <div style="font-size:13px;">食器洗い</div>
+              <div class="mock-task-date">2026-05-18</div>
+            </div>
+            <span class="mock-badge-text-bad">かずくん</span>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:#b91c1c;">テキストバッジのみでアイコンなし</div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">家事カード（担当者欄）</div>
+          <div class="mock-task-row">
+            <span class="mock-avatar-md mock-avatar-unassigned">未</span>
+            <div>
+              <div style="font-size:13px;">洗濯物を畳む</div>
+              <div class="mock-task-date">2026-05-18</div>
+            </div>
+          </div>
+          <div class="mock-task-row">
+            <span class="mock-avatar-md mock-avatar-assigned">か</span>
+            <div>
+              <div style="font-size:13px;">食器洗い</div>
+              <div class="mock-task-date">2026-05-18</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:#166534;">丸形アイコン（イニシャル）で表示</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">_AssigneeBadgeがテキストのみで実装されており、アイコン表示の仕組みがなかった</span>
+      </div>
+      <div class="cause-body">
+        <p><code>assignable_task_card.dart</code> に <code>_AssigneeBadge</code> という内部クラスが存在したが、これはテキストラベルを丸角バッジ形式で表示するだけの実装だった。Web版のようにユーザーアイコン画像またはイニシャルを丸形で表示する仕組みが存在しなかった。</p>
+        <p>また、<code>member_summary_strip.dart</code> のメンバーサマリも同様にテキストのみ（アイコンなし）の構成だった。アプリ全体でアイコン表示を統一するコンポーネントが存在しなかったことが根本的な原因。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <div class="new-file-box">
+      <div class="new-file-label">新規ファイル</div>
+      <div class="new-file-desc"><code>lib/core/ui/user_avatar.dart</code> — 共通アバターコンポーネントを新規作成</div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/core/ui/user_avatar.dart（新規作成・134行）</span>
+        <span class="diff-stat">+134</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-add"><span class="line-num"> 1</span><span class="line-prefix">+</span><span>enum UserAvatarSize { sm, md, lg }</span></div>
+        <div class="code-line line-add"><span class="line-num"> 2</span><span class="line-prefix">+</span><span></span></div>
+        <div class="code-line line-add"><span class="line-num"> 3</span><span class="line-prefix">+</span><span>class UserAvatar extends StatefulWidget {</span></div>
+        <div class="code-line line-add"><span class="line-num"> 4</span><span class="line-prefix">+</span><span>  const UserAvatar({</span></div>
+        <div class="code-line line-add"><span class="line-num"> 5</span><span class="line-prefix">+</span><span>    required this.iconUrl,   // アイコン画像URL（null可）</span></div>
+        <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>    required this.label,     // イニシャル生成に使う表示名</span></div>
+        <div class="code-line line-add"><span class="line-num"> 7</span><span class="line-prefix">+</span><span>    this.isUnassigned = false, // true のとき「未」バッジ表示</span></div>
+        <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span>    this.size = UserAvatarSize.md,</span></div>
+        <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>  });</span></div>
+        <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>  ...</span></div>
+        <div class="code-line line-add"><span class="line-num">71</span><span class="line-prefix">+</span><span>  Widget build(BuildContext context) {</span></div>
+        <div class="code-line line-add"><span class="line-num">72</span><span class="line-prefix">+</span><span>    if (widget.isUnassigned) {</span></div>
+        <div class="code-line line-add"><span class="line-num">73</span><span class="line-prefix">+</span><span>      // 未割当: 「未」テキストをイニシャル代わりに表示</span></div>
+        <div class="code-line line-add"><span class="line-num">74</span><span class="line-prefix">+</span><span>    } else if (hasIcon) {</span></div>
+        <div class="code-line line-add"><span class="line-num">75</span><span class="line-prefix">+</span><span>      // アイコン画像あり: Image.network + errorBuilder でフォールバック</span></div>
+        <div class="code-line line-add"><span class="line-num">76</span><span class="line-prefix">+</span><span>    } else {</span></div>
+        <div class="code-line line-add"><span class="line-num">77</span><span class="line-prefix">+</span><span>      // イニシャル表示: label の先頭2文字</span></div>
+        <div class="code-line line-add"><span class="line-num">78</span><span class="line-prefix">+</span><span>    }</span></div>
+        <div class="code-line line-add"><span class="line-num">79</span><span class="line-prefix">+</span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span><code>UserAvatar</code> は <code>core/ui/</code> に配置した共通コンポーネント。iconUrlが設定されていれば画像を表示し、読み込み失敗時は自動でイニシャルにフォールバックする（<code>_imageError</code> フラグ）。未割当の場合はARBキー <code>houseworkAssignUnassignedBadge</code>（= 「未」）を表示する。サイズは sm(24px) / md(32px) / lg(36px) から選べる。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/widgets/assignable_task_card.dart</span>
+        <span class="diff-stat">_AssigneeBadge → UserAvatar に置き換え</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">95</span><span class="line-prefix"> </span><span>    final isUnassigned = task.assigneeUserId == null;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">96</span><span class="line-prefix"> </span><span>    final assigneeLabel = isUnassigned</span></div>
+        <div class="code-line line-ctx"><span class="line-num">97</span><span class="line-prefix"> </span><span>        ? l10n.houseworkAssignAssigneeUnassigned</span></div>
+        <div class="code-line line-ctx"><span class="line-num">98</span><span class="line-prefix"> </span><span>        : (task.assigneeNickname ?? task.assigneeUserId.toString());</span></div>
+        <div class="code-line line-ctx"><span class="line-num">99</span><span class="line-prefix"> </span><span>    return Container(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">100</span><span class="line-prefix"> </span><span>      ...child: Row(children: [</span></div>
+        <div class="code-line line-del"><span class="line-num">101</span><span class="line-prefix">-</span><span>        _AssigneeBadge(label: assigneeLabel, isUnassigned: isUnassigned),</span></div>
+        <div class="code-line line-add"><span class="line-num">101</span><span class="line-prefix">+</span><span>        UserAvatar(</span></div>
+        <div class="code-line line-add"><span class="line-num">102</span><span class="line-prefix">+</span><span>          iconUrl: null,</span></div>
+        <div class="code-line line-add"><span class="line-num">103</span><span class="line-prefix">+</span><span>          label: assigneeLabel,</span></div>
+        <div class="code-line line-add"><span class="line-num">104</span><span class="line-prefix">+</span><span>          isUnassigned: isUnassigned,</span></div>
+        <div class="code-line line-add"><span class="line-num">105</span><span class="line-prefix">+</span><span>          size: UserAvatarSize.md,</span></div>
+        <div class="code-line line-add"><span class="line-num">106</span><span class="line-prefix">+</span><span>        ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">107</span><span class="line-prefix"> </span><span>        const SizedBox(width: 12),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">108</span><span class="line-prefix"> </span><span>        // タスク名・日付テキスト...</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span><code>_AssigneeBadge</code> クラスはこの変更で完全に削除し、<code>UserAvatar(size: md)</code> に置き換えた。担当者表示が「テキストバッジ」から「丸形アバター」に変わる。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/widgets/member_summary_strip.dart</span>
+        <span class="diff-stat">メンバーチップにもUserAvatarを追加</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">35</span><span class="line-prefix"> </span><span>          _SummaryChip(</span></div>
+        <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>            avatar: UserAvatar(</span></div>
+        <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>              iconUrl: null,</span></div>
+        <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>              label: l10n.houseworkAssignMemberSummaryUnassigned,</span></div>
+        <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>              isUnassigned: true,</span></div>
+        <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>              size: UserAvatarSize.sm,</span></div>
+        <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>            ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">42</span><span class="line-prefix"> </span><span>            label: l10n.houseworkAssignMemberSummaryUnassigned,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">  </span><span class="line-prefix"> </span><span>            ...</span></div>
+        <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>            avatar: UserAvatar(</span></div>
+        <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>              iconUrl: m.iconUrl,</span></div>
+        <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>              label: label,</span></div>
+        <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>              size: UserAvatarSize.sm,</span></div>
+        <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>            ),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>メンバーサマリのチップにも同じ <code>UserAvatar</code> コンポーネントを適用し、アイコン表示をアプリ全体で統一した。メンバーサマリは小さいサイズ（sm = 24px）を使用している。メンバーにiconUrlが設定されていれば画像が、未設定であればイニシャルが表示される。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">ユーザーアイコンが登録済みの場合はアイコン画像を表示する</div>
+      </div>
+      <div class="ac-body">
+        <code>UserAvatar</code> に <code>iconUrl</code> が渡されると <code>Image.network</code> で画像を表示する。読み込み失敗時は <code>errorBuilder</code> でイニシャル表示に自動フォールバックする（<code>_imageError = true</code> フラグで切り替え）。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">ユーザーアイコンが未登録の場合はm_household_member.nickname（なければm_user.display_name）のイニシャルを表示する</div>
+      </div>
+      <div class="ac-body">
+        <code>iconUrl</code> が null のとき、<code>_initials(label)</code> でラベルの先頭2文字を取得して円形バッジに表示する。<code>label</code> にはnicknameが設定されていればnickname、未設定であればdisplayNameが渡される（#110の修正と連携）。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>家事カードの左側に丸形アイコンが表示されること</strong>
+          <span>担当者がいる場合はイニシャル（例: 「か」）が、未割当の場合は「未」が丸形バッジで表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>メンバーサマリのチップにも小さいアイコンが表示されること</strong>
+          <span>画面上部のメンバーサマリ（未割当・各メンバーのチップ）の左側に小さい丸形アイコンが表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>アイコン未登録のユーザーはイニシャルで表示されること</strong>
+          <span>アイコン画像が未設定のメンバーはnicknameまたはdisplayNameの先頭2文字が表示されるか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>UserAvatarコンポーネントの各表示パターン（iconUrl有り・無し・isUnassigned・各サイズ）をカバーするウィジェットテストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/core/ui/user_avatar_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">AC1: iconUrlが設定されている場合はImage.networkが表示されることを確認</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/core/ui/user_avatar_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">AC2: iconUrlがnullの場合はlabelの先頭2文字（イニシャル）が表示されることを確認</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/core/ui/user_avatar_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">AC2: isUnassigned=trueの場合は「未」ラベルが表示されることを確認</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
