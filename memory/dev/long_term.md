@@ -32,6 +32,9 @@
 | `items.map()` で生成するウィジェットに `key` 未設定 | 38, 39 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
 | `build()` 内で重いループ・重複計算を毎フレーム実行 | 39 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`） |
 | IndexedStack 配下で一覧 Provider の invalidate 漏れ             | 35             | 詳細・作成画面での追加/削除/ステータス変更後に `ref.invalidate(一覧Provider)` |
+| `Dismissible` の `background`/`secondaryBackground` の中身と `confirmDismiss` の `direction` 判定が不一致（スワイプ方向逆） | 40, 41 | 3箇所をセットで確認する。`background` → startToEnd（右スワイプ）、`secondaryBackground` → endToStart（左スワイプ）に対応 |
+| `Text` ウィジェットで長い文字列が画面外にはみ出す（Overdue ラベル・タイトル等） | 41 | `overflow: TextOverflow.ellipsis`（または `softWrap: true`）を設定する。特にカード内の固定幅コンテナ内のテキストは必須 |
+| ユーザーアイコン表示に `UserAvatar` 共通ウィジェットを使わずにテキストラベルで実装 | 40, 41 | `lib/core/ui/user_avatar.dart` の `UserAvatar` を使う。新機能でアイコン表示が必要なときに再実装しない |
 
 ### hw-hub-backend
 
@@ -126,6 +129,9 @@
 - `Dismissible` のスワイプ方向（左右どちらで何が起きるか）は `background`（startToEnd）と `secondaryBackground`（endToStart）の中身と、`confirmDismiss` の `direction == DismissDirection.startToEnd` 判定を対応させる必要がある。中身だけ入れ替えて判定を変え忘れると逆の操作が実行される（Sprint 40 #115 の根本原因）
 - 水平スクロールリスト（`ListView(scrollDirection: Axis.horizontal)`）をコンテナ高さ固定で実装すると画面外に項目が流れて非表示になる。項目を折り返して表示したい場合は `Wrap(spacing: 8, runSpacing: 8)` を使う。`SizedBox` の高さ固定も不要になり、コンテンツ量に応じて高さが伸縮する（Sprint 40 #111）
 - アイコンURL + イニシャルフォールバック + 未割当表示が必要なアバターは `core/ui/user_avatar.dart` に共通ウィジェットとして実装し、複数画面から参照する。iconUrl が null または読み込み失敗時はイニシャル（CircleAvatar + Text）で表示し、未割当は「未」ラベルを持つ別スタイルで表示する設計が Web 版と一致する（Sprint 40 #112）
+- `table_calendar` パッケージで読み取り専用カレンダーを実装する場合、`onDaySelected` を指定しない・`headerStyle` で formatButton と navigation を非表示にすることでタップ・月遷移を無効化できる。`focusedDay` と `selectedDayPredicate` だけを制御すれば対象日ハイライト表示が実現できる（Sprint 41 #114 SwipeDateCalendar）
+- スワイプモード中に「現在のカードの対象日」をカレンダーで可視化する場合、カレンダーウィジェット（`SwipeDateCalendar`）をカードとは独立した `Column` の要素として配置し、`targetDate` を props で受け取る設計にするとカード変更時の自動更新がシンプルになる（親が再描画するだけで focusedDay が更新される）
+- スワイプモード進捗を AppBar actions の小さなテキストから body 最上部の `headlineSmall`（24sp）中央寄せに変更すると、ユーザーが現在の進行状況を視認しやすくなる。共通の `SwipeProgressHeader` ウィジェットに切り出しておくと他のスワイプ型フローでも再利用できる（Sprint 41 #114 AC1）
 
 ### hw-hub-backend
 
@@ -152,3 +158,4 @@
 | Sprint 38 | mobile-conventions | `items.map()` の key 付与ルール追記      | レビュー指摘（スワイプリストで ValueKey 未設定によるウィジェット状態混乱）|
 | Sprint 39 | mobile-conventions | `build()` 内の重い計算を Notifier 事前計算に移す指針を追記 | レビュー指摘（O(n×m) ループを build() 毎フレーム実行していた実績） |
 | Sprint 40 | mobile-conventions | Dismissible スワイプ方向修正パターン・Wrap折り返し・UserAvatar共通ウィジェットを追記 | Sprint 40 バグ修正（#115/#111/#112）で確立した設計パターン |
+| Sprint 41 | mobile-conventions | Overdue テキスト overflow 対応ルール・table_calendar 読み取り専用カレンダーパターンを追記 | Sprint 41 レビュー指摘（Overdue オーバーフロー）・#114 実装で確立 |

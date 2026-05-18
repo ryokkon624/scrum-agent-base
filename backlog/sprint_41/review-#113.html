@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 41 Review — #113 家事割り当て画面のボタン配置を変更する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #e0f2fe; color: #0369a1; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Layout comparison */
+  .layout-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+  .layout-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .layout-box .layout-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .layout-box.before { border-color: #fca5a5; }
+  .layout-box.after { border-color: #86efac; }
+  .layout-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 40px; }
+
+  /* Screen mockup */
+  .screen-mock { border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; font-size: 12px; }
+  .mock-section { padding: 8px 12px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; gap: 8px; }
+  .mock-section:last-child { border-bottom: none; }
+  .mock-section-label { font-size: 10px; font-weight: 600; color: #9ca3af; letter-spacing: 0.05em; text-transform: uppercase; min-width: 70px; }
+  .mock-section-content { flex: 1; color: #374151; }
+  .mock-btn { display: inline-block; background: #1d6de3; color: white; border-radius: 4px; padding: 3px 8px; font-size: 11px; margin: 2px 0; }
+  .mock-btn.outline { background: white; border: 1px solid #1d6de3; color: #1d6de3; }
+  .mock-chip { display: inline-block; background: #f3f4f6; border: 1px solid #e5e5e5; border-radius: 12px; padding: 2px 8px; font-size: 11px; margin: 2px; }
+  .mock-task { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 4px; padding: 4px 8px; font-size: 11px; color: #6b7280; margin: 2px 0; }
+  .mock-highlight { background: #dcfce7; border-color: #86efac; }
+  .mock-moved { background: #fef9c3; border-color: #fde68a; font-weight: 600; color: #713f12; }
+  .arrow-down { color: #9ca3af; font-size: 10px; text-align: center; padding: 2px 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 32px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 41 Review</div>
+  <h1>#113 — 家事割り当て画面のボタン配置を変更する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 41</span>
+    <span class="badge badge-issue">#113</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題（Sprint 39 Sprint Review 指摘）</div>
+      <p>スワイプモード起動ボタン（「未割当を自分に割り当てる」「他メンバーのタスクを奪う」）がタスクリストの<strong>末尾</strong>に配置されていた。タスクが多い場合はスクロールしないと見えず、どのフィルタ条件でスワイプが開始されるかが視覚的にわかりにくい状態だった。</p>
+    </div>
+
+    <div class="layout-grid">
+      <div class="layout-box before">
+        <div class="layout-title">改修前（ボタンがリスト末尾）</div>
+        <div class="screen-mock">
+          <div class="mock-section">
+            <div class="mock-section-label">統計情報</div>
+            <div class="mock-section-content">未処理 12件（うち未割当 5件）</div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">過去スキップ</div>
+            <div class="mock-section-content"><span class="mock-btn outline">過去の未割当をスキップ</span></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">Divider</div>
+            <div class="mock-section-content"></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">フィルタ</div>
+            <div class="mock-section-content"><span class="mock-chip">すべて</span><span class="mock-chip">未割当</span><span class="mock-chip">自分</span></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">タスク①</div>
+            <div class="mock-section-content"><div class="mock-task">トイレ掃除 — 5/20</div></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">タスク②</div>
+            <div class="mock-section-content"><div class="mock-task">洗濯 — 5/21</div></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">（スクロール後）</div>
+            <div class="mock-section-content" style="color:#9ca3af; font-size:11px;">↓ スクロールしないと見えない</div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label" style="color:#ef4444;">ボタン</div>
+            <div class="mock-section-content"><div class="mock-btn" style="display:block; margin-bottom:4px;">未割当を自分に割り当てる</div><div class="mock-btn">他メンバーのタスクを奪う</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="layout-arrow">→</div>
+      <div class="layout-box after">
+        <div class="layout-title">改修後（ボタンがフィルタの直上）</div>
+        <div class="screen-mock">
+          <div class="mock-section">
+            <div class="mock-section-label">統計情報</div>
+            <div class="mock-section-content">未処理 12件（うち未割当 5件）</div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">過去スキップ</div>
+            <div class="mock-section-content"><span class="mock-btn outline">過去の未割当をスキップ</span></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label" style="color:#166534; font-weight:700;">ボタン(新)</div>
+            <div class="mock-section-content"><div class="mock-btn mock-moved" style="display:block; margin-bottom:4px; background:#dcfce7; color:#166534; border:1px solid #86efac;">未割当を自分に割り当てる</div><div class="mock-btn mock-moved" style="display:block; background:#dcfce7; color:#166534; border:1px solid #86efac;">他メンバーのタスクを奪う</div></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">Divider</div>
+            <div class="mock-section-content"></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">フィルタ</div>
+            <div class="mock-section-content"><span class="mock-chip">すべて</span><span class="mock-chip">未割当</span><span class="mock-chip">自分</span></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">タスク①</div>
+            <div class="mock-section-content"><div class="mock-task">トイレ掃除 — 5/20</div></div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-label">タスク②</div>
+            <div class="mock-section-content"><div class="mock-task">洗濯 — 5/21</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">「未割当を自分に割り当てる」「他メンバーのタスクを奪う」の2ボタンを、「過去の未割当をスキップ」ボタンとフィルタの間に配置する</div>
+      </div>
+      <div class="ac-body">
+        <p>2ボタンをタスクリスト末尾（ListView の末尾）から取り出し、統計情報・過去スキップボタンを含む上部ブロック（Padding → Column）の直後・Divider の前に移動した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/housework_assign_page.dart</span>
+            <span class="diff-stat">+21 / -27</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">135</span><span class="line-prefix"> </span><span>          ),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">136</span><span class="line-prefix"> </span><span>          ),</span></div>
+            <div class="code-line line-add"><span class="line-num">137</span><span class="line-prefix">+</span><span>          // スワイプモード起動ボタン（フィルタ直上に移動）</span></div>
+            <div class="code-line line-add"><span class="line-num">138</span><span class="line-prefix">+</span><span>          Padding(</span></div>
+            <div class="code-line line-add"><span class="line-num">139</span><span class="line-prefix">+</span><span>            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),</span></div>
+            <div class="code-line line-add"><span class="line-num">140</span><span class="line-prefix">+</span><span>            child: ElevatedButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">141</span><span class="line-prefix">+</span><span>              onPressed: unassignedForSwipe.isEmpty</span></div>
+            <div class="code-line line-add"><span class="line-num">142</span><span class="line-prefix">+</span><span>                  ? null</span></div>
+            <div class="code-line line-add"><span class="line-num">143</span><span class="line-prefix">+</span><span>                  : () =&gt; notifier.startSwipeMode(SwipeTarget.unassigned),</span></div>
+            <div class="code-line line-add"><span class="line-num">144</span><span class="line-prefix">+</span><span>              child: Text(l10n.houseworkAssignStartSwipeUnassigned),</span></div>
+            <div class="code-line line-add"><span class="line-num">145</span><span class="line-prefix">+</span><span>            ),</span></div>
+            <div class="code-line line-add"><span class="line-num">146</span><span class="line-prefix">+</span><span>          ),</span></div>
+            <div class="code-line line-add"><span class="line-num">147</span><span class="line-prefix">+</span><span>          Padding(</span></div>
+            <div class="code-line line-add"><span class="line-num">148</span><span class="line-prefix">+</span><span>            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),</span></div>
+            <div class="code-line line-add"><span class="line-num">149</span><span class="line-prefix">+</span><span>            child: ElevatedButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">150</span><span class="line-prefix">+</span><span>              onPressed: othersForSwipe.isEmpty</span></div>
+            <div class="code-line line-add"><span class="line-num">151</span><span class="line-prefix">+</span><span>                  ? null</span></div>
+            <div class="code-line line-add"><span class="line-num">152</span><span class="line-prefix">+</span><span>                  : () =&gt; notifier.startSwipeMode(SwipeTarget.others),</span></div>
+            <div class="code-line line-add"><span class="line-num">153</span><span class="line-prefix">+</span><span>              child: Text(l10n.houseworkAssignStartSwipeOthers),</span></div>
+            <div class="code-line line-add"><span class="line-num">154</span><span class="line-prefix">+</span><span>            ),</span></div>
+            <div class="code-line line-add"><span class="line-num">155</span><span class="line-prefix">+</span><span>          ),</span></div>
+            <div class="code-line line-add"><span class="line-num">156</span><span class="line-prefix">+</span><span>          const SizedBox(height: 8),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">157</span><span class="line-prefix"> </span><span>          const Divider(height: 1),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">158</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-ctx"><span class="line-num">159</span><span class="line-prefix"> </span><span>          // フィルタ</span></div>
+            <div class="code-line line-ctx"><span class="line-num">     </span><span class="line-prefix"> </span><span>          ...</span></div>
+            <div class="code-line line-ctx"><span class="line-num">192</span><span class="line-prefix"> </span><span>                const SizedBox(height: 16),</span></div>
+            <div class="code-line line-del"><span class="line-num">193</span><span class="line-prefix">-</span><span>                // スワイプモード起動ボタン（リスト末尾・削除）</span></div>
+            <div class="code-line line-del"><span class="line-num">194</span><span class="line-prefix">-</span><span>                Padding( ... ElevatedButton（未割当） ... ),</span></div>
+            <div class="code-line line-del"><span class="line-num">     </span><span class="line-prefix">-</span><span>                Padding( ... ElevatedButton（他メンバー） ... ),</span></div>
+            <div class="code-line line-del"><span class="line-num">201</span><span class="line-prefix">-</span><span>                const SizedBox(height: 24),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>ボタン本体のコードは変更なし。配置先のみ変更。<code>unassignedForSwipe.isEmpty</code> 時に null を渡すことで無効化（グレーアウト）する挙動も維持している。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>ボタンが過去スキップボタンとフィルタ（チップ群）の間に表示されること</strong>
+          <span>家事割り当て画面を開いたとき、スクロールしなくても「未割当を自分に割り当てる」「他メンバーのタスクを奪う」の2ボタンが見えること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>対象タスクが0件のときボタンがグレーアウトすること</strong>
+          <span>未割当タスクが0件の場合は「未割当を自分に割り当てる」ボタンが押せない状態になっていること。他メンバーのタスクが0件の場合も同様</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>ボタンを押すとスワイプモードに遷移すること</strong>
+          <span>各ボタンを押したとき、それぞれ「未割当タスク対象」「他メンバータスク対象」でスワイプモードが開始されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>フィルタ・タスクリストの表示が変わっていないこと</strong>
+          <span>フィルタチップ・タスクカードの並び順・スワイプ動作など、ボタン配置以外の機能に影響がないこと</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>housework_assign_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>スワイプ起動2ボタンをListView末尾からColumn直下（Divider前）へ移動</td>
+      </tr>
+      <tr>
+        <td>Notifier・State・Repository</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>ロジックの変更なし。ボタンのUIコード・イベントハンドラはそのまま</td>
+      </tr>
+      <tr>
+        <td>ARBファイル（i18n）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>既存のi18nキーを使用。新規追加なし</td>
+      </tr>
+      <tr>
+        <td>テストファイル</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>配置のみ変更・ロジック変更なしのためウィジェットテスト追加なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

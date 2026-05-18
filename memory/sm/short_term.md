@@ -1,13 +1,13 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 41（未開始）
+**スプリント**: Sprint 42（未開始）
 **最終更新**: 2026-05-18
 
 ---
 
 ## 現在の状態
 
-Sprint 40 完了。次スプリント開始時にリセット済み。
+Sprint 41 完了。次スプリント開始時にリセット済み。
 
 ## 引き継ぎ事項
 
@@ -19,6 +19,11 @@ Sprint 40 完了。次スプリント開始時にリセット済み。
 - hw-hub-mobile `fix/109-nav-label-i18n` はPR #15でオープン中（#109のclosesを含む）。りょこさんがマージ予定
 - hw-hub-mobile `feature/91-purchased-swipe` はPR #16でオープン中（#91のclosesを含む）。PR #14マージ後にbaseをmainに変更してからマージ可能
 - hw-hub-mobile `feature/87-mobile-housework-assign` はPR #18でオープン中（#87・#110・#111・#112・#115のclosesを含む）。りょこさんがマージ予定
+- hw-hub-mobile `feature/113-mobile-housework-assign-button-layout` はPR #19でオープン中（#113のclosesを含む）。りょこさんがマージ予定
+- hw-hub-mobile `feature/114-mobile-housework-assign-swipe-ux` はPR #20でオープン中（#114のclosesを含む）。りょこさんがマージ予定
 - reviewer起動前に `git diff --name-only` で変更ファイル一覧をSMが取得してプロンプトに含めること（Sprint 36 Retro追加）
 - **モバイルのUI変更はDEVの完了報告だけでAC達成とみなさない。りょこさんの実機確認を一次確認とする**（Sprint 37 #98でAC未達成が実機確認で発覚）
 - **reviewerの指摘は実ファイルを確認してから対応要否を判断すること**（Sprint 38でconvention-reviewerが実装済みコードを誤指摘）
+- **スワイプ方向は同一画面内で統一されているか必ず確認すること**（Sprint 41でスワイプモードと通常リストモードの方向不統一が発覚 #116）
+- **スワイプモードカードはOverdueデータを含むケースでの表示確認を必ず行うこと**（Sprint 41でOVERFLOWが発覚 #117）
+- **UserAvatarはプロフィール画像登録済みユーザでの表示確認を必ず行うこと**（Sprint 41でアイコン画像未表示が発覚 #118）

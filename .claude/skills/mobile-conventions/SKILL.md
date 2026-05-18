@@ -247,6 +247,55 @@ UserAvatar(
 
 > **背景（Sprint 40 #112）**: 担当者バッジがテキストラベルのみで実装されており、アイコン表示に対応していなかった。`core/ui/user_avatar.dart` として共通ウィジェットを新規作成し、担当者バッジ・メンバーサマリの両方から参照する構成にした。
 
+### テキストの overflow 対応（必須）
+
+カード内・固定幅コンテナ内に表示するテキストは、コンテンツが長い場合にはみ出しが発生する。以下のパターンで overflow を設定すること。
+
+```dart
+// NG: overflow 未指定 → 長い文字列で画面外にはみ出す
+Text(task.title)
+
+// OK: ellipsis で末尾を省略
+Text(
+  task.title,
+  overflow: TextOverflow.ellipsis,
+  maxLines: 1,
+)
+
+// OK: 複数行に折り返す（タイトル等）
+Text(
+  task.title,
+  softWrap: true,
+  maxLines: 2,
+  overflow: TextOverflow.ellipsis,
+)
+```
+
+適用すべき場面:
+- カード内のタイトル・サブタイトル
+- `Overdue` / 期限ラベルなど状態バッジの隣のテキスト
+- Row の中に配置された `Text`（親が固定幅または `Expanded` でない場合）
+
+`Row` の中の `Text` がはみ出す場合は `Expanded` または `Flexible` で囲む：
+
+```dart
+Row(
+  children: [
+    const Icon(Icons.warning, size: 14),
+    const SizedBox(width: 4),
+    Expanded(
+      child: Text(
+        label,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+    ),
+  ],
+)
+```
+
+> **背景（Sprint 41 レビュー）**: Overdue ラベルを含む Row 内のテキストが `overflow` 未指定で画面外にはみ出していた。
+
 ### リスト生成時の key 付与（必須）
 
 `items.map((item) => ...)` でウィジェットを生成する際は、最外ウィジェットに必ず `key: ValueKey(item.uniqueId)` を付与すること。
@@ -652,3 +701,42 @@ flutter test
 - webのSP版と異なる実装が必要な場合は、specに明示的に記載する
 
 > **背景（Sprint 26 Retro）**: 積み上げ棒グラフの未割当の表示順序など、specに記載がなかった要素がwebと異なっていたことがSprint Reviewで指摘された。
+
+---
+
+## 12. 外部パッケージ採用実績
+
+### table_calendar（読み取り専用カレンダー）
+
+カレンダー表示が必要な場合は `table_calendar` パッケージを使う（自作しない）。
+
+```yaml
+# pubspec.yaml
+dependencies:
+  table_calendar: ^3.x.x
+```
+
+**読み取り専用カレンダーの実装パターン**（タップ・月遷移を無効化して特定日をハイライトするだけ）:
+
+```dart
+TableCalendar(
+  firstDay: DateTime.utc(2020, 1, 1),
+  lastDay: DateTime.utc(2030, 12, 31),
+  focusedDay: targetDate,                       // 表示する月をここで制御
+  selectedDayPredicate: (day) =>
+      isSameDay(day, targetDate),               // ハイライトする日
+  // タップ・スワイプ無効化
+  onDaySelected: null,                          // タップ無効
+  availableGestures: AvailableGestures.none,   // スワイプ無効
+  headerStyle: const HeaderStyle(
+    formatButtonVisible: false,                 // 週/月切替ボタン非表示
+    leftChevronVisible: false,                  // 前月ボタン非表示
+    rightChevronVisible: false,                 // 次月ボタン非表示
+  ),
+)
+```
+
+- `focusedDay` を親ウィジェットの props として受け取り、カード変更時に親が再描画するだけで月フォーカスが自動更新される
+- 読み取り専用ラッパーとして `SwipeDateCalendar` のような専用ウィジェットに切り出すと再利用しやすい
+
+> **背景（Sprint 41 #114 AC3）**: スワイプモードのカード上部に対象日をカレンダー表示するために導入。りょこさんの確認で「自作しない・`table_calendar` を使う」方針が承認された。
