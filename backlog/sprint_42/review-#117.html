@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 42 Review — #117 スワイプモードのOverdueカードがレイアウトオーバーフローしている</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* モックカード */
+  .mock-phone { background: #f3f4f6; border-radius: 12px; padding: 12px; }
+  .mock-phone-header { background: #1e293b; border-radius: 6px 6px 0 0; height: 28px; display: flex; align-items: center; padding: 0 10px; }
+  .mock-phone-header-dot { width: 6px; height: 6px; border-radius: 50%; background: #64748b; margin-right: 4px; }
+  .mock-screen { background: #f8f7f5; min-height: 240px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .mock-calendar { background: #e2e8f0; border-radius: 6px; height: 110px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #64748b; }
+  .mock-card-swipe { background: white; border-radius: 10px; padding: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .mock-card-name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .mock-card-date-normal { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+  .mock-card-date-overdue { font-size: 12px; color: #dc2626; background: #fef2f2; padding: 2px 6px; border-radius: 3px; font-weight: 600; margin-bottom: 8px; display: inline-block; }
+  .mock-card-assignee { font-size: 12px; color: #374151; }
+  .overflow-error { background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 4px; padding: 6px 10px; font-size: 11px; color: #b91c1c; font-weight: 600; text-align: center; margin-top: 4px; }
+  .no-overflow-ok { background: #f0fdf4; border: 1px dashed #86efac; border-radius: 4px; padding: 6px 10px; font-size: 11px; color: #166534; font-weight: 600; text-align: center; margin-top: 4px; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .layout-diagram { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: 12px; }
+  .layout-diagram .block { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 6px 10px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+  .layout-diagram .block-large { background: #fef2f2; border: 1px solid #fca5a5; }
+  .layout-diagram .block-overflow { background: #fef2f2; border: 2px dashed #ef4444; color: #b91c1c; font-weight: 600; }
+  .block-size { font-size: 11px; color: #6b7280; }
+  .block-size-bad { color: #b91c1c; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 42 Review · Bug Fix</div>
+  <h1>#117 — 家事割り当て画面のスワイプモードの<br>Overdueカードがレイアウトオーバーフローしている</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 42</span>
+    <span class="badge badge-issue">#117</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-phone">
+          <div class="mock-phone-header">
+            <div class="mock-phone-header-dot"></div>
+            <div class="mock-phone-header-dot"></div>
+            <div class="mock-phone-header-dot"></div>
+          </div>
+          <div class="mock-screen">
+            <div class="mock-calendar">カレンダー（約 110px）</div>
+            <div class="mock-card-swipe">
+              <div class="mock-card-name">お風呂掃除</div>
+              <div class="mock-card-date-normal" style="color:#6b7280;">実施日: 2026-05-10</div>
+              <div class="overflow-error">BOTTOM OVERFLOWED BY 23 PIXELS</div>
+              <div class="mock-card-assignee">現在の担当: 未割当</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#b91c1c;margin-top:8px;font-weight:600;">「実施日」と「現在の担当」の間にオーバーフローエラーが表示。Overdueカードのみ発生。</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-phone">
+          <div class="mock-phone-header">
+            <div class="mock-phone-header-dot"></div>
+            <div class="mock-phone-header-dot"></div>
+            <div class="mock-phone-header-dot"></div>
+          </div>
+          <div class="mock-screen">
+            <div class="mock-calendar">カレンダー（約 110px）</div>
+            <div class="mock-card-swipe">
+              <div class="mock-card-name">お風呂掃除</div>
+              <div class="mock-card-date-overdue">実施日: 2026-05-10</div>
+              <div class="mock-card-assignee">現在の担当: 未割当</div>
+              <div class="no-overflow-ok">オーバーフローなし</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#166534;margin-top:8px;font-weight:600;">オーバーフローが解消。Overdueの実施日は赤背景・赤文字で表示（MyTasks画面と同デザイン）。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">カード内コンテンツが固定高さの Expanded 領域に収まりきらないレイアウト構造</span>
+      </div>
+      <div class="cause-body">
+        <p>スワイプモード画面はカレンダー（Sprint 41 #114 で追加、約 350px）が上部を占有するため、その下の <code>Expanded</code> に割り当てられる高さは限られる。<code>SwipeModeCard</code> の内部コンテンツ（<code>Column</code>）は <code>mainAxisSize: MainAxisSize.min</code> で最小高さにしていたが、<code>margin: EdgeInsets.all(24)</code> と <code>padding: EdgeInsets.all(24)</code> の余白（合計 96px）を加えるとコンテンツ全体が Expanded の残り高を超え、23px はみ出ていた。</p>
+        <p>さらに、Overdue タスクの視覚的な表現（実施日の赤字・薄赤背景）が実装されておらず、MyTasks 画面の「過去の家事」カードとデザインが揃っていなかった。</p>
+        <div class="layout-diagram">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:8px;font-weight:600;">修正前のレイアウト高さ内訳（問題発生時）</div>
+          <div class="block block-large">カレンダー（SwipeDateCalendar）<span class="block-size block-size-bad">&#8776; 350px</span></div>
+          <div class="block">SwipeModeCard margin (top: 24px)<span class="block-size">24px</span></div>
+          <div class="block">SwipeModeCard padding (top: 24px)<span class="block-size">24px</span></div>
+          <div class="block">タスク名 + 実施日テキスト<span class="block-size">&#8776; 60px</span></div>
+          <div class="block block-overflow">担当者テキスト（Expanded の外にはみ出す）<span class="block-size block-size-bad">23px オーバー</span></div>
+          <div class="block">SwipeModeCard margin + padding (bottom: 24+24px)<span class="block-size">48px</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <div style="font-size:13px;color:#4b5563;margin-bottom:16px;padding:12px 14px;background:white;border:1px solid #e5e5e5;border-radius:8px;">
+      <strong style="display:block;margin-bottom:4px;">改修方針</strong>
+      1. <strong>オーバーフロー解消</strong>: <code>SwipeModeCard</code> のコンテンツ Column を <code>SingleChildScrollView</code> でラップして縦スクロール可能にする<br>
+      2. <strong>Overdue 表示追加</strong>: <code>targetDate</code> が今日より前であれば薄赤背景・赤文字で実施日を装飾（MyTasks の <code>SwipeableTaskCard(isPast:true)</code> と統一）
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/widgets/swipe_mode_card.dart</span>
+        <span class="diff-stat">修正 1: SingleChildScrollView でラップ</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num"> 89</span><span class="line-prefix"> </span><span>      child: Container(</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 90</span><span class="line-prefix"> </span><span>        width: double.infinity,</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 91</span><span class="line-prefix"> </span><span>        margin: const EdgeInsets.all(24),</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 92</span><span class="line-prefix"> </span><span>        padding: const EdgeInsets.all(24),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">103</span><span class="line-prefix"> </span><span>        // ...</span></div>
+        <div class="code-line line-del"><span class="line-num">104</span><span class="line-prefix">-</span><span>        child: Column(</span></div>
+        <div class="code-line line-del"><span class="line-num">105</span><span class="line-prefix">-</span><span>          mainAxisSize: MainAxisSize.min,</span></div>
+        <div class="code-line line-del"><span class="line-num">106</span><span class="line-prefix">-</span><span>          crossAxisAlignment: CrossAxisAlignment.start,</span></div>
+        <div class="code-line line-del"><span class="line-num">107</span><span class="line-prefix">-</span><span>          children: [</span></div>
+        <div class="code-line line-add"><span class="line-num">104</span><span class="line-prefix">+</span><span>        child: SingleChildScrollView(</span></div>
+        <div class="code-line line-add"><span class="line-num">105</span><span class="line-prefix">+</span><span>          child: Column(</span></div>
+        <div class="code-line line-add"><span class="line-num">106</span><span class="line-prefix">+</span><span>            mainAxisSize: MainAxisSize.min,</span></div>
+        <div class="code-line line-add"><span class="line-num">107</span><span class="line-prefix">+</span><span>            crossAxisAlignment: CrossAxisAlignment.start,</span></div>
+        <div class="code-line line-add"><span class="line-num">108</span><span class="line-prefix">+</span><span>            children: [</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>カード内コンテンツを <code>SingleChildScrollView</code> でラップすることで、画面高さが小さい端末でもコンテンツが切れずスクロール可能になる。Overdue 表示追加で高さが増えた際も自動的に対応できる構造。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/widgets/swipe_mode_card.dart</span>
+        <span class="diff-stat">修正 2: Overdue 判定と赤背景・赤文字スタイル</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-add"><span class="line-num"> 26</span><span class="line-prefix">+</span><span>    // Overdue 判定</span></div>
+        <div class="code-line line-add"><span class="line-num"> 27</span><span class="line-prefix">+</span><span>    final targetDate = DateTime.tryParse(task.targetDate);</span></div>
+        <div class="code-line line-add"><span class="line-num"> 28</span><span class="line-prefix">+</span><span>    final now = DateTime.now();</span></div>
+        <div class="code-line line-add"><span class="line-num"> 29</span><span class="line-prefix">+</span><span>    final today = DateTime(now.year, now.month, now.day);</span></div>
+        <div class="code-line line-add"><span class="line-num"> 30</span><span class="line-prefix">+</span><span>    final isOverdue =</span></div>
+        <div class="code-line line-add"><span class="line-num"> 31</span><span class="line-prefix">+</span><span>        targetDate != null &amp;&amp;</span></div>
+        <div class="code-line line-add"><span class="line-num"> 32</span><span class="line-prefix">+</span><span>        DateTime(targetDate.year, targetDate.month, targetDate.day)</span></div>
+        <div class="code-line line-add"><span class="line-num"> 33</span><span class="line-prefix">+</span><span>            .isBefore(today);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">113</span><span class="line-prefix"> </span><span>              const SizedBox(height: 8),</span></div>
+        <div class="code-line line-add"><span class="line-num">114</span><span class="line-prefix">+</span><span>              // 実施日（Overdue の場合は赤背景・赤文字で装飾）</span></div>
+        <div class="code-line line-add"><span class="line-num">115</span><span class="line-prefix">+</span><span>              Container(</span></div>
+        <div class="code-line line-add"><span class="line-num">116</span><span class="line-prefix">+</span><span>                key: const Key('swipe_mode_card_date_container'),</span></div>
+        <div class="code-line line-add"><span class="line-num">117</span><span class="line-prefix">+</span><span>                color: isOverdue ? colorScheme?.paletteRoseSoft : null,</span></div>
+        <div class="code-line line-add"><span class="line-num">118</span><span class="line-prefix">+</span><span>                padding: isOverdue</span></div>
+        <div class="code-line line-add"><span class="line-num">119</span><span class="line-prefix">+</span><span>                    ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)</span></div>
+        <div class="code-line line-add"><span class="line-num">120</span><span class="line-prefix">+</span><span>                    : EdgeInsets.zero,</span></div>
+        <div class="code-line line-add"><span class="line-num">121</span><span class="line-prefix">+</span><span>                child: Text(</span></div>
+        <div class="code-line line-add"><span class="line-num">122</span><span class="line-prefix">+</span><span>                  l10n.houseworkAssignTargetDateLabel(task.targetDate),</span></div>
+        <div class="code-line line-add"><span class="line-num">123</span><span class="line-prefix">+</span><span>                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(</span></div>
+        <div class="code-line line-add"><span class="line-num">124</span><span class="line-prefix">+</span><span>                    color: isOverdue ? colorScheme?.paletteRoseText : null,</span></div>
+        <div class="code-line line-add"><span class="line-num">125</span><span class="line-prefix">+</span><span>                    fontWeight: isOverdue ? FontWeight.w600 : null,</span></div>
+        <div class="code-line line-add"><span class="line-num">126</span><span class="line-prefix">+</span><span>                  ),</span></div>
+        <div class="code-line line-add"><span class="line-num">127</span><span class="line-prefix">+</span><span>                ),</span></div>
+        <div class="code-line add"><span class="line-num">128</span><span class="line-prefix">+</span><span>              ),</span></div>
+        <div class="code-line line-del"><span class="line-num">—</span><span class="line-prefix">-</span><span>              Text(l10n.houseworkAssignTargetDateLabel(task.targetDate), ...</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>Overdue 判定は時刻を除いた日付比較（<code>DateTime(y, m, d)</code>）で行い、当日はOverdueに含めない。カラーは <code>AppColorScheme.paletteRoseSoft</code>（薄赤背景）と <code>AppColorScheme.paletteRoseText</code>（赤文字）で MyTasks の過去家事カードと同じデザイントークンを使用。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">「自分に割り当てる」「他メンバーのタスクを奪う」両スワイプモードで、OverdueカードのBOTTOM OVERFLOWEDエラーが表示されない</div>
+      </div>
+      <div class="ac-body">コンテンツを <code>SingleChildScrollView</code> でラップして縦オーバーフローを解消。両スワイプモードは同じ <code>SwipeModeCard</code> を使うため、1 ファイルの修正で両モードに適用済み。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">Overdueカードの実施日はMyTasks画面の「過去の家事」カードと同様に赤字・背景色が薄い赤で表示される</div>
+      </div>
+      <div class="ac-body"><code>targetDate</code> が今日（日付のみ比較）より前の場合、実施日テキストを <code>paletteRoseText</code>（赤文字）+ <code>paletteRoseSoft</code>（薄赤背景）で装飾。MyTasks の <code>SwipeableTaskCard(isPast:true)</code> で使用している同じカラートークンを採用し、デザインを統一した。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>「自分に割り当てる」スワイプモードで過去日付のタスクカードを開いてもオーバーフローエラーが表示されないこと</strong>
+          <span>「BOTTOM OVERFLOWED BY XX PIXELS」の黄色いバナーが出ないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「他メンバーのタスクを奪う」スワイプモードでも同様にオーバーフローエラーが出ないこと</strong>
+          <span>過去日付のタスクがある場合に同画面で確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>Overdueカードの実施日テキストが赤文字・薄赤背景で表示されること</strong>
+          <span>MyTasks画面の「過去の家事」カードの実施日表示と同じ見た目になっていることを比較確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>当日のタスクはOverdueにならないこと（赤字にならないこと）</strong>
+          <span>今日の日付のタスクは通常の文字色で表示されることを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>オーバーフローはウィジェットテストで自動検出が難しいため、実機確認と組み合わせる方針。Overdue 表示の正否はウィジェットテストで自動検証できるようにした。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/housework_assign/presentation/widgets/swipe_mode_card_test.dart（新規）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「targetDate が今日より前なら Overdue スタイルで実施日が表示される（Container に色が設定されている）」「今日以降なら通常スタイル（color が null）」の 2 ケースをテスト</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

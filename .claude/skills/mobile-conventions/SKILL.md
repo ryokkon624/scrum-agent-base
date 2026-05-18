@@ -189,7 +189,7 @@ Dismissible(
 )
 ```
 
-> **背景（Sprint 40 #115）**: `background` と `secondaryBackground` の中身を正しく設定していたが、`confirmDismiss` の `direction` 判定が逆になっており、右スワイプで削除・左スワイプで担当者変更が実行されていた。中身と判定は常にセットで確認すること。
+> **背景（Sprint 40 #115 / Sprint 42 #116）**: Sprint 40 では `confirmDismiss` の `direction` 判定が逆になっていた。Sprint 42 では `SwipeModeCard`（スワイプモード専用 Widget）の `background`/`secondaryBackground` 自体が逆に設定されており、同じパターンで再発した。通常の `Dismissible` に限らず、スワイプモード専用 Widget にも同じルールを適用すること。3点（`background`・`secondaryBackground`・`confirmDismiss` の `direction` 判定）は常にセットで確認する。
 
 ### 折り返しレイアウト（Wrap）vs 水平スクロール（ListView）
 
@@ -245,7 +245,7 @@ UserAvatar(
 - `displayName` が null（未割当） → 「未」ラベルの円を表示（Web 版踏襲）
 - `displayName` が非 null（割当済み） → イニシャル（最初の1文字）を表示
 
-> **背景（Sprint 40 #112）**: 担当者バッジがテキストラベルのみで実装されており、アイコン表示に対応していなかった。`core/ui/user_avatar.dart` として共通ウィジェットを新規作成し、担当者バッジ・メンバーサマリの両方から参照する構成にした。
+> **背景（Sprint 40 #112 / Sprint 42 #118）**: Sprint 40 でコア Widget として確立。Sprint 42 では新規画面（家事割り当て画面）で `assigneeIconUrl: null` をハードコードしたまま実装しており、プロフィール画像が常にイニシャル表示になっていた。**呼び出し元で `state.members.where((m) => m.userId == task.assigneeUserId).firstOrNull?.iconUrl` のように members から lookup して渡すこと。`iconUrl: null` のハードコードは「未割当表示」専用であり、割当済みユーザのアイコンに使ってはならない。**
 
 ### テキストの overflow 対応（必須）
 

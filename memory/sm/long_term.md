@@ -96,3 +96,4 @@
 | Sprint 38 | scrum-master-workflow | reviewerの指摘検証ルール追記（long_term.md） | convention-reviewerが実装済みコードを誤指摘するケースが複数スプリントで継続発生 |
 | Sprint 40 | mobile-conventions | Dismissibleスワイプ方向・Wrap折り返し・UserAvatar共通ウィジェットの3パターンを追加 | Sprint 39 Sprint Reviewで発覚したバグ（#110/#111/#112/#115）の修正で確立したパターンを規約化（DEV実施） |
 | Sprint 41 | mobile-conventions | テキストoverflow対応（必須）・table_calendar採用実績を追加 | Sprint 41 Sprint Reviewでスワイプモードカードのオーバーフロー指摘（#117）を受け規約化（DEV実施） |
+| Sprint 42 | mobile-conventions | Dismissibleスワイプ方向の背景事例にSprint 42 #116を追記・UserAvatar iconUrl:nullハードコード禁止ルールを強化 | 規約既存にもかかわらずSprint 40→42と同パターン再発。背景と禁止事項を強化（SM実施） |
