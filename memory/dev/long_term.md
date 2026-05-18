@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-18（Sprint 43 Retro）
+**最終更新**: 2026-05-18（Sprint 44 Retro）
 
 ---
 
@@ -30,10 +30,10 @@
 | `catch (_) {}` でエラーを握りつぶし                             | 34, 35, 43     | `rethrow` または `AppException` に変換。Notifier層は `on AppException catch (e)` で state に格納。StatefulWidget の event handler 内は AppSnackBar で汎用通知 |
 | i18n ハードコード（日本語・英語文字列をウィジェット内に直書き） | 33, 34, 37, 38 | ARB ファイルに定義して `AppLocalizations.of(context).key` を使う（`features/shell` の BottomNavigationBar ラベルも例外なく適用）|
 | `items.map()` で生成するウィジェットに `key` 未設定 | 38, 39 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
-| `build()` 内で重いループ・重複計算を毎フレーム実行 | 39 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`） |
+| `build()` 内で重いループ・重複計算を毎フレーム実行 | 39, 44 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`） |
 | IndexedStack 配下で一覧 Provider の invalidate 漏れ             | 35             | 詳細・作成画面での追加/削除/ステータス変更後に `ref.invalidate(一覧Provider)` |
 | `Dismissible` の `background`/`secondaryBackground` の中身と `confirmDismiss` の `direction` 判定が不一致（スワイプ方向逆） | 40, 41, 42 | 3箇所をセットで確認する。`background` → startToEnd（右スワイプ）、`secondaryBackground` → endToStart（左スワイプ）に対応 |
-| `Text` ウィジェットで長い文字列が画面外にはみ出す（Overdue ラベル・タイトル等） | 41 | `overflow: TextOverflow.ellipsis`（または `softWrap: true`）を設定する。特にカード内の固定幅コンテナ内のテキストは必須 |
+| `Text` ウィジェットで長い文字列が画面外にはみ出す（Overdue ラベル・タイトル等） | 41, 44 | `overflow: TextOverflow.ellipsis`（または `softWrap: true`）を設定する。特にカード内の固定幅コンテナ内のテキストは必須 |
 | ユーザーアイコン表示に `UserAvatar` 共通ウィジェットを使わずにテキストラベルで実装 | 40, 41 | `lib/core/ui/user_avatar.dart` の `UserAvatar` を使う。新機能でアイコン表示が必要なときに再実装しない |
 
 ### hw-hub-backend
@@ -167,3 +167,4 @@
 | Sprint 40 | mobile-conventions | Dismissible スワイプ方向修正パターン・Wrap折り返し・UserAvatar共通ウィジェットを追記 | Sprint 40 バグ修正（#115/#111/#112）で確立した設計パターン |
 | Sprint 41 | mobile-conventions | Overdue テキスト overflow 対応ルール・table_calendar 読み取り専用カレンダーパターンを追記 | Sprint 41 レビュー指摘（Overdue オーバーフロー）・#114 実装で確立 |
 | Sprint 43 | mobile-conventions | エラーハンドリングルールに StatefulWidget event handler 内パターンを追記 | #119 レビュー指摘（StatefulWidget 内での `catch (_) {}` 握りつぶし） |
+| Sprint 44 | （更新なし）       | —                                                                        | Sprint 44 の指摘はいずれも既存ルール（`overflow: TextOverflow.ellipsis` / Notifier 事前計算）に既に記載があるため新規追記不要。繰り返し指摘パターンの発生スプリント欄に 44 を追記のみ |

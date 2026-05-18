@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 44 Review — #120 設定トップ画面を実装する（画面#17）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #ecfdf5; color: #065f46; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Screen mock */
+  .mock-phone { display: inline-flex; flex-direction: column; width: 280px; border: 1.5px solid #e5e5e5; border-radius: 16px; overflow: hidden; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .mock-appbar { background: white; border-bottom: 1px solid #f0f0f0; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .mock-title { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  .mock-actions { display: flex; align-items: center; gap: 8px; }
+  .mock-bell { width: 24px; height: 24px; background: #f0fdf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .mock-avatar { width: 28px; height: 28px; background: #065f46; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
+  .mock-body { padding: 12px; background: #f8f7f5; }
+  .mock-desc { font-size: 11px; color: #888; margin-bottom: 10px; }
+  .mock-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .mock-card-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .mock-card-icon-blue { background: #dbeafe; }
+  .mock-card-icon-green { background: #dcfce7; }
+  .mock-card-icon-amber { background: #fef3c7; }
+  .mock-card-icon-rose { background: #ffe4e6; }
+  .mock-card-icon-violet { background: #f3e8ff; }
+  .mock-card-icon-gray { background: #f3f4f6; }
+  .mock-card-text { flex: 1; }
+  .mock-card-title { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+  .mock-card-subtitle { font-size: 10px; color: #888; }
+  .mock-card-arrow { font-size: 12px; color: #aaa; }
+
+  /* card table */
+  .card-list-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+  .card-list-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card-list-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: middle; }
+  .card-list-table tr:hover td { background: #f9fafb; }
+  .icon-chip { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 44 Review</div>
+  <h1>#120 — 設定トップ画面を実装する（画面 #17）</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 44</span>
+    <span class="badge badge-issue">#120</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの実装が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">課題</div>
+      <p>ボトムナビの⚙️タブをタップしても <code>_P('設定')</code>（プレースホルダの仮テキスト）が表示されるだけで、設定画面群（アカウント設定・世帯設定・家事設定・通知センター・お問い合わせ・アプリ情報）への入口がなかった。Phase 3 Step 7 の設定画面群実装の起点として、設定トップ画面（#17）が必要だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>⚙️タブ → <code>_P('設定')</code>（仮テキスト）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>設定画面群への遷移導線なし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>Phase 3 Step 7 に進めない</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>⚙️タブ → <code>SettingsTopPage</code>（6カード表示）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>各カードタップで対応画面に遷移</div>
+        <div class="flow-item"><span class="dot dot-green"></span>#123 のユーザーアイコン「設定」からも遷移可能</div>
+      </div>
+    </div>
+
+    <!-- Screen mock -->
+    <div style="margin-top: 20px; text-align: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">実装後の設定トップ画面イメージ</div>
+      <div class="mock-phone" style="margin: 0 auto;">
+        <div class="mock-appbar">
+          <div class="mock-title">設定</div>
+          <div class="mock-actions">
+            <div class="mock-bell">&#128276;</div>
+            <div class="mock-avatar">田中</div>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-desc">アプリの設定・管理メニューです。</div>
+          <div class="mock-card">
+            <div class="mock-card-icon mock-card-icon-blue">&#128100;</div>
+            <div class="mock-card-text">
+              <div class="mock-card-title">アカウント設定</div>
+              <div class="mock-card-subtitle">プロフィール・パスワード...</div>
+            </div>
+            <div class="mock-card-arrow">›</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-icon mock-card-icon-green">&#127968;</div>
+            <div class="mock-card-text">
+              <div class="mock-card-title">世帯設定</div>
+              <div class="mock-card-subtitle">おうちの管理・メンバー...</div>
+            </div>
+            <div class="mock-card-arrow">›</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-icon mock-card-icon-amber">&#9999;&#65039;</div>
+            <div class="mock-card-text">
+              <div class="mock-card-title">家事設定</div>
+              <div class="mock-card-subtitle">家事マスタの登録・編集</div>
+            </div>
+            <div class="mock-card-arrow">›</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-icon mock-card-icon-rose">&#128276;</div>
+            <div class="mock-card-text">
+              <div class="mock-card-title">通知センター</div>
+              <div class="mock-card-subtitle">通知の一覧・既読化</div>
+            </div>
+            <div class="mock-card-arrow">›</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-icon mock-card-icon-violet">&#10067;</div>
+            <div class="mock-card-text">
+              <div class="mock-card-title">お問い合わせ</div>
+              <div class="mock-card-subtitle">サポートへの問い合わせ</div>
+            </div>
+            <div class="mock-card-arrow">›</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-icon mock-card-icon-gray">&#8505;&#65039;</div>
+            <div class="mock-card-text">
+              <div class="mock-card-title">アプリ情報</div>
+              <div class="mock-card-subtitle">バージョン・利用規約...</div>
+            </div>
+            <div class="mock-card-arrow">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">アカウント設定・世帯設定・家事設定・通知センター・お問い合わせ・アプリ情報の6カードが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>SettingsTopPage</code> と再利用可能な <code>SettingsCard</code> Widget を新規作成。Web 版 <code>SettingsCard.vue</code> のカード枠・アイコンバッジ・タイトル・サブタイトル・矢印の構成を踏襲。各カードに <code>key: ValueKey(...)</code> を付与し、将来的なリスト更新時のウィジェット状態混乱を防止。</p>
+
+        <table class="card-list-table">
+          <tr>
+            <th>順序</th>
+            <th>カード</th>
+            <th>アイコン色</th>
+            <th>サブタイトル</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>アカウント設定</td>
+            <td><span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:3px; font-size:11px;">paletteBlueSoft</span></td>
+            <td>プロフィール・パスワード...</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>世帯設定</td>
+            <td><span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:3px; font-size:11px;">paletteEmeraldSoft</span></td>
+            <td>おうちの管理・メンバー...</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>家事設定</td>
+            <td><span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:3px; font-size:11px;">paletteAmberSoft</span></td>
+            <td>家事マスタの登録・編集</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>通知センター</td>
+            <td><span style="background:#ffe4e6; color:#9f1239; padding:2px 6px; border-radius:3px; font-size:11px;">paletteRoseSoft</span></td>
+            <td>通知の一覧・既読化</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>お問い合わせ</td>
+            <td><span style="background:#f3e8ff; color:#7e22ce; padding:2px 6px; border-radius:3px; font-size:11px;">paletteVioletSoft</span></td>
+            <td>サポートへの問い合わせ</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>アプリ情報</td>
+            <td><span style="background:#f3f4f6; color:#6b7280; padding:2px 6px; border-radius:3px; font-size:11px;">surfaceSubtle</span></td>
+            <td>バージョン・利用規約...</td>
+          </tr>
+        </table>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/settings/presentation/settings_top/widgets/settings_card.dart</span>
+            <span class="diff-stat">+95 新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span>class SettingsCard extends StatelessWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>  const SettingsCard({</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    super.key,</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    required this.icon, required this.iconBgColor,</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>    required this.iconColor, required this.title,</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>    required this.subtitle, required this.onTap,</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>  });</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>  // ... InkWell + Container + Row(icon / text / arrow) ...</span></div>
+            <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>    Text(title,</span></div>
+            <div class="code-line line-add"><span class="line-num">61</span><span class="line-prefix">+</span><span>      overflow: TextOverflow.ellipsis, maxLines: 1,</span></div>
+            <div class="code-line line-add"><span class="line-num">62</span><span class="line-prefix">+</span><span>      style: ...),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>アイコン色はすべて <code>AppColorScheme</code> 拡張のパレットトークンから取得（<code>paletteBlueSoft</code>/<code>paletteEmeraldSoft</code> 等）。Web 版の <code>SettingsCard.vue</code> のカラースキームと対応させることで、将来の Web/Mobile デザイン同期が容易になる設計。タイトル <code>Text</code> には <code>overflow: TextOverflow.ellipsis</code> を指定済み（レビュー指摘対応済み）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">各カードのタップで対応画面に遷移する（順に #18 / #19 / #20 / #16 / #23 / #26）</div>
+      </div>
+      <div class="ac-body">
+        <p>各 <code>SettingsCard</code> の <code>onTap</code> に <code>context.go()</code> または <code>context.push()</code> を指定。通知センター（#16）のみ <code>context.push()</code>（シェルの外に出て全画面表示するため）、その他は <code>context.go()</code> でシェル内遷移。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/settings/presentation/settings_top/settings_top_page.dart（遷移部分）</span>
+            <span class="diff-stat"></span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>// #18 アカウント設定</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>onTap: () =&gt; context.go(AppRoutes.settingsAccount),</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>// #19 世帯設定</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>onTap: () =&gt; context.go(AppRoutes.settingsHousehold),</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>// #20 家事設定</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>onTap: () =&gt; context.go(AppRoutes.settingsHousework),</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>// #16 通知センター（push で遷移）</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>onTap: () =&gt; context.push(AppRoutes.notifications),</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>// #23 お問い合わせ</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>onTap: () =&gt; context.go(AppRoutes.settingsInquiries),</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>// #26 アプリ情報</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>onTap: () =&gt; context.go(AppRoutes.settingsAppInfo),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>通知センター（<code>/notifications</code>）は <code>StatefulShellRoute</code> の外（<code>app_router.dart</code> の <code>_routes</code> 直下）に配置されているため、<code>context.go()</code> では BottomNavigationBar が消えてしまう。<code>context.push()</code> を使うことでシェルを維持したまま遷移できる。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">ボトムナビの⚙️タブからアクセスできる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>app_router.dart</code> の <code>settings</code> ルートの <code>builder</code> を仮実装の <code>_P('設定')</code> から <code>SettingsTopPage()</code> に差し替えるだけで達成。ルーティング設定は既存のまま流用。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/app_router.dart</span>
+            <span class="diff-stat">+2 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">175</span><span class="line-prefix"> </span><span>          GoRoute(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">176</span><span class="line-prefix"> </span><span>            path: AppRoutes.settings,</span></div>
+            <div class="code-line line-del"><span class="line-num">177</span><span class="line-prefix">-</span><span>            builder: (_, _) =&gt; const _P('設定'),</span></div>
+            <div class="code-line line-add"><span class="line-num">177</span><span class="line-prefix">+</span><span>            builder: (_, _) =&gt; const SettingsTopPage(),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">178</span><span class="line-prefix"> </span><span>            routes: [</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>ルーティング定数（<code>AppRoutes.settings</code>）・BottomNavigationBar の⚙️タブとの紐付けは既存実装を流用。1行の差し替えでボトムナビからの導線が完成する。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>ボトムナビの⚙️タブをタップすると設定トップ画面が表示されること</strong>
+          <span>仮の「設定」テキストではなく、6つのカードが並んだ画面が表示される。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>ヘッダーに「設定」タイトルと通知ベル・ユーザーアイコンが表示されること</strong>
+          <span>#123 で実装した <code>MainAppBar</code> が使われていること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>6つのカードが正しい順序で表示されること</strong>
+          <span>アカウント設定 / 世帯設定 / 家事設定 / 通知センター / お問い合わせ / アプリ情報 の順。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>「通知センター」カードをタップすると通知センター画面（#16）に遷移すること</strong>
+          <span>ボトムナビが残った状態で通知センターが表示される（<code>push</code> 遷移のため戻るボタンが出る）。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>各カードのタイトルが長くても画面外にはみ出さないこと</strong>
+          <span>タイトルが長い場合は「...」で省略される（<code>overflow: TextOverflow.ellipsis</code> 適用済み）。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>#123 のユーザーアイコン「設定」タップでもこの画面に遷移すること</strong>
+          <span>ヘッダーのユーザーアイコン → ポップオーバー「設定」 → 設定トップ画面が表示される。</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>features/settings/presentation/settings_top/settings_top_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>設定トップ画面（ScrollView + 6カード + <code>MainAppBar</code>）</td>
+      </tr>
+      <tr>
+        <td><code>features/settings/presentation/settings_top/widgets/settings_card.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>再利用可能な設定カード Widget（アイコン・タイトル・サブタイトル・矢印・<code>InkWell</code>）</td>
+      </tr>
+      <tr>
+        <td><code>app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>settings ルートの builder を <code>_P('設定')</code> → <code>SettingsTopPage()</code> に差し替え</td>
+      </tr>
+      <tr>
+        <td><code>l10n/app_ja.arb</code> / <code>app_en.arb</code> / <code>app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり（#123 と共有）</span></td>
+        <td><code>settingsDescription</code>・6カード分の title/subtitle キーを追加</td>
+      </tr>
+      <tr>
+        <td><code>test/features/settings/presentation/settings_top/settings_top_page_test.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>6カードの表示確認・各カードタップのナビゲーションテスト</td>
+      </tr>
+      <tr>
+        <td>他の設定サブ画面（アカウント設定・世帯設定・家事設定・アプリ情報）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>各サブ画面は別 Issue で実装予定。本 Issue のスコープは設定トップのみ。</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

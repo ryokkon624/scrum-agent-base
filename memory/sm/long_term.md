@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-18（Sprint 41 Retro）
+**最終更新**: 2026-05-18（Sprint 44 Retro）
 
 ---
 
@@ -36,6 +36,7 @@
 - **reviewerの指摘は実ファイルを確認してから対応要否を判断する**: convention-reviewerが実装済みコードを「未実装」と誤報告するケースが複数スプリントで発生（Sprint 38も#109で発生）。指摘を受けたらSMが実ファイルを確認し、実装済みであればスコープ外として対応不要と判断する
 - 指摘対応後は必ず再レビューを実施してから Sprint Review に進む。省略禁止
 - 横展開確認でスコープ外問題を発見した場合は即 Issue 化する
+- **複数ブランチにまたがる実装の場合、修正が含まれるブランチをreviewerに明示すること（Sprint 44で発生）**: 例えばIssue Aの修正が `feature/A-xxx` にのみあり `feature/B-xxx` にない場合、「Issue Aの修正は `feature/A-xxx` ブランチで確認してください」と明示しないとreviewerが誤って未修正と判断する
 
 ### Sprint Review / Retro
 
@@ -98,3 +99,4 @@
 | Sprint 41 | mobile-conventions | テキストoverflow対応（必須）・table_calendar採用実績を追加 | Sprint 41 Sprint Reviewでスワイプモードカードのオーバーフロー指摘（#117）を受け規約化（DEV実施） |
 | Sprint 42 | mobile-conventions | Dismissibleスワイプ方向の背景事例にSprint 42 #116を追記・UserAvatar iconUrl:nullハードコード禁止ルールを強化 | 規約既存にもかかわらずSprint 40→42と同パターン再発。背景と禁止事項を強化（SM実施） |
 | Sprint 43 | mobile-conventions | StatefulWidget event handler内エラーハンドリングパターン追記（DEV）・バックエンドキー値とARBキー突き合わせ確認ルール追記（SM） | catch(_)握りつぶしがSprint 43でも2件発生・Sprint Review指摘#124（i18nキー不一致）を受けて追記 |
+| Sprint 44 | scrum-master-workflow | 複数ブランチにまたがる実装でreviewerに修正含有ブランチを明示する注意事項を追加（SM） | `feature/120`ブランチに`housework_assign`修正が含まれていないことに気づかずperformance-reviewerが「未修正」と誤判断した実績 |
