@@ -29,7 +29,8 @@
 | マジックストリング（status/flag値を `'0'`/`'1'` で直接比較）    | 34, 35         | `core/models/` の生成済み enum（`ShoppingItemStatus.xxx.code`）を使う         |
 | `catch (_) {}` でエラーを握りつぶし                             | 34, 35         | `rethrow` または `AppException` に変換                                        |
 | i18n ハードコード（日本語・英語文字列をウィジェット内に直書き） | 33, 34, 37, 38 | ARB ファイルに定義して `AppLocalizations.of(context).key` を使う（`features/shell` の BottomNavigationBar ラベルも例外なく適用）|
-| `items.map()` で生成するウィジェットに `key` 未設定 | 38 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
+| `items.map()` で生成するウィジェットに `key` 未設定 | 38, 39 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
+| `build()` 内で重いループ・重複計算を毎フレーム実行 | 39 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`） |
 | IndexedStack 配下で一覧 Provider の invalidate 漏れ             | 35             | 詳細・作成画面での追加/削除/ステータス変更後に `ref.invalidate(一覧Provider)` |
 
 ### hw-hub-backend
@@ -120,6 +121,8 @@
 - Notifier 層のエラーハンドリングは `on AppException catch (e)` でメッセージを state に格納し、予期しない例外は汎用メッセージを格納する（空ボディの `catch (_) {}` は禁止。rethrow は Riverpod に吸収されるだけで UI に反映されない）（Sprint 36 で確立・横展開完了）
 - `enableSwipe: bool = true` のようなオプションパラメータを既存ウィジェットに追加することで、後続 feature で同ウィジェットを「スワイプ無効カード」として再利用できる（Sprint 37 #90: SwipeableShoppingCard を purchased_tab でも流用）。既存 API を拡張することで UI 一貫性を維持しつつコードを共有する設計パターンとして有効
 - `items.map((item) => ...)` で生成するウィジェットには必ず `key: ValueKey(item.uniqueId)` を最外ウィジェットに付与すること。`Dismissible` はもともと `key` 必須だが、その外側の `Padding` にも同じ key を付けないとスワイプ後のリスト更新時にウィジェット状態が意図しない要素に紐づいたままになる（Sprint 38 レビュー指摘）
+- `build()` メソッド内で O(n×m) の集計や同一フィルタの複数回呼び出しを行うとフレームごとに無駄な計算が走る。タスク数カウントのような集計は Notifier の操作完了後（`_computeMemberTaskCounts()` 等）に一度だけ計算して `Map<int, int>` として state に持たせ、ウィジェットは `state.memberTaskCounts[memberId]` で参照するだけにするのがFlutter のパフォーマンスベストプラクティス（Sprint 39 レビュー指摘）
+- スワイプモード中にリストが動的に変化する場合、スワイプ開始時のタスク数スナップショット（`swipeTaskCount`）を state に持つことでスワイプモードの早期終了を防げる。完了件数のカウントは動的リストの長さではなくスナップショットとの差分で計算する設計が堅牢
 
 ### hw-hub-backend
 
@@ -144,3 +147,4 @@
 | Sprint 36 | mobile-conventions | Notifier層エラーハンドリングパターン追記 | #99 全 Notifier への AppSnackBar 横展開で確立（`on AppException → state 格納`） |
 | Sprint 37 | （更新なし）       | —                                        | i18nハードコード禁止はすでに記載済みのため Skill 更新不要（long_term.md の繰り返し指摘パターンに 37 を追記）|
 | Sprint 38 | mobile-conventions | `items.map()` の key 付与ルール追記      | レビュー指摘（スワイプリストで ValueKey 未設定によるウィジェット状態混乱）|
+| Sprint 39 | mobile-conventions | `build()` 内の重い計算を Notifier 事前計算に移す指針を追記 | レビュー指摘（O(n×m) ループを build() 毎フレーム実行していた実績） |

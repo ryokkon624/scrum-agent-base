@@ -182,6 +182,57 @@ items.map((item) => Padding(
 `Dismissible` は `key` が必須だが、その外側の `Padding` 等にも同じ key を付与しないと `setState` や `invalidate` 後にウィジェット状態が意図しない要素に紐づいたままになる。
 
 > **背景（Sprint 38 Review）**: `purchased_tab.dart` の `items.map()` で `Padding` に key を付与しておらず、スワイプ後のリスト更新時にウィジェット状態が混乱する可能性を指摘された。
+> **Sprint 39**: `member_picker_bottom_sheet` / `member_summary_strip` でも同様の指摘。`members.map()` のような別モデルのリスト生成でも同様に適用すること。
+
+### build() 内の重い計算を Notifier 側で事前計算する（パフォーマンス必須）
+
+`build()` メソッドはフレームごとに呼ばれる。O(n×m) の集計・同一フィルタの複数回呼び出しは `build()` 内に書かない。
+
+```dart
+// NG: build() 内で毎フレーム O(n × m) のループを実行
+Widget build(BuildContext context, WidgetRef ref) {
+  final state = ref.watch(houseworkAssignNotifierProvider).valueOrNull;
+  return Row(
+    children: state!.members.map((m) {
+      // tasks.where(...).toList() を毎フレーム実行
+      final count = state.tasks.where((t) => t.assigneeId == m.memberId).length;
+      return _SummaryChip(member: m, count: count);
+    }).toList(),
+  );
+}
+
+// OK: Notifier 側で事前計算し Map として state に持たせる
+// housework_assign_notifier.dart 側
+Map<int, int> _computeMemberTaskCounts(List<HouseworkTask> tasks) {
+  final counts = <int, int>{};
+  for (final task in tasks) {
+    if (task.assigneeId != null) {
+      counts[task.assigneeId!] = (counts[task.assigneeId!] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+// state に memberTaskCounts: Map<int, int> を持たせ、
+// tasks が変化するたびに _computeMemberTaskCounts() を呼んで更新する
+
+// ウィジェット側
+Widget build(BuildContext context, WidgetRef ref) {
+  final state = ref.watch(houseworkAssignNotifierProvider).valueOrNull;
+  return Row(
+    children: state!.members.map((m) {
+      final count = state.memberTaskCounts[m.memberId] ?? 0; // O(1)参照
+      return _SummaryChip(member: m, count: count);
+    }).toList(),
+  );
+}
+```
+
+適用すべき場面:
+- `items.where(条件).length` を `build()` 内の `map()` の中で呼んでいる場合
+- 同じ `where().toList()` を `build()` 内で複数回呼んでいる場合
+- `DTO.copyWith()` が使えるのに全フィールドを明示して再生成している場合（可読性・保守性）
+
+> **背景（Sprint 39 Review）**: `MemberSummaryStrip.build()` でメンバーごとにタスク数を `tasks.where(...).length` で計算していた。O(メンバー数 × タスク数) のループが毎フレーム走るため、Notifier 側で `_computeMemberTaskCounts()` として事前計算し `Map<int, int>` を state に持たせる改修を行った。
 
 ---
 
