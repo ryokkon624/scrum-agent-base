@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-19（Sprint 45 Retro）
+**最終更新**: 2026-05-19（Sprint 47 Retro）
 
 ---
 
@@ -71,6 +71,9 @@
 - **DEVのスコープクリープ**: ACに明記されていない動作を自己判断で含めることがある。計画フェーズでACが曖昧な箇所を事前確認する
 - **ShellレベルUIの実機未確認**: GoRouterのShellRoute外にpushした画面でのBottomNavBar/HouseholdIndicatorBar表示状態は実機でないと分からない。route判定実装前に「そもそも表示されているか」をりょこさんに確認する（Sprint 37 #98でAC未達成が発覚）
 - **複合画面でAPIの副作用とUI反映の連動確認漏れ**: 複数APIを組み合わせる複合画面（アカウント設定等）で、「アップロード後の再フェッチ」「ON/OFFの副作用がDBにどう反映されるか」「連携後のDB状態とUI表示の同期」がACに明記されないまま実装され、Sprint Reviewで3件のbugが発覚（Sprint 45: #127/#128/#129）。計画フェーズでACに「APIの副作用とUI反映の連動」を明示する
+- **空状態（0件）ハンドリング漏れ**: 一覧画面でデータが0件の場合に「読み込み中」が表示され続ける（Sprint 47: #145）。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースをACに明記し、実装チェックリストで確認する
+- **フォームのState更新とUI（TextEditingController）反映の切り離し**: テンプレート選択・既存データ読み込みでStateは更新されているが`TextEditingController.text`への反映が漏れ、画面に表示されない（Sprint 47: #146）。複数フィールドがある場合は全フィールドの横展開確認が必要
+- **日付の月・日組み合わせ整合性バリデーション漏れ**: 月次繰り返し設定で存在しない日付（2月30日等）を入力して保存できる（Sprint 47: #147）。`DateTime(year, month, day).month == month`チェックを必須化
 
 ---
 
@@ -105,3 +108,5 @@
 | Sprint 43 | mobile-conventions | StatefulWidget event handler内エラーハンドリングパターン追記（DEV）・バックエンドキー値とARBキー突き合わせ確認ルール追記（SM） | catch(_)握りつぶしがSprint 43でも2件発生・Sprint Review指摘#124（i18nキー不一致）を受けて追記 |
 | Sprint 44 | scrum-master-workflow | 複数ブランチにまたがる実装でreviewerに修正含有ブランチを明示する注意事項を追加（SM） | `feature/120`ブランチに`housework_assign`修正が含まれていないことに気づかずperformance-reviewerが「未修正」と誤判断した実績 |
 | Sprint 45 | sm/long_term.md | DEV指摘傾向に「dynamic型乱用」「AutoDispose未設定」「テスト日本語直接検証」を追記。Sprint Review発覚パターンに「複合画面のAPI副作用とUI反映の連動確認漏れ」を追記（SM） | Sprint 45 Sprint Reviewで3件のbugが発覚（#127/#128/#129）。複合画面の設計上の盲点として記録 |
+| Sprint 47 | mobile-conventions | 空状態ハンドリングルール（4ケースチェックリスト）・フォームUI反映漏れ防止ルール（TextEditingController横展開）・月日整合性バリデーションルールの3セクション追記（DEV実施） | Sprint 47 Sprint Reviewで3件のbugが発覚（#145/#146/#147）。一覧画面・フォーム画面の実装盲点として記録 |
+| Sprint 47 | sm/long_term.md | Sprint Review発覚パターンに空状態ハンドリング漏れ・TextEditingController反映漏れ・日付バリデーション漏れの3パターンを追記（SM） | Sprint 47 Sprint Reviewで発覚した3件のbugを記録 |

@@ -354,6 +354,112 @@ items.map((item) => Padding(
 > **背景（Sprint 38 Review）**: `purchased_tab.dart` の `items.map()` で `Padding` に key を付与しておらず、スワイプ後のリスト更新時にウィジェット状態が混乱する可能性を指摘された。
 > **Sprint 39**: `member_picker_bottom_sheet` / `member_summary_strip` でも同様の指摘。`members.map()` のような別モデルのリスト生成でも同様に適用すること。
 
+### 空状態（0件）とローディング中を必ず区別する（必須）
+
+一覧画面の `AsyncValue` ハンドリングでは、`data` が空リストの場合に空状態ウィジェットを表示すること。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースをすべて実装する。
+
+```dart
+// NG: data が空のときにローディングと同じ表示になる（0件なのに「読み込み中」が消えない）
+Widget build(BuildContext context, WidgetRef ref) {
+  final state = ref.watch(houseworkListNotifierProvider);
+  return state.when(
+    loading: () => const CircularProgressIndicator(),
+    error: (e, _) => ErrorWidget(e),
+    data: (items) => items.isEmpty
+        ? const CircularProgressIndicator()  // ← NG: loading と同じ扱い
+        : ListView.builder(...),
+  );
+}
+
+// OK: 0件は専用の空状態ウィジェットを表示する
+Widget build(BuildContext context, WidgetRef ref) {
+  final state = ref.watch(houseworkListNotifierProvider);
+  return state.when(
+    loading: () => const CircularProgressIndicator(),
+    error: (e, _) => ErrorWidget(e),
+    data: (items) => items.isEmpty
+        ? const _EmptyState()   // ← OK: 「家事がまだ登録されていません」等の空状態
+        : ListView.builder(...),
+  );
+}
+```
+
+実装チェックリスト（一覧画面を実装するたびに確認）:
+- [ ] `loading:` → ローディングインジケーター
+- [ ] `error:` → エラー表示
+- [ ] `data:` + `items.isEmpty` → 空状態ウィジェット（EmptyState）
+- [ ] `data:` + `items.isNotEmpty` → 一覧表示
+
+> **背景（Sprint 47 #136 Sprint Review）**: 家事設定一覧画面で家事が0件の場合に `CircularProgressIndicator` が表示され続けた。`data` が空リストであっても `loading` と同じ表示になっていた。
+
+### フォームにテンプレートや既存データから値を流し込む際の反映チェック
+
+テンプレート選択・既存データ読み込みなどで State を一括更新する場合、`TextEditingController.text` への反映も必ずセットで行うこと。State の更新だけでは、`TextEditingController` をベースにしたウィジェット（`TextFormField` 等）の表示が更新されない。
+
+また、フォーム内に複数フィールドがある場合は**全フィールドが反映されているか**を横展開で確認すること。
+
+```dart
+// NG: State だけ更新して TextEditingController を更新しない
+void applyTemplate(HouseworkTemplate template) {
+  state = state.copyWith(name: template.name);  // State は更新される
+  // _nameController.text = template.name; ← これを忘れると画面に反映されない
+}
+
+// OK: State と TextEditingController を必ず両方更新する
+void applyTemplate(HouseworkTemplate template) {
+  state = state.copyWith(
+    name: template.name,
+    description: template.description,  // 全フィールドを横展開
+  );
+  _nameController.text = template.name;
+  _descriptionController.text = template.description ?? '';  // 横展開
+}
+```
+
+横展開チェックリスト（テンプレート/既存データ反映を実装するとき）:
+- [ ] 名前（name）フィールドが反映されているか
+- [ ] 説明（description）などの補助フィールドも反映されているか
+- [ ] 各 `TextEditingController.text` への代入が全フィールド分あるか
+
+> **背景（Sprint 47 #137 Sprint Review）**: テンプレート選択時に家事名が画面に反映されなかった（画面非表示だがDB登録はされていた）。State の更新はできていたが、`_nameController.text = ...` への反映が漏れていた。説明欄も同様のリスクがあることが横展開確認で判明した。
+
+### 月と日を個別に入力するフォームの日付整合性バリデーション
+
+「繰り返し設定」「有効期間」など、月と日を個別入力するフォームでは**存在しない日付**（例: 2月30日、4月31日）を弾くバリデーションを必ず実装すること。
+
+Dart の `DateTime` は無効な日付を自動繰り越しするため、`DateTime(year, month, day).month == month` で存在チェックできる。
+
+```dart
+// 月末日チェック（month と day の組み合わせが実在する日付か確認する）
+bool isValidDayForMonth(int month, int day) {
+  // 閏年に依存しない固定年（例: 2000年など閏年）を使うか、
+  // 現在年を使ってチェックする
+  final date = DateTime(2000, month, day);  // 2000年は閏年（2月29日も有効）
+  return date.month == month;
+}
+
+// 利用例（保存ボタン押下時）
+bool _validate() {
+  if (recurrenceType == RecurrenceType.monthly) {
+    if (!isValidDayForMonth(selectedMonth, selectedDay)) {
+      // 「指定した月に存在しない日付です」等のエラーを表示
+      state = state.copyWith(errorMessage: 'invalidDayForMonth');
+      return false;
+    }
+  }
+  return true;
+}
+```
+
+適用すべき場面:
+- 月次繰り返しで「毎月N日」を入力するフォーム
+- 有効期間の「開始日」「終了日」で月・日を個別入力するフォーム
+- 誕生日など「月」「日」を別フィールドで入力するフォーム
+
+**注意**: 「月末」を `dayOfMonth=31` 等の特殊値で表現している場合（バックエンド仕様）は、特殊値を除外してからチェックすること。
+
+> **背景（Sprint 47 #138 Sprint Review）**: 家事編集画面の月次繰り返し日設定で、2月30日などを入力した状態で保存ボタンが押下できた。フロント側に月・日の組み合わせ整合性バリデーションがなかった。
+
 ### build() 内の重い計算を Notifier 側で事前計算する（パフォーマンス必須）
 
 `build()` メソッドはフレームごとに呼ばれる。O(n×m) の集計・同一フィルタの複数回呼び出しは `build()` 内に書かない。
