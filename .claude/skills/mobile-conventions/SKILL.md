@@ -385,6 +385,28 @@ Widget build(BuildContext context, WidgetRef ref) {
 - グローバルに参照する Provider は `{feature}_providers.dart` または `core/di/providers.dart` に置く
 - `ref.watch` は build メソッド内のみ。ハンドラ内では `ref.read` を使う
 
+### AutoDispose の設定ルール（重要）
+
+画面固有の `AsyncNotifierProvider` / `NotifierProvider` には原則 `autoDispose` を付与すること。付与しないとユーザーが画面を離れてもプロバイダーがメモリに残り続ける。
+
+```dart
+// NG: autoDispose なし → 画面離脱後もメモリに残る
+final accountSettingsNotifierProvider =
+    AsyncNotifierProvider<AccountSettingsNotifier, AccountSettingsState>(
+        AccountSettingsNotifier.new);
+
+// OK: autoDispose あり → 画面離脱時に自動破棄
+final accountSettingsNotifierProvider =
+    AsyncNotifierProvider.autoDispose<AccountSettingsNotifier, AccountSettingsState>(
+        AccountSettingsNotifier.new);
+```
+
+**autoDispose を付けてはいけないプロバイダー（グローバル共有 Provider）**:
+- 未読件数など全画面共通で参照するグローバル Provider（`core/di/providers.dart` に置くもの）
+- `authNotifierProvider` など認証状態 Provider
+
+> **背景（Sprint 45 レビュー）**: `accountSettingsNotifierProvider` に `autoDispose` が未設定のまま実装していた。
+
 ### IndexedStack 配下の一覧画面における invalidate（重要）
 
 `StatefulShellRoute.indexedStack` 配下では、一覧画面ウィジェットが `IndexedStack` で保持されるため `AutoDispose` が破棄されず古い state が残る。
@@ -430,6 +452,24 @@ ref.invalidate(shoppingListNotifierProvider);
 ```
 
 - 認証トークンの付与・リフレッシュは `AuthInterceptor` で一元管理する
+
+### デバッグログのセキュリティルール
+
+`debugPrint` でキャッチした例外オブジェクト（`$e`）を直接出力してはならない。スタックトレース・内部状態がログに露出し、セキュリティリスクになる。
+
+```dart
+// NG: エラーオブジェクト全体を出力（スタックトレース・内部 userId 等が露出）
+} catch (e) {
+  debugPrint('Google sign-in error: $e');
+}
+
+// OK: 固定の警告文字列のみ出力
+} catch (e) {
+  debugPrint('Google sign-in failed');
+}
+```
+
+> **背景（Sprint 45 レビュー）**: `google_link_section.dart` で `debugPrint('Google sign-in error: $e')` とエラーオブジェクト全体を出力していた。
 
 ### エラーハンドリングルール
 
@@ -499,6 +539,37 @@ when(mockDio.get(...)).thenAnswer((_) async => Response(data: [{"id": 1, ...}], 
 // OK: ラッパー形式を確認してモック
 when(mockDio.get(...)).thenAnswer((_) async => Response(data: {"items": [{"id": 1, ...}]}, ...));
 ```
+
+### ウィジェットテストで日本語テキストを直接検証しない（重要）
+
+`find.text('日本語文字列')` でウィジェットを検索・検証することは禁止。ARB の文字列変更に脆く、多言語テスト環境に対応できない。
+
+**代わりに `Key` ベースで検証すること。**各ウィジェット（セクション・バッジ・ボタン等）に `Key` を付与し、`find.byKey` で検索する。
+
+```dart
+// NG: 日本語テキスト直接検証 → ARB変更・多言語対応で壊れる
+expect(find.text('パスワード変更'), findsOneWidget);
+expect(find.text('保存'), findsOneWidget);
+
+// OK: Key ベースで検証 → 表示文字列に依存しない
+// ウィジェット側
+PasswordChangeSection(key: const Key('passwordChangeSection'), ...),
+ElevatedButton(key: const Key('saveButton'), ...)
+
+// テスト側
+expect(find.byKey(const Key('passwordChangeSection')), findsOneWidget);
+expect(find.byKey(const Key('saveButton')), findsOneWidget);
+```
+
+適用すべき場面:
+- セクションウィジェット（`AccountInfoSection`, `ProfileSection` 等）の表示/非表示確認
+- バッジや状態ラベルの検証
+- ボタン・アイコンボタンのタップ・検索
+
+例外（英語固定文字列のみ許容）:
+- テスト用のルーティング先 Scaffold の body テキスト（例: `Text('signup-page')`）など、テスト専用プレースホルダーは引き続き `find.text` で参照可
+
+> **背景（Sprint 45 レビュー）**: `account_settings_page_test.dart` で `find.text('パスワード変更')` 等の日本語テキスト直接検証を多用していた。ARB 変更や多言語テスト環境への対応として Key ベース検証に全面移行した。
 
 ### ウィジェットテストのヘルパー
 

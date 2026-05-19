@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-18（Sprint 44 Retro）
+**最終更新**: 2026-05-19（Sprint 45 Retro）
 
 ---
 
@@ -27,18 +27,24 @@
 | パターン                                                        | 発生スプリント | 対応                                                                          |
 | --------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------- |
 | マジックストリング（status/flag値を `'0'`/`'1'` で直接比較）    | 34, 35         | `core/models/` の生成済み enum（`ShoppingItemStatus.xxx.code`）を使う         |
-| `catch (_) {}` でエラーを握りつぶし                             | 34, 35, 43     | `rethrow` または `AppException` に変換。Notifier層は `on AppException catch (e)` で state に格納。StatefulWidget の event handler 内は AppSnackBar で汎用通知 |
+| `catch (_) {}` でエラーを握りつぶし                             | 34, 35, 43, 45 | `rethrow` または `AppException` に変換。Notifier層は `on AppException catch (e)` で state に格納。StatefulWidget の event handler 内は AppSnackBar で汎用通知。`catch (e)` で `e.toString()` をそのまま state に格納するのも同様に NG |
 | i18n ハードコード（日本語・英語文字列をウィジェット内に直書き） | 33, 34, 37, 38 | ARB ファイルに定義して `AppLocalizations.of(context).key` を使う（`features/shell` の BottomNavigationBar ラベルも例外なく適用）|
 | `items.map()` で生成するウィジェットに `key` 未設定 | 38, 39 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
 | `build()` 内で重いループ・重複計算を毎フレーム実行 | 39, 44 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`） |
 | IndexedStack 配下で一覧 Provider の invalidate 漏れ             | 35             | 詳細・作成画面での追加/削除/ステータス変更後に `ref.invalidate(一覧Provider)` |
 | `Dismissible` の `background`/`secondaryBackground` の中身と `confirmDismiss` の `direction` 判定が不一致（スワイプ方向逆） | 40, 41, 42 | 3箇所をセットで確認する。`background` → startToEnd（右スワイプ）、`secondaryBackground` → endToStart（左スワイプ）に対応 |
 | `Text` ウィジェットで長い文字列が画面外にはみ出す（Overdue ラベル・タイトル等） | 41, 44 | `overflow: TextOverflow.ellipsis`（または `softWrap: true`）を設定する。特にカード内の固定幅コンテナ内のテキストは必須 |
-| ユーザーアイコン表示に `UserAvatar` 共通ウィジェットを使わずにテキストラベルで実装 | 40, 41 | `lib/core/ui/user_avatar.dart` の `UserAvatar` を使う。新機能でアイコン表示が必要なときに再実装しない |
+| ユーザーアイコン表示に `UserAvatar` 共通ウィジェットを使わずにテキストラベルで実装 | 40, 41, 45 | `lib/core/ui/user_avatar.dart` の `UserAvatar` を使う。新機能でアイコン表示が必要なときに再実装しない。`iconUrl: null` のハードコードは「未割当表示」専用であり、ラベル（`displayName`）も親から渡すこと。ハードコード文字列（`'U'` 等）は禁止 |
+| ウィジェットテストで日本語テキストを直接検証（`find.text('日本語')` 等） | 45 | `find.byKey(const Key('xxx'))` を使い Key ベースで検証する。ARB 変更に強く、多言語対応のテストになる |
+| `debugPrint` でエラーオブジェクト（`$e`）全体を出力 | 45 | スタックトレース・内部状態がログに露出するためセキュリティリスク。固定の警告文字列のみ出力する（例: `debugPrint('Google sign-in failed')`）|
+| `AsyncNotifierProvider` の AutoDispose 未設定（画面離脱後もメモリに残る） | 45 | アカウント設定などユーザー操作完了後に破棄してよい画面は `AsyncNotifierProvider.autoDispose` にする。グローバル共有 Provider（未読数等）は AutoDispose なしで実装 |
 
 ### hw-hub-backend
 
-（現時点で繰り返し指摘の実績なし）
+| パターン | 発生スプリント | 対応 |
+| -------- | -------------- | ---- |
+| 例外メッセージに内部ユーザーID（userId 等）を含める | 45 | エラーメッセージには内部IDを含めない。固定のメッセージ文字列を使う（例: `"他のユーザーに連携済みです"` → `"このGoogleアカウントはすでに別のアカウントに連携されています"`）|
+| ループ内でリポジトリ呼び出し（N+1問題） | 45 | `deleteAccount()` の OWNER 判定チェックなど、複数IDをループで検索する場合は `findByIds()` / `countByIds()` のような一括クエリに変更する |
 
 ### hw-hub-batch
 
@@ -168,3 +174,5 @@
 | Sprint 41 | mobile-conventions | Overdue テキスト overflow 対応ルール・table_calendar 読み取り専用カレンダーパターンを追記 | Sprint 41 レビュー指摘（Overdue オーバーフロー）・#114 実装で確立 |
 | Sprint 43 | mobile-conventions | エラーハンドリングルールに StatefulWidget event handler 内パターンを追記 | #119 レビュー指摘（StatefulWidget 内での `catch (_) {}` 握りつぶし） |
 | Sprint 44 | （更新なし）       | —                                                                        | Sprint 44 の指摘はいずれも既存ルール（`overflow: TextOverflow.ellipsis` / Notifier 事前計算）に既に記載があるため新規追記不要。繰り返し指摘パターンの発生スプリント欄に 44 を追記のみ |
+| Sprint 45 | mobile-conventions | テストで日本語テキスト直接検証禁止・debugPrint でエラーオブジェクト全体出力禁止・AutoDispose 設定ルールを追記 | Sprint 45 レビュー指摘（ウィジェットテスト Key ベース検証・セキュリティ・パフォーマンス） |
+| Sprint 45 | backend-conventions | 例外メッセージに内部IDを含めない・N+1問題防止パターンを追記 | Sprint 45 レビュー指摘（セキュリティ・パフォーマンス） |

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 45 Review — #121 アカウント設定画面を実装する（画面#18）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #e0f2fe; color: #0369a1; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 20px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Feature overview */
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .feature-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px; }
+  .feature-card .fc-label { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .feature-card .fc-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .feature-card .fc-desc { font-size: 12px; color: #6b7280; }
+  .feature-card.ac1 { border-left: 3px solid #6366f1; }
+  .feature-card.ac2 { border-left: 3px solid #f59e0b; }
+  .feature-card.ac3 { border-left: 3px solid #22c55e; }
+  .feature-card.ac4 { border-left: 3px solid #3b82f6; }
+  .feature-card.ac5 { border-left: 3px solid #a855f7; }
+  .feature-card.ac6 { border-left: 3px solid #ef4444; }
+  .feature-card.ac7 { border-left: 3px solid #ec4899; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 45 Review</div>
+  <h1>#121 — アカウント設定画面を実装する（画面#18）</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 45</span>
+    <span class="badge badge-issue">#121</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem / Background -->
+  <section>
+    <h2>なぜこの実装が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>ユーザーが自分のプロフィール・パスワード・アイコン・通知設定・Google連携を自分で管理できる画面がなかった。設定トップ（画面#17）から遷移するアカウント設定画面（画面#18）として、Phase 3 Step 7 の設定画面群の一環として実装が必要だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>設定トップ → アカウント設定（プレースホルダー画面のみ）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>プロフィール変更不可</div>
+        <div class="flow-item"><span class="dot dot-red"></span>パスワード変更不可</div>
+        <div class="flow-item"><span class="dot dot-red"></span>通知設定変更不可</div>
+        <div class="flow-item"><span class="dot dot-red"></span>Google連携不可（モバイルエンドポイントなし）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>アカウント削除不可</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>設定トップ → アカウント設定（全機能実装済み）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>表示名・利用言語の変更（ロケール即時反映）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>パスワード変更（Googleのみアカウント除外）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>通知設定トグル（グローバル・世帯関連・タスク割り当て）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>Google連携（新バックエンドエンドポイント経由）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>アカウント削除（OWNER削除不可エラー対応）</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Overview -->
+  <section>
+    <h2>実装した機能のまとめ</h2>
+    <div class="feature-grid">
+      <div class="feature-card ac1">
+        <div class="fc-label">AC1</div>
+        <div class="fc-title">アカウント情報（読み取り専用）</div>
+        <div class="fc-desc">メールアドレスと表示名を読み取り専用で表示</div>
+      </div>
+      <div class="feature-card ac2">
+        <div class="fc-label">AC2</div>
+        <div class="fc-title">パスワード変更</div>
+        <div class="fc-desc">現在/新規/確認の3フィールド。Googleのみアカウントはセクション非表示</div>
+      </div>
+      <div class="feature-card ac3">
+        <div class="fc-label">AC3</div>
+        <div class="fc-title">プロフィール設定</div>
+        <div class="fc-desc">表示名（50文字以内）と言語（ja/en/es）。変更時のみ保存ボタンが活性。言語変更はアプリ全体に即時反映</div>
+      </div>
+      <div class="feature-card ac4">
+        <div class="fc-label">AC4</div>
+        <div class="fc-title">プロフィール画像</div>
+        <div class="fc-desc">カメラ/ライブラリから選択。5MB制限・JPEG/PNG/GIF対応。S3 Presigned URL方式でアップロード</div>
+      </div>
+      <div class="feature-card ac5">
+        <div class="fc-label">AC5</div>
+        <div class="fc-title">通知設定</div>
+        <div class="fc-desc">グローバルON/OFFと世帯関連・タスク割り当てをトグルで即時反映。グローバルOFF時は子トグルが非活性</div>
+      </div>
+      <div class="feature-card ac6">
+        <div class="fc-label">AC6</div>
+        <div class="fc-title">Google連携</div>
+        <div class="fc-desc">@gmail.com のユーザーにのみ表示。未連携/連携済みで表示が切り替わる</div>
+      </div>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card ac7">
+        <div class="fc-label">AC7</div>
+        <div class="fc-title">アカウント削除</div>
+        <div class="fc-desc">確認ダイアログ後に実行。OWNER削除不可エラーはSnackBarで表示。成功時はログイン画面へ遷移</div>
+      </div>
+      <div class="feature-card" style="border-left: 3px solid #06b6d4;">
+        <div class="fc-label">新規共通機能</div>
+        <div class="fc-title">ロケール即時反映（LocaleNotifier）</div>
+        <div class="fc-desc">SharedPreferences で永続化。main.dart の MaterialApp.router に locale: を連動</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">メール・表示名が読み取り専用で表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>AccountInfoSection</code> が <code>UserProfileDto</code> を受け取り、メールアドレスと表示名を読み取り専用で表示する。テキストが長くても <code>overflow: TextOverflow.ellipsis</code> で切り捨て。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/widgets/account_info_section.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>/// AC1: アカウント情報（メール・表示名の読み取り専用表示）</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>class AccountInfoSection extends StatelessWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>  const AccountInfoSection({super.key, required this.profile});</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>    return _SectionCard(</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>      title: l10n.accountSettingsAccountInfoSection,</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>      child: Column(children: [</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>        _InfoRow(label: l10n.accountSettingsEmail, value: profile.email, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>        _InfoRow(label: l10n.accountSettingsDisplayName, value: profile.displayName, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>      ]),</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-ctx"><span class="line-num">66</span><span class="line-prefix"> </span><span>// _InfoRow で overflow: TextOverflow.ellipsis を設定（長いメールアドレス対応）</span></div>
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>  overflow: TextOverflow.ellipsis,</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>バックエンドの <code>GET /api/users/me/profile</code> から取得した <code>UserProfileDto</code> を直接表示する。Editableにする予定はないため StatelessWidget で実装。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">パスワード変更（現在/新規/確認）が可能。Googleのみアカウントの場合はセクション非表示</div>
+      </div>
+      <div class="ac-body">
+        <p><code>UserProfileDto.isGoogleOnly</code>（<code>authProvider == 'GOOGLE'</code>）を判定し、Google のみアカウントの場合は <code>PasswordChangeSection</code> をそのまま非表示にする。3フィールドはすべて入力済み かつ 新パスワードが8文字以上 かつ 確認と一致する場合のみ保存ボタンが活性になる。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/account_settings_page.dart</span>
+            <span class="diff-stat">新規（AC2関連部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">94</span><span class="line-prefix"> </span><span>          // AC2: パスワード変更（Googleのみアカウントは非表示）</span></div>
+            <div class="code-line line-add"><span class="line-num">95</span><span class="line-prefix">+</span><span>          if (!profile.isGoogleOnly) ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">96</span><span class="line-prefix">+</span><span>            PasswordChangeSection(</span></div>
+            <div class="code-line line-add"><span class="line-num">97</span><span class="line-prefix">+</span><span>              key: const Key('passwordChangeSection'),</span></div>
+            <div class="code-line line-add"><span class="line-num">98</span><span class="line-prefix">+</span><span>              onSave: (current, next) async { ... },</span></div>
+            <div class="code-line line-add"><span class="line-num">99</span><span class="line-prefix">+</span><span>            ),</span></div>
+            <div class="code-line line-add"><span class="line-num">100</span><span class="line-prefix">+</span><span>          ],</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span><code>profile.isGoogleOnly</code> は <code>authProvider == 'GOOGLE'</code> のゲッターとして <code>UserProfileDto</code> に定義。バックエンドが返す文字列を直接比較し、追加のAPI呼び出しなしに判定できる。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/widgets/password_change_section.dart</span>
+            <span class="diff-stat">新規（バリデーション部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>  bool get _canSave =></span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>      _currentController.text.isNotEmpty &&</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>      _newController.text.length >= 8 &&</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>      _newController.text == _confirmController.text;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>パスワード不一致のエラーメッセージはリアルタイムで表示（両フィールドに入力がある状態で不一致の場合）。保存ボタンは <code>_canSave</code> が true のときのみ活性。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">表示名（必須・最大50文字）と言語（ja/en/es）を変更でき、変更があるときのみ「保存」ボタンが活性になる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>ProfileSection</code>（StatefulWidget）で dirty 判定を管理。<code>_isDirty</code>（テキストまたはロケールが元の値から変わったか）と <code>_isValid</code>（表示名が空でないか）を AND 判定して保存ボタンを制御。保存成功後は <code>LocaleNotifier.setLocale()</code> を呼んでアプリ全体に言語変更を即時反映する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/widgets/profile_section.dart</span>
+            <span class="diff-stat">新規（dirty判定部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>  bool get _isDirty =></span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>      _nameController.text != widget.profile.displayName ||</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>      _selectedLocale != widget.profile.locale;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">53</span><span class="line-prefix"> </span><span>  bool get _isValid => _nameController.text.trim().isNotEmpty;</span></div>
+            <div class="code-line line-add"><span class="line-num">162</span><span class="line-prefix">+</span><span>  child: ElevatedButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">163</span><span class="line-prefix">+</span><span>    onPressed: (_isDirty && _isValid && !_isSaving) ? _handleSave : null,</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span><code>didUpdateWidget</code> をオーバーライドし、保存後に <code>profile</code> が更新された場合は TextController・ロケール選択も最新値にリセットされる設計。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/locale/locale_notifier.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>class LocaleNotifier extends AsyncNotifier&lt;Locale?&gt; {</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>  @override</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>  Future&lt;Locale?&gt; build() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>    final prefs = await SharedPreferences.getInstance();</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>    final code = prefs.getString(_kLocaleKey);</span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>    if (code == null) return null;  // null = システムロケール追従</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>    return Locale(code);</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; setLocale(Locale locale) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>    final prefs = await SharedPreferences.getInstance();</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>    await prefs.setString(_kLocaleKey, locale.languageCode);</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>    state = AsyncData(locale);  // ref.watch で即時反映</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span><code>MaterialApp.router</code> の <code>locale:</code> に <code>ref.watch(localeNotifierProvider).valueOrNull</code> を渡すことで、<code>setLocale()</code> を呼んだ瞬間にアプリ全体の言語が切り替わる。<code>null</code> はシステムロケール追従（デフォルト動作）。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/main.dart</span>
+            <span class="diff-stat">+3 行追加</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">51</span><span class="line-prefix"> </span><span>  Widget build(BuildContext context) {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">52</span><span class="line-prefix"> </span><span>    final router = ref.watch(routerProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>    final localeAsync = ref.watch(localeNotifierProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>    final locale = localeAsync.valueOrNull;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">55</span><span class="line-prefix"> </span><span>    return MaterialApp.router(</span></div>
+            <div class="code-line line-add"><span class="line-num">62</span><span class="line-prefix">+</span><span>      locale: locale,  // ← これを追加</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">image_picker でカメラ/フォトライブラリからアイコン画像を変更できる（5MB以内・JPEG/PNG/GIF、S3 Presigned URL方式）</div>
+      </div>
+      <div class="ac-body">
+        <p>アイコンアップロードは3ステップ: (1) Presigned URL 取得 → (2) S3 直接 PUT → (3) fileKey 登録。S3 PUT は認証インターセプターを外した別の <code>Dio</code> インスタンスを使用（Authorization ヘッダがあると S3 が 403 を返すため）。5MB バリデーションは Notifier 側で実施。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/data/account_settings_repository.dart</span>
+            <span class="diff-stat">新規（S3アップロード部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>class AccountSettingsRepositoryImpl implements AccountSettingsRepository {</span></div>
+            <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>  AccountSettingsRepositoryImpl(this._dio, this._s3Dio);</span></div>
+            <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>  final Dio _dio;       // 通常API（AuthInterceptor付き）</span></div>
+            <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>  final Dio _s3Dio;    // S3直接PUT用（インターセプターなし）</span></div>
+            <div class="code-line line-ctx"><span class="line-num">135</span><span class="line-prefix"> </span><span>  // S3 PUT: _s3Dio を使う（Authorization ヘッダなし）</span></div>
+            <div class="code-line line-add"><span class="line-num">143</span><span class="line-prefix">+</span><span>      await _s3Dio.put&lt;dynamic&gt;(resolved, data: Stream.fromIterable([bytes]),</span></div>
+            <div class="code-line line-add"><span class="line-num">144</span><span class="line-prefix">+</span><span>        options: Options(headers: {'Content-Type': mimeType, 'Content-Length': bytes.length}),</span></div>
+            <div class="code-line line-add"><span class="line-num">145</span><span class="line-prefix">+</span><span>      );</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>デバッグモード時は <code>localhost</code> / <code>127.0.0.1</code> を <code>10.0.2.2</code>（Androidエミュレーターのホスト）に変換する <code>_resolveS3Url</code> を用意。本番環境では変換しない。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/account_settings_notifier.dart</span>
+            <span class="diff-stat">新規（5MBバリデーション部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">97</span><span class="line-prefix"> </span><span>    // バリデーション（5MB 上限）</span></div>
+            <div class="code-line line-add"><span class="line-num">98</span><span class="line-prefix">+</span><span>    if (bytes.length > 5 * 1024 * 1024) {</span></div>
+            <div class="code-line line-add"><span class="line-num">99</span><span class="line-prefix">+</span><span>      state = AsyncData(current.copyWith(errorMessage: 'accountSettingsIconTooLarge'));</span></div>
+            <div class="code-line line-add"><span class="line-num">100</span><span class="line-prefix">+</span><span>      return;</span></div>
+            <div class="code-line line-add"><span class="line-num">101</span><span class="line-prefix">+</span><span>    }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">通知設定（グローバルON/OFF・世帯関連・タスク割り当て）をトグルで即時反映できる</div>
+      </div>
+      <div class="ac-body">
+        <p>グローバル通知 OFF 時は子トグル（世帯関連・タスク割り当て）を <code>Opacity(0.4) + IgnorePointer</code> で視覚的に無効化し、タップ操作も受け付けないようにする。トグル操作のたびに <code>PUT /api/users/me/notification-settings</code> を即座に呼び出す。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/widgets/notification_settings_section.dart</span>
+            <span class="diff-stat">新規（グローバルOFF時の子トグル制御）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>              Opacity(</span></div>
+            <div class="code-line line-add"><span class="line-num">64</span><span class="line-prefix">+</span><span>                opacity: globalEnabled ? 1.0 : 0.4,</span></div>
+            <div class="code-line line-add"><span class="line-num">65</span><span class="line-prefix">+</span><span>                child: IgnorePointer(</span></div>
+            <div class="code-line line-add"><span class="line-num">66</span><span class="line-prefix">+</span><span>                  ignoring: !globalEnabled,</span></div>
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>                  child: _NotificationToggleRow(</span></div>
+            <div class="code-line line-add"><span class="line-num">68</span><span class="line-prefix">+</span><span>                    label: l10n.accountSettingsNotificationHousehold,</span></div>
+            <div class="code-line line-add"><span class="line-num">69</span><span class="line-prefix">+</span><span>                    value: householdEnabled,</span></div>
+            <div class="code-line line-add"><span class="line-num">70</span><span class="line-prefix">+</span><span>                    onChanged: (v) => onToggleGroup(_householdCode, v),</span></div>
+            <div class="code-line line-add"><span class="line-num">71</span><span class="line-prefix">+</span><span>                  ),</span></div>
+            <div class="code-line line-add"><span class="line-num">72</span><span class="line-prefix">+</span><span>                ),</span></div>
+            <div class="code-line line-add"><span class="line-num">73</span><span class="line-prefix">+</span><span>              ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>グループコード <code>'100'</code>（世帯関連）・<code>'200'</code>（タスク割り当て）は <code>NotificationSettingsDto.groupSettings</code> のキーとして管理。バックエンドの <code>m_code</code> 定義に対応する。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">メールが @gmail.com のユーザーにのみ Google 連携セクションが表示され、未連携/連携済みで表示が切り替わる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>profile.email.endsWith('@gmail.com')</code> で表示を制御。連携済み（<code>isGoogleOnly == true</code>）は緑バッジで「連携済み」を表示。未連携は「Googleと連携する」ボタンを表示し、タップすると <code>google_sign_in</code> パッケージ経由でサインインし、取得した IDトークンをバックエンド新規エンドポイント <code>POST /api/users/me/google/link/mobile</code> に送信する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/account_settings_page.dart</span>
+            <span class="diff-stat">AC6 表示制御部分</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">160</span><span class="line-prefix"> </span><span>          // AC6: Google連携（@gmail.com のみ表示）</span></div>
+            <div class="code-line line-add"><span class="line-num">161</span><span class="line-prefix">+</span><span>          if (profile.email.endsWith('@gmail.com'))</span></div>
+            <div class="code-line line-add"><span class="line-num">162</span><span class="line-prefix">+</span><span>            GoogleLinkSection(</span></div>
+            <div class="code-line line-add"><span class="line-num">163</span><span class="line-prefix">+</span><span>              key: const Key('googleLinkSection'),</span></div>
+            <div class="code-line line-add"><span class="line-num">164</span><span class="line-prefix">+</span><span>              isLinked: profile.isGoogleOnly,</span></div>
+            <div class="code-line line-add"><span class="line-num">165</span><span class="line-prefix">+</span><span>              isLinking: state.isLinkingGoogle,</span></div>
+            <div class="code-line line-add"><span class="line-num">166</span><span class="line-prefix">+</span><span>              onLink: (idToken) async { ... },</span></div>
+            <div class="code-line line-add"><span class="line-num">167</span><span class="line-prefix">+</span><span>            ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span>バックエンドに新規エンドポイント <code>POST /api/users/me/google/link/mobile</code> を追加。Web 用の <code>/api/users/me/google/link</code>（認可コード <code>code</code> 受け取り）とは別に、IDトークンを直接検証する専用エンドポイント。iOS/Android のネイティブ設定ファイルは次スプリント以降。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC7 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC7</div>
+        <div class="ac-text">アカウント削除は確認ダイアログ後に実行。他の有効メンバーが存在する世帯の OWNER は削除不可でエラー表示</div>
+      </div>
+      <div class="ac-body">
+        <p>「アカウント削除」ボタンをタップすると確認ダイアログを表示し、「削除する」を選択した場合のみ <code>DELETE /api/users/me</code> を実行する。OWNER 削除不可エラー（バックエンドから <code>AppException</code> として返る）は SnackBar で表示。削除成功後は <code>authNotifierProvider.logout()</code> → <code>context.go('/login')</code> で遷移する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/widgets/danger_zone_section.dart</span>
+            <span class="diff-stat">新規（確認ダイアログ部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; _confirmAndDelete(BuildContext context, AppLocalizations l10n) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>    final confirmed = await showDialog&lt;bool&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>      context: context,</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>      builder: (dialogContext) =&gt; AlertDialog(</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>        title: Text(l10n.accountSettingsDeleteAccountConfirmTitle),</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>        actions: [</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>          TextButton(onPressed: () =&gt; Navigator.pop(dialogContext, false), ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>          TextButton(onPressed: () =&gt; Navigator.pop(dialogContext, true), ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>        ],</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>      ),</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>    if (confirmed == true) { await onDelete(); }</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">i</span>
+            <span><code>showDialog</code> の <code>builder:</code> で <code>dialogContext</code> を明示的に受け取り、<code>Navigator.pop(dialogContext)</code> を使うことで go_router 環境でページごと閉じるバグを防止（long_term.md 記載の既知パターン）。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/account_settings_page.dart</span>
+            <span class="diff-stat">削除成功後の遷移部分</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">178</span><span class="line-prefix"> </span><span>            onDelete: () async {</span></div>
+            <div class="code-line line-add"><span class="line-num">179</span><span class="line-prefix">+</span><span>              await ref.read(accountSettingsNotifierProvider.notifier).deleteAccount();</span></div>
+            <div class="code-line line-add"><span class="line-num">180</span><span class="line-prefix">+</span><span>              // 削除成功後: トークン破棄 → ログイン画面へ</span></div>
+            <div class="code-line line-add"><span class="line-num">181</span><span class="line-prefix">+</span><span>              if (mounted) {</span></div>
+            <div class="code-line line-add"><span class="line-num">182</span><span class="line-prefix">+</span><span>                await ref.read(authNotifierProvider.notifier).logout();</span></div>
+            <div class="code-line line-add"><span class="line-num">183</span><span class="line-prefix">+</span><span>                if (context.mounted) { context.go(AppRoutes.login); }</span></div>
+            <div class="code-line line-add"><span class="line-num">184</span><span class="line-prefix">+</span><span>              }</span></div>
+            <div class="code-line line-add"><span class="line-num">185</span><span class="line-prefix">+</span><span>            },</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Architecture -->
+  <section>
+    <h2>アーキテクチャ構成（feature-first + 簡略 Clean Architecture）</h2>
+    <div style="background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.8; color: #374151;">
+      <div style="color: #6b7280;">features/account_settings/</div>
+      <div style="padding-left: 16px;">├── account_settings_providers.dart <span style="color: #9ca3af;">  # DI: Repo・S3Dio の Provider</span></div>
+      <div style="padding-left: 16px;">├── data/</div>
+      <div style="padding-left: 32px;">├── account_settings_repository.dart <span style="color: #9ca3af;">  # interface + impl</span></div>
+      <div style="padding-left: 32px;">└── models/</div>
+      <div style="padding-left: 48px;">├── user_profile_dto.dart <span style="color: #9ca3af;">             # GET /api/users/me/profile レスポンス</span></div>
+      <div style="padding-left: 48px;">└── notification_settings_dto.dart <span style="color: #9ca3af;">    # 通知設定レスポンス</span></div>
+      <div style="padding-left: 16px;">└── presentation/account_settings/</div>
+      <div style="padding-left: 32px;">├── account_settings_page.dart <span style="color: #9ca3af;">        # Scaffold + セクション配置</span></div>
+      <div style="padding-left: 32px;">├── account_settings_notifier.dart <span style="color: #9ca3af;">    # AsyncNotifier（7操作すべて）</span></div>
+      <div style="padding-left: 32px;">├── account_settings_state.dart <span style="color: #9ca3af;">       # 不変 state</span></div>
+      <div style="padding-left: 32px;">└── widgets/</div>
+      <div style="padding-left: 48px;">├── account_info_section.dart <span style="color: #9ca3af;">     # AC1</span></div>
+      <div style="padding-left: 48px;">├── password_change_section.dart <span style="color: #9ca3af;">  # AC2（StatefulWidget）</span></div>
+      <div style="padding-left: 48px;">├── profile_section.dart <span style="color: #9ca3af;">          # AC3（dirty判定）</span></div>
+      <div style="padding-left: 48px;">├── icon_section.dart <span style="color: #9ca3af;">             # AC4（image_picker）</span></div>
+      <div style="padding-left: 48px;">├── notification_settings_section.dart <span style="color: #9ca3af;"> # AC5</span></div>
+      <div style="padding-left: 48px;">├── google_link_section.dart <span style="color: #9ca3af;">      # AC6</span></div>
+      <div style="padding-left: 48px;">└── danger_zone_section.dart <span style="color: #9ca3af;">      # AC7</span></div>
+      <br>
+      <div style="color: #6b7280;">core/locale/</div>
+      <div style="padding-left: 16px;">└── locale_notifier.dart <span style="color: #9ca3af;">              # 新規: ロケール永続化 + 即時反映</span></div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>設定画面 → アカウント設定 でメールアドレスと表示名が表示されること</strong>
+          <span>読み取り専用（タップしても編集できない）。長いメールアドレスは末尾が「…」で省略される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>パスワード変更フォームが使えること（メール/パスワードアカウントのみ）</strong>
+          <span>現在のパスワード・新パスワード（8文字以上）・確認が全部入力されて初めて「パスワードを変更」ボタンが押せる。Googleのみアカウントでログインした場合はセクション自体が非表示になる</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>表示名または言語を変えると「保存」ボタンが活性になること</strong>
+          <span>何も変えていない状態はボタンが灰色。変更したら緑色になり、保存後は再び元の値になってボタンが灰色に戻る。言語を「English」に変えて保存するとアプリ全体が英語に切り替わる</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>「カメラ」「ライブラリ」ボタンから写真を選んでアイコンが更新されること</strong>
+          <span>選択中はプログレス表示。5MB を超えるファイルを選ぶと「画像サイズは5MB以内にしてください」エラーが表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>通知設定のトグルをOFFにすると子トグルが淡色になり操作できなくなること</strong>
+          <span>「通知を受け取る」をOFFにした時点で世帯関連・タスク割り当てのトグルが半透明になり、タップしても何も起きない状態になる</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>@gmail.com アカウントのみ Google連携セクションが表示されること</strong>
+          <span>それ以外のメールアドレスのアカウントではこのセクションは一切表示されない。連携済み（Googleのみアカウント）の場合は緑色の「連携済み」バッジが表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">7</div>
+        <div class="verify-content">
+          <strong>「アカウント削除」ボタンを押すと確認ダイアログが出ること</strong>
+          <span>「キャンセル」では何も起きない。「削除する」を押すと削除され、ログイン画面に遷移する。世帯のオーナーで他のメンバーがいる場合は削除できずにエラーメッセージが表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">8</div>
+        <div class="verify-content">
+          <strong>アプリを再起動しても変更した言語設定が保持されていること</strong>
+          <span>「English」に変更して保存 → アプリを完全終了 → 再起動して英語表示になっていることを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>features/account_settings/</code> 配下一式</td>
+        <td><span class="tag-new">新規</span></td>
+        <td>アカウント設定 feature 全体（Repository・Notifier・State・Page・widgets×7）</td>
+      </tr>
+      <tr>
+        <td><code>core/locale/locale_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ロケール永続化・即時反映 Notifier</td>
+      </tr>
+      <tr>
+        <td><code>lib/main.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>MaterialApp.router に <code>locale: locale</code> を追加し localeNotifierProvider と連動</td>
+      </tr>
+      <tr>
+        <td><code>lib/app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>/settings/account</code> ルートを <code>AccountSettingsPage</code> に差し替え（旧: プレースホルダー）</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb</code> / <code>app_en.arb</code> / <code>app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>accountSettings*</code> キー追加（計28キー。ja/en/es すべて）</td>
+      </tr>
+      <tr>
+        <td><code>pubspec.yaml</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>google_sign_in: ^6.x</code> を追加</td>
+      </tr>
+      <tr>
+        <td>バックエンド（<code>POST /api/users/me/google/link/mobile</code>）</td>
+        <td><span class="tag-new">新規</span></td>
+        <td>モバイル向け Google 連携エンドポイント。IDトークンを直接検証する</td>
+      </tr>
+      <tr>
+        <td>既存の設定トップ・ホーム・タスク画面</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>本 Issue のスコープ外。設定トップからのルーティングは既存の <code>app_router.dart</code> ルート設定で対応済み</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

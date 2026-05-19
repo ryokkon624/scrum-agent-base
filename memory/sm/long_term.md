@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-18（Sprint 44 Retro）
+**最終更新**: 2026-05-19（Sprint 45 Retro）
 
 ---
 
@@ -55,7 +55,10 @@
 |---|---|---|
 | マジックストリング（enum未使用） | Sprint 34, 35 | status/flag値を `'0'`/`'1'` で直接比較。`core/models/` の生成済みenum を使う |
 | i18n ハードコード | Sprint 33, 34, 37 | 日本語・英語文字列をウィジェットに直書き。Sprint 37 は main_shell.dartのナビゲーションラベルで発生（既存コードだがファイルを触ったタイミングで指摘） |
+| テストで日本語テキスト直接検証 | Sprint 45 | `find.text('パスワード変更')` 等の日本語直接検索 → `find.byKey(const Key('...'))` に変更。Key付与を実装時の標準チェック項目にする |
 | `catch (_) {}` 握りつぶし | Sprint 34（規約化）, 35（再発） | rethrow または AppException 変換が必要。ただし Notifier 層は catch → errorMessage 格納が正解（Sprint 36 で規約を層別化） |
+| `dynamic` 型の乱用（`as dynamic`） | Sprint 45 | Future.wait の結果を `as dynamic` でキャスト → `as UserProfileDto` 等の明示型キャストに変更。型推論が効かない場面で発生しやすい |
+| `AutoDispose` 未設定 | Sprint 45 | 個人情報を持つ Provider に `AutoDispose` が未設定。画面離脱時にメモリから破棄されない。個人情報を扱う Provider は必ず `AutoDisposeAsyncNotifierProvider` を使う |
 | IndexedStack invalidate 漏れ | Sprint 35 Review, Sprint 36 | 詳細・作成画面からの操作後に一覧 Provider を invalidate していない。#93/#107/#108 で3回修正。詳細画面実装時の標準チェック項目 |
 
 ---
@@ -67,6 +70,7 @@
 - **視覚的AC（幅・配置）の目視未確認**: シミュレーターまたはウィジェットテストで確認しないとSprint Reviewで指摘される（Sprint 31）
 - **DEVのスコープクリープ**: ACに明記されていない動作を自己判断で含めることがある。計画フェーズでACが曖昧な箇所を事前確認する
 - **ShellレベルUIの実機未確認**: GoRouterのShellRoute外にpushした画面でのBottomNavBar/HouseholdIndicatorBar表示状態は実機でないと分からない。route判定実装前に「そもそも表示されているか」をりょこさんに確認する（Sprint 37 #98でAC未達成が発覚）
+- **複合画面でAPIの副作用とUI反映の連動確認漏れ**: 複数APIを組み合わせる複合画面（アカウント設定等）で、「アップロード後の再フェッチ」「ON/OFFの副作用がDBにどう反映されるか」「連携後のDB状態とUI表示の同期」がACに明記されないまま実装され、Sprint Reviewで3件のbugが発覚（Sprint 45: #127/#128/#129）。計画フェーズでACに「APIの副作用とUI反映の連動」を明示する
 
 ---
 
@@ -100,3 +104,4 @@
 | Sprint 42 | mobile-conventions | Dismissibleスワイプ方向の背景事例にSprint 42 #116を追記・UserAvatar iconUrl:nullハードコード禁止ルールを強化 | 規約既存にもかかわらずSprint 40→42と同パターン再発。背景と禁止事項を強化（SM実施） |
 | Sprint 43 | mobile-conventions | StatefulWidget event handler内エラーハンドリングパターン追記（DEV）・バックエンドキー値とARBキー突き合わせ確認ルール追記（SM） | catch(_)握りつぶしがSprint 43でも2件発生・Sprint Review指摘#124（i18nキー不一致）を受けて追記 |
 | Sprint 44 | scrum-master-workflow | 複数ブランチにまたがる実装でreviewerに修正含有ブランチを明示する注意事項を追加（SM） | `feature/120`ブランチに`housework_assign`修正が含まれていないことに気づかずperformance-reviewerが「未修正」と誤判断した実績 |
+| Sprint 45 | sm/long_term.md | DEV指摘傾向に「dynamic型乱用」「AutoDispose未設定」「テスト日本語直接検証」を追記。Sprint Review発覚パターンに「複合画面のAPI副作用とUI反映の連動確認漏れ」を追記（SM） | Sprint 45 Sprint Reviewで3件のbugが発覚（#127/#128/#129）。複合画面の設計上の盲点として記録 |
