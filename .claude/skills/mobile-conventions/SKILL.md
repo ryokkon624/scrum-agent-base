@@ -1005,3 +1005,90 @@ TableCalendar(
 - 読み取り専用ラッパーとして `SwipeDateCalendar` のような専用ウィジェットに切り出すと再利用しやすい
 
 > **背景（Sprint 41 #114 AC3）**: スワイプモードのカード上部に対象日をカレンダー表示するために導入。りょこさんの確認で「自作しない・`table_calendar` を使う」方針が承認された。
+
+### package_info_plus（アプリバージョン取得）
+
+アプリのバージョン番号（`pubspec.yaml` の `version:`）をランタイムで取得する場合は `package_info_plus` パッケージを使う。
+
+```yaml
+# pubspec.yaml
+dependencies:
+  package_info_plus: ^8.x.x
+```
+
+**AsyncNotifier での取得パターン**（バックエンドAPIと並行して取得する例）:
+
+```dart
+@override
+Future<AppInfoState> build() async {
+  // バックエンドAPI呼び出しと PackageInfo 取得を並行実行
+  final results = await Future.wait([
+    _repository.getServerVersion(),        // バックエンドのバージョン
+    PackageInfo.fromPlatform(),            // アプリのバージョン
+  ]);
+  final serverVersion = results[0] as String;
+  final packageInfo = results[1] as PackageInfo;
+
+  return AppInfoState(
+    serverVersion: serverVersion,
+    appVersion: packageInfo.version,       // "1.2.3" 形式
+  );
+}
+```
+
+- `PackageInfo.fromPlatform()` は非同期のため `AsyncNotifier.build()` 内で `await` が必要
+- 複数の非同期処理は `Future.wait()` で並行実行するとレイテンシを最小化できる
+- `packageInfo.version` → バージョン番号（例: `"1.2.3"`）
+- `packageInfo.buildNumber` → ビルド番号（例: `"42"`）。通常は `version` だけ使えば十分
+
+> **背景（Sprint 49 #142）**: アプリ情報画面でバックエンドバージョンとアプリバージョンを同時表示するために導入。
+
+---
+
+## 13. 静的コンテンツ画面の設計パターン
+
+利用規約・プライバシーポリシーなど「APIコールも状態管理も不要な情報表示画面」では Notifier / Repository / State の3点セットを作らない。
+
+**設計指針**:
+- `StatelessWidget` で実装する（`ConsumerWidget` も不要）
+- `SingleChildScrollView` + `Column` でスクロール可能なコンテンツを表示する
+- テキストはすべて ARB ファイルに定義して `AppLocalizations.of(context).key` を使う
+- ウィジェットテストは「画面が表示できること」と「主要なセクション Key が存在すること」の確認だけで十分
+
+```dart
+// 静的コンテンツ画面の実装パターン
+class TermsPage extends StatelessWidget {
+  const TermsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.termsTitle)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.termsSection1Title, key: const Key('termsSection1Title')),
+            Text(l10n.termsSection1Body),
+            // ...各条文...
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+**ウィジェットテストの最小パターン**:
+
+```dart
+testWidgets('利用規約画面が表示される', (tester) async {
+  await tester.pumpWidget(buildTestPage(const TermsPage()));
+  await tester.pumpAndSettle();
+  expect(find.byKey(const Key('termsSection1Title')), findsOneWidget);
+});
+```
+
+> **背景（Sprint 49 #143/#144）**: 利用規約・プライバシーポリシー画面を実装。状態管理不要なコンテンツ表示画面に Notifier / Repository を作るのは過剰設計のため、StatelessWidget のみで実装する方針をりょこさんが承認した。

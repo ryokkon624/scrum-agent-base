@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 49 Review — #143 利用規約画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Screen mock */
+  .screen-mock { background: #f3f4f6; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .screen-mock .mock-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  .mock-appbar { background: #1a2e1a; color: white; padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 13px; font-weight: 600; }
+  .mock-body { background: #f7f8f6; padding: 12px; border-radius: 0 0 8px 8px; }
+  .mock-article { margin-bottom: 10px; }
+  .mock-article-title { font-size: 12px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .mock-article-body { font-size: 11px; color: #6b7280; }
+  .mock-bullet { font-size: 11px; color: #6b7280; padding-left: 12px; margin-bottom: 2px; }
+  .mock-note { font-size: 10px; color: #9ca3af; margin-top: 12px; }
+  .mock-intro { font-size: 11px; color: #6b7280; margin-bottom: 12px; }
+  .mock-scroll-hint { font-size: 10px; color: #9ca3af; text-align: center; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 49 Review</div>
+  <h1>#143 — 利用規約画面を実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 49</span>
+    <span class="badge badge-issue">#143</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Why -->
+  <section>
+    <h2>なぜこの実装が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>アプリ情報画面（#142）から「利用規約」リンクをタップしても、遷移先が <code>_P('利用規約')</code> というプレースホルダーのままだった。サービス利用に関するルールをユーザーに提示するため、第1〜6条の利用規約コンテンツを静的コンテンツとして実装する必要があった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>アプリ情報 → 利用規約をタップ</div>
+        <div class="flow-item"><span class="dot dot-red"></span>「利用規約」テキストのみのプレースホルダー</div>
+        <div class="flow-item"><span class="dot dot-red"></span>規約コンテンツ表示不可</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>アプリ情報 → 利用規約をタップ</div>
+        <div class="flow-item"><span class="dot dot-green"></span>第1〜6条 + 注記をスクロール表示</div>
+        <div class="flow-item"><span class="dot dot-green"></span>API コール不要（静的コンテンツ）</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <div class="screen-mock">
+        <div class="mock-title">実装後の画面イメージ</div>
+        <div class="mock-appbar">&#8592; 利用規約</div>
+        <div class="mock-body">
+          <div class="mock-intro">この規約は、Housework Hub（以下「本サービス」）の利用条件を定めるものです...</div>
+          <div class="mock-article">
+            <div class="mock-article-title">第1条（適用）</div>
+            <div class="mock-article-body">本規約は、本サービスの提供条件および利用に関する権利義務関係を定めるものです。</div>
+          </div>
+          <div class="mock-article">
+            <div class="mock-article-title">第2条（アカウント）</div>
+            <div class="mock-bullet">• 利用者は、正確な情報を登録のうえ本サービスのアカウントを作成します。</div>
+            <div class="mock-bullet">• アカウント情報の管理は利用者自身が責任を負うものとします。</div>
+            <div class="mock-bullet">• 第三者による不正利用等が判明した場合は、速やかに運営者へ連絡してください。</div>
+          </div>
+          <div class="mock-article">
+            <div class="mock-article-title">第3条（禁止事項）...</div>
+          </div>
+          <div class="mock-scroll-hint">... スクロールで続きを表示 ...</div>
+          <div class="mock-note">※ 実際に公開する際は、必要に応じて専門家による確認を行ってください。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">第1〜6条の利用規約コンテンツが i18n キーを使って表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>各条文を <code>terms*</code> 系 ARB キーで定義。<code>TermsPage</code> では <code>_ArticleSection</code> ウィジェットで各条を表示する。箇条書きが必要な第2〜3条では <code>_BulletText</code> で各項目を列挙する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/app_info/presentation/terms_page.dart（抜粋：第2条）</span>
+            <span class="diff-stat">+194 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>            _ArticleSection(</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>              key: const Key('termsArticle2'),</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>              title: l10n.termsArticle2Title,</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>              child: Column(</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>                crossAxisAlignment: CrossAxisAlignment.start,</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>                children: [</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>                  _BulletText(l10n.termsArticle2AccurateInfo),</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>                  _BulletText(l10n.termsArticle2AccountResponsibility),</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>                  _BulletText(l10n.termsArticle2IllegalUseNotice),</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>                ],</span></div>
+            <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>              ),</span></div>
+            <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>            ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>全条文に <code>Key</code>（<code>termsArticle1</code> ～ <code>termsArticle6</code>）を付与。日本語テキスト直接検証ではなく Key ベースでウィジェットテスト検証ができる実装になっている。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/l10n/app_ja.arb（抜粋：terms系キー）</span>
+            <span class="diff-stat">+21キー追加</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">902</span><span class="line-prefix">+</span><span>  "termsTitle": "利用規約",</span></div>
+            <div class="code-line line-add"><span class="line-num">903</span><span class="line-prefix">+</span><span>  "termsIntro": "この規約は、Housework Hub（以下「本サービス」）の利用条件を定めるものです...",</span></div>
+            <div class="code-line line-add"><span class="line-num">904</span><span class="line-prefix">+</span><span>  "termsArticle1Title": "第1条（適用）",</span></div>
+            <div class="code-line line-add"><span class="line-num">905</span><span class="line-prefix">+</span><span>  "termsArticle1Body": "本規約は、本サービスの提供条件および利用に関する権利義務関係を定めるものです。",</span></div>
+            <div class="code-line line-add"><span class="line-num">906</span><span class="line-prefix">+</span><span>  ... （第2〜6条 + 注記）</span></div>
+            <div class="code-line line-add"><span class="line-num">921</span><span class="line-prefix">+</span><span>  "termsNote": "※ 実際に公開する際は、必要に応じて専門家による確認を行ってください。",</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>日英西（ja/en/es）の3言語すべてに同じキーを追加済み。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">末尾に改訂予告の注記が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>第6条の後ろに <code>key: const Key('termsNote')</code> を付与した注記テキストを配置。<code>termsNote</code> ARB キーに「※ 実際に公開する際は、必要に応じて専門家による確認を行ってください。」を定義。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/app_info/presentation/terms_page.dart（抜粋：注記）</span>
+            <span class="diff-stat">+7 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">118</span><span class="line-prefix">+</span><span>            Text(</span></div>
+            <div class="code-line line-add"><span class="line-num">119</span><span class="line-prefix">+</span><span>              key: const Key('termsNote'),</span></div>
+            <div class="code-line line-add"><span class="line-num">120</span><span class="line-prefix">+</span><span>              l10n.termsNote,</span></div>
+            <div class="code-line line-add"><span class="line-num">121</span><span class="line-prefix">+</span><span>              style: Theme.of(context).textTheme.bodySmall?.copyWith(</span></div>
+            <div class="code-line line-add"><span class="line-num">122</span><span class="line-prefix">+</span><span>                color: colors.textMuted,</span></div>
+            <div class="code-line line-add"><span class="line-num">123</span><span class="line-prefix">+</span><span>                fontSize: 11,</span></div>
+            <div class="code-line line-add"><span class="line-num">124</span><span class="line-prefix">+</span><span>              ),</span></div>
+            <div class="code-line line-add"><span class="line-num">125</span><span class="line-prefix">+</span><span>            ),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">コンテンツがスクロール可能なレイアウトで表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>Scaffold.body</code> を <code>SingleChildScrollView</code> で包み、すべてのコンテンツを縦スクロール可能なレイアウトで表示する。コンテンツ量が多いため、各条文間に <code>SizedBox(height: 12)</code> のスペースを設けて可読性を確保。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/app_info/presentation/terms_page.dart（抜粋：ルートレイアウト）</span>
+            <span class="diff-stat">+194 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>    return Scaffold(</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>      backgroundColor: colors.surface,</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>      appBar: MainAppBar(title: l10n.pageTitleTerms),</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>      body: SingleChildScrollView(</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>        padding: const EdgeInsets.all(16),</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>        child: Column(</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>          crossAxisAlignment: CrossAxisAlignment.start,</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>          children: [ ... ],</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>        ),</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      ),</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>    );</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">API コールを行わない（静的コンテンツのみ）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>TermsPage</code> は <code>StatelessWidget</code> で実装。Riverpod の <code>ConsumerWidget</code> ではなく通常の <code>StatelessWidget</code> を採用することで、API コールを行わない静的コンテンツ専用画面であることを型で明示している。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/app_info/presentation/terms_page.dart（クラス定義）</span>
+            <span class="diff-stat">+194 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>/// 利用規約画面（#143）。</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>///</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>/// 静的コンテンツとして第1〜6条と注記を表示する。</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>class TermsPage extends StatelessWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>  const TermsPage({super.key});</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>API 呼び出しが必要な場合は <code>ConsumerWidget</code> を使う設計になっているため、<code>StatelessWidget</code> の採用が「静的コンテンツのみ」であることの明示的な設計意図になっている。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">カバレッジ ≥ 95%</div>
+      </div>
+      <div class="ac-body">
+        <p>ウィジェットテスト（<code>terms_page_test.dart</code>）を作成。全6条 + 注記の表示確認を Key ベースで検証する。<code>app_info</code> 全体カバレッジ <strong>約 98.9%（349/353行）</strong> の一部として達成済み。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>test/features/app_info/presentation/terms_page_test.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>// 第1〜6条すべての表示確認</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>expect(find.byKey(const Key('termsArticle1')), findsOneWidget);</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>expect(find.byKey(const Key('termsArticle2')), findsOneWidget);</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>expect(find.byKey(const Key('termsArticle3')), findsOneWidget);</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>expect(find.byKey(const Key('termsArticle4')), findsOneWidget);</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>expect(find.byKey(const Key('termsArticle5')), findsOneWidget);</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>expect(find.byKey(const Key('termsArticle6')), findsOneWidget);</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>expect(find.byKey(const Key('termsNote')), findsOneWidget);</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>アプリ情報 → 「利用規約」タップで利用規約画面に遷移すること</strong>
+          <span>AppBar に「利用規約」と表示され、戻るボタン（&laquo;）でアプリ情報画面に戻れること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>第1条〜第6条の利用規約コンテンツが表示されること</strong>
+          <span>「第1条（適用）」「第2条（アカウント）」「第3条（禁止事項）」「第4条（サービスの変更・停止）」「第5条（免責事項）」「第6条（規約の変更）」の各タイトルが見えること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>ページ末尾まで下スクロールできること</strong>
+          <span>コンテンツが画面を超えてスクロール可能であり、第6条の後に注記（「※ 実際に公開する際は...」）が表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>第2条と第3条で箇条書き（• ）が表示されること</strong>
+          <span>第2条はアカウント管理に関する3項目、第3条は禁止事項4項目が箇条書きで列挙されること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/presentation/terms_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>TermsPage（StatelessWidget・第1〜6条 + 注記・SingleChildScrollView）</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>terms* 系キーを追加（日英西 3言語）</td>
+      </tr>
+      <tr>
+        <td><code>lib/app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり（#142と共通）</span></td>
+        <td>_P('利用規約') プレースホルダーを TermsPage() に置き換え</td>
+      </tr>
+      <tr>
+        <td><code>test/features/app_info/presentation/terms_page_test.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ウィジェットテスト（全条文 + 注記を Key ベースで検証）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/presentation/app_info_page.dart</code></td>
+        <td><span class="tag-unchanged">別Issue (#142)</span></td>
+        <td>アプリ情報画面（利用規約リンクを含む・同ブランチで実装）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-19（Sprint 48 Retro）
+**最終更新**: 2026-05-19（Sprint 49 Retro）
 
 ---
 
@@ -155,6 +155,8 @@
 - 一覧のメンバー操作（削除・OWNER譲渡）後に全件再取得（`fetchMembers()`）するのはリスト件数が多い場合に無駄なAPI呼び出しになる。成功時は操作対象のエントリだけローカルリストを差分更新（`state.members.where((m) => m.userId != targetId).toList()` 等）することで API 呼び出しを削減できる（Sprint 46 #122 1回目レビュー）
 - 世帯の家事件数・買い物件数を取得する専用 API がない場合、全リストを `List<T>` で取得してから即 `.length` でカウントして変数に入れ、リスト自体は破棄するパターンが最小メモリで実現できる。`state` に件数（`int`）だけ持ち、リストを保持しない設計を意識する（Sprint 46 #122 1回目レビュー）
 - OWNER 判定・他アクティブメンバー存在確認など「ウィジェットが分岐に使うフラグ」は `bool isCurrentUserOwner`・`bool hasOtherActiveMembers` のように State に明示的なフィールドとして持たせ、Notifier でデータ変化時に再計算する。`build()` 内で `members.any(...)` を呼び出すのはパフォーマンス違反（Sprint 46 #122 2回目レビュー）
+- `package_info_plus` パッケージの `PackageInfo.fromPlatform()` は非同期のため `AsyncNotifier.build()` 内で `await` して使う。バックエンドAPI呼び出しと並行させる場合は `Future.wait([api.getServerVersion(), PackageInfo.fromPlatform()])` で同時取得するとレイテンシを最小化できる（Sprint 49 #142 アプリ情報画面）
+- API呼び出しも状態管理も不要な情報表示画面（利用規約・プライバシーポリシー等）は `StatelessWidget` + `SingleChildScrollView` のみで実装する。Notifier / Repository / State の3点セットを作る必要はない。ウィジェットテストも「キーワードKey が存在するか」の確認だけで十分（Sprint 49 #143/#144）
 
 ### hw-hub-backend
 
@@ -189,3 +191,4 @@
 | Sprint 46 | mobile-conventions | `build()` 内フラグ事前計算の適用場面に `bool` フィールドを追記・Dio 型パラメータ具体型指定ルール追加・`copyWith` 全フィールド列挙ルール追加 | Sprint 46 #122 2回目レビュー指摘（パフォーマンス・型安全性・不完全 copyWith） |
 | Sprint 47 | mobile-conventions | 空状態ハンドリングルール・TextEditingController 反映漏れ防止ルール・月日整合性バリデーションルールを追記 | Sprint 47 Sprint Review指摘（#136 空状態/読み込み中区別・#137 テンプレート選択時反映漏れ・#138 日付バリデーション漏れ） |
 | Sprint 48 | mobile-conventions | AutoDispose 設定ルールの背景に「一覧画面 Notifier も対象」の実績を追記（Sprint 48 背景） | Sprint 48 レビュー指摘（`InquiryListNotifier` が `NotifierProvider` 非 autoDispose で実装されていた実績）|
+| Sprint 49 | mobile-conventions | `package_info_plus` でアプリバージョン取得パターン・静的コンテンツ画面の設計パターンを追記 | Sprint 49 #142〜#144 実装（アプリ情報・利用規約・プライバシーポリシー画面）で確立したパターン |

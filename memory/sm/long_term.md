@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-19（Sprint 47 Retro）
+**最終更新**: 2026-05-19（Sprint 49 Retro）
 
 ---
 
@@ -114,3 +114,4 @@
 | Sprint 47 | sm/long_term.md | Sprint Review発覚パターンに空状態ハンドリング漏れ・TextEditingController反映漏れ・日付バリデーション漏れの3パターンを追記（SM） | Sprint 47 Sprint Reviewで発覚した3件のbugを記録 |
 | Sprint 48 | mobile-conventions | ナビゲーションルールに `context.go()` vs `context.push()` の使い分け詳細と新規作成後遷移の注意事項を追記（SM） | Sprint 48 Sprint Reviewで新規作成後の詳細画面「←」問題発覚（#149） |
 | Sprint 48 | sm/long_term.md | Sprint Review発覚パターンに「新規作成後の詳細画面←問題」「背景色の実機未確認」を追記（SM） | Sprint 48 Sprint Reviewで2件発覚（#148/#149） |
+| Sprint 49 | mobile-conventions | package_info_plus 採用実績（AsyncNotifier + Future.wait並行取得）・静的コンテンツ画面は StatelessWidget のみで実装する設計パターンを追記（DEV実施） | Sprint 49 でアプリ情報・利用規約・プライバシーポリシー画面を実装し確立したパターンを規約化 |
