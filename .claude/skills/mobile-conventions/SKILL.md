@@ -133,6 +133,40 @@ enum PasswordResetResult { success, expired, invalid }
 - カスタム enum はコード値を持たない（画面状態の分岐にのみ使う）ことが多い
 - API レスポンスのフラグなど文字列/数値のマッピングが必要な場合は生成済み enum と同じ形式（`fromCode` + null 安全）で作る
 
+### copyWith は全フィールドを必ず列挙する
+
+State クラス・DTO クラスに `copyWith` を実装する際は、**すべてのフィールドを列挙すること**。一部フィールドのみ書くと他のフィールドが更新できず、実装時または後のメンテナンスで「バグか仕様か」と混乱する原因になる。
+
+```dart
+// NG: role フィールドしかない copyWith → nickname など他フィールドを変更不能
+HouseholdSettingsMemberDto copyWith({String? role}) {
+  return HouseholdSettingsMemberDto(
+    userId: userId,
+    nickname: nickname,
+    role: role ?? this.role,
+  );
+}
+
+// OK: 全フィールドを列挙する
+HouseholdSettingsMemberDto copyWith({
+  int? userId,
+  String? nickname,
+  String? role,
+  String? iconUrl,
+  String? status,
+}) {
+  return HouseholdSettingsMemberDto(
+    userId: userId ?? this.userId,
+    nickname: nickname ?? this.nickname,
+    role: role ?? this.role,
+    iconUrl: iconUrl ?? this.iconUrl,
+    status: status ?? this.status,
+  );
+}
+```
+
+> **背景（Sprint 46 #122 2回目レビュー）**: `HouseholdSettingsMemberDto.copyWith` に `role` フィールドしかなく、他のフィールドを copyWith で変更できない状態だった。
+
 ### 全幅表示が必要なウィジェット
 
 カードや一覧アイテムを親コンテナ幅いっぱいに広げる場合は、以下のいずれかを明示的に指定すること。
@@ -367,8 +401,10 @@ Widget build(BuildContext context, WidgetRef ref) {
 - `items.where(条件).length` を `build()` 内の `map()` の中で呼んでいる場合
 - 同じ `where().toList()` を `build()` 内で複数回呼んでいる場合
 - `DTO.copyWith()` が使えるのに全フィールドを明示して再生成している場合（可読性・保守性）
+- `members.any((m) => m.role == 'OWNER' && m.userId == myId)` のような「ウィジェットが条件分岐に使うフラグ」を `build()` 内で判定している場合 → `bool isCurrentUserOwner` / `bool hasOtherActiveMembers` のような bool フィールドを State に持たせ、Notifier で data 変化時に計算する
 
 > **背景（Sprint 39 Review）**: `MemberSummaryStrip.build()` でメンバーごとにタスク数を `tasks.where(...).length` で計算していた。O(メンバー数 × タスク数) のループが毎フレーム走るため、Notifier 側で `_computeMemberTaskCounts()` として事前計算し `Map<int, int>` を state に持たせる改修を行った。
+> **Sprint 46 Review（#122）**: 世帯設定画面で `build()` 内に `members.any(...)` で OWNER 判定・他アクティブメンバー存在確認を書いていた。`isCurrentUserOwner: bool` / `hasOtherActiveMembers: bool` を State フィールドに移し Notifier 側で計算する形に修正した。
 
 ---
 
@@ -452,6 +488,25 @@ ref.invalidate(shoppingListNotifierProvider);
 ```
 
 - 認証トークンの付与・リフレッシュは `AuthInterceptor` で一元管理する
+
+### Dio の型パラメータは必ず具体型を指定する
+
+`_dio.get<T>()` / `_dio.post<T>()` 等の型パラメータには `<dynamic>` ではなく具体的な型を指定すること。`<dynamic>` のままにすると 2 段階キャストが必要になりコードが汚くなる。テストでモックのスタブを書く際も型パラメータを合わせないとスタブが効かない。
+
+```dart
+// NG: <dynamic> → キャスト地獄・テストスタブも壊れやすい
+final res = await _dio.get<dynamic>('/api/households/$id/members');
+final list = (res.data as List<dynamic>).cast<Map<String, dynamic>>();
+
+// OK: 具体型を指定 → 1段階のキャストで済む
+final res = await _dio.get<List<dynamic>>('/api/households/$id/members');
+final list = (res.data as List<dynamic>).cast<Map<String, dynamic>>();
+// ラッパー形式の場合
+final res = await _dio.get<Map<String, dynamic>>('/api/invitations');
+final items = (res.data!['items'] as List<dynamic>).cast<Map<String, dynamic>>();
+```
+
+> **背景（Sprint 46 #122 2回目レビュー）**: Repository の `_dio.get<dynamic>()` を全箇所で使っており、2段階キャストが随所に発生していた。
 
 ### デバッグログのセキュリティルール
 

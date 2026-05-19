@@ -30,7 +30,7 @@
 | `catch (_) {}` でエラーを握りつぶし                             | 34, 35, 43, 45 | `rethrow` または `AppException` に変換。Notifier層は `on AppException catch (e)` で state に格納。StatefulWidget の event handler 内は AppSnackBar で汎用通知。`catch (e)` で `e.toString()` をそのまま state に格納するのも同様に NG |
 | i18n ハードコード（日本語・英語文字列をウィジェット内に直書き） | 33, 34, 37, 38 | ARB ファイルに定義して `AppLocalizations.of(context).key` を使う（`features/shell` の BottomNavigationBar ラベルも例外なく適用）|
 | `items.map()` で生成するウィジェットに `key` 未設定 | 38, 39 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
-| `build()` 内で重いループ・重複計算を毎フレーム実行 | 39, 44 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`） |
+| `build()` 内で重いループ・重複計算を毎フレーム実行 | 39, 44, 46 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`、`isCurrentUserOwner: bool` フラグ等も State に移す） |
 | IndexedStack 配下で一覧 Provider の invalidate 漏れ             | 35             | 詳細・作成画面での追加/削除/ステータス変更後に `ref.invalidate(一覧Provider)` |
 | `Dismissible` の `background`/`secondaryBackground` の中身と `confirmDismiss` の `direction` 判定が不一致（スワイプ方向逆） | 40, 41, 42 | 3箇所をセットで確認する。`background` → startToEnd（右スワイプ）、`secondaryBackground` → endToStart（左スワイプ）に対応 |
 | `Text` ウィジェットで長い文字列が画面外にはみ出す（Overdue ラベル・タイトル等） | 41, 44 | `overflow: TextOverflow.ellipsis`（または `softWrap: true`）を設定する。特にカード内の固定幅コンテナ内のテキストは必須 |
@@ -145,6 +145,12 @@
 - 未読件数のような「全画面共通のグローバル状態」は `AsyncNotifier`（AutoDispose なし）で実装し、`refreshUnreadCount()` と `resetToZero()` の2メソッドのみ公開する設計がシンプル。バッジ表示上限（99+）はこの Notifier 側で計算して state に持たせる（Sprint 43 #119）
 - `WidgetsBindingObserver.didChangeAppLifecycleState` で `AppLifecycleState.resumed` を検知し、フォアグラウンド復帰時に未読件数を再取得するパターン。main.dart でトップレベルの `StatefulWidget` か専用の Observer クラスで実装する（Sprint 43 #119）
 - ARB の `AppLocalizations` は動的キー参照不可のため、通知メッセージのように titleKey/bodyKey が API から動的に返ってくる場合は `Map<String, String Function(AppLocalizations, Map<String, String>)>` のディスパッチテーブルを実装する。未知キーはキー文字列をそのまま fallback 表示する設計が Web 版と挙動一致（Sprint 43 #119 NotificationMessageRenderer）
+- Repository の `_dio.get<dynamic>()` 等の型パラメータは必ず具体型（`_dio.get<List<dynamic>>()`・`_dio.get<Map<String, dynamic>>()` 等）を指定すること。`<dynamic>` のままにすると 2 段階キャストが必要になりコードが汚くなる上、テストのモックも型パラメータを合わせて書かないとスタブが効かなくなる（Sprint 46 #122 2回目レビュー）
+- `copyWith` を実装する際は全フィールドを必ず列挙する。フィールドの一部しか書かないと他のフィールドが更新できず、後で「バグか仕様か」と混乱する（Sprint 46 #122 2回目レビュー: `HouseholdSettingsMemberDto.copyWith` に role フィールドしかなかった）
+
+- 一覧のメンバー操作（削除・OWNER譲渡）後に全件再取得（`fetchMembers()`）するのはリスト件数が多い場合に無駄なAPI呼び出しになる。成功時は操作対象のエントリだけローカルリストを差分更新（`state.members.where((m) => m.userId != targetId).toList()` 等）することで API 呼び出しを削減できる（Sprint 46 #122 1回目レビュー）
+- 世帯の家事件数・買い物件数を取得する専用 API がない場合、全リストを `List<T>` で取得してから即 `.length` でカウントして変数に入れ、リスト自体は破棄するパターンが最小メモリで実現できる。`state` に件数（`int`）だけ持ち、リストを保持しない設計を意識する（Sprint 46 #122 1回目レビュー）
+- OWNER 判定・他アクティブメンバー存在確認など「ウィジェットが分岐に使うフラグ」は `bool isCurrentUserOwner`・`bool hasOtherActiveMembers` のように State に明示的なフィールドとして持たせ、Notifier でデータ変化時に再計算する。`build()` 内で `members.any(...)` を呼び出すのはパフォーマンス違反（Sprint 46 #122 2回目レビュー）
 
 ### hw-hub-backend
 
@@ -176,3 +182,4 @@
 | Sprint 44 | （更新なし）       | —                                                                        | Sprint 44 の指摘はいずれも既存ルール（`overflow: TextOverflow.ellipsis` / Notifier 事前計算）に既に記載があるため新規追記不要。繰り返し指摘パターンの発生スプリント欄に 44 を追記のみ |
 | Sprint 45 | mobile-conventions | テストで日本語テキスト直接検証禁止・debugPrint でエラーオブジェクト全体出力禁止・AutoDispose 設定ルールを追記 | Sprint 45 レビュー指摘（ウィジェットテスト Key ベース検証・セキュリティ・パフォーマンス） |
 | Sprint 45 | backend-conventions | 例外メッセージに内部IDを含めない・N+1問題防止パターンを追記 | Sprint 45 レビュー指摘（セキュリティ・パフォーマンス） |
+| Sprint 46 | mobile-conventions | `build()` 内フラグ事前計算の適用場面に `bool` フィールドを追記・Dio 型パラメータ具体型指定ルール追加・`copyWith` 全フィールド列挙ルール追加 | Sprint 46 #122 2回目レビュー指摘（パフォーマンス・型安全性・不完全 copyWith） |
