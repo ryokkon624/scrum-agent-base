@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 48 Review — #139 問い合わせ一覧画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #e0f2fe; color: #0369a1; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1d4ed8; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* screen mock */
+  .screen-mock { background: #1a1a2e; border-radius: 24px; padding: 16px; max-width: 360px; margin: 0 auto; }
+  .screen-mock .status-bar { height: 24px; background: #0f0f23; border-radius: 12px 12px 0 0; margin: -16px -16px 8px; display: flex; align-items: center; justify-content: center; }
+  .screen-inner { background: #f8f7f5; border-radius: 12px; overflow: hidden; }
+  .app-bar { background: white; padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-weight: 700; font-size: 16px; color: #1a1a1a; }
+  .screen-body { padding: 16px; }
+  .description-text { font-size: 11px; color: #888; margin-bottom: 12px; }
+  .new-inquiry-btn { background: #059669; color: white; padding: 10px 16px; border-radius: 8px; text-align: center; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+  .inquiry-card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .inquiry-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .inquiry-badges { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .badge-cat { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+  .badge-cat-housework { background: #fef3c7; color: #92400e; }
+  .badge-cat-bug { background: #fce7f3; color: #9d174d; }
+  .badge-cat-general { background: #f3f4f6; color: #374151; }
+  .badge-status { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+  .badge-status-open { background: #dbeafe; color: #1e40af; }
+  .badge-status-ai { background: #ede9fe; color: #5b21b6; }
+  .badge-status-closed { background: #f3f4f6; color: #6b7280; }
+  .inquiry-date { font-size: 11px; color: #9ca3af; }
+  .empty-state-text { text-align: center; color: #9ca3af; font-size: 13px; padding: 32px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 48 Review</div>
+  <h1>#139 — 問い合わせ一覧画面を実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 48</span>
+    <span class="badge badge-issue">#139</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- なぜこの改修が必要だったか -->
+  <section>
+    <h2>なぜこの機能が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>設定トップ（#17）からの遷移先として「問い合わせ一覧」が必要だった。ユーザーが送信した問い合わせの対応状況（ステータス・カテゴリ）を一目で確認できる画面がなく、詳細確認・新規作成へのナビゲーションもなかった。</p>
+    </div>
+
+    <!-- 画面モック -->
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px;">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #888; text-align: center; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">問い合わせがある場合</div>
+        <div class="screen-mock">
+          <div class="screen-inner">
+            <div class="app-bar">お問い合わせ</div>
+            <div class="screen-body">
+              <div class="description-text">お問い合わせの一覧です。タップで詳細を確認できます。</div>
+              <div class="new-inquiry-btn">+ 新規お問い合わせ</div>
+              <div class="inquiry-card">
+                <div class="inquiry-title">#3: 家事の繰り返し設定について</div>
+                <div class="inquiry-badges">
+                  <span class="badge-cat badge-cat-housework">家事</span>
+                  <span class="badge-status badge-status-ai">AI回答済み</span>
+                </div>
+                <div class="inquiry-date">2026/05/19 10:30</div>
+              </div>
+              <div class="inquiry-card">
+                <div class="inquiry-title">#1: ログインできない</div>
+                <div class="inquiry-badges">
+                  <span class="badge-cat badge-cat-bug">バグ報告</span>
+                  <span class="badge-status badge-status-closed">クローズ</span>
+                </div>
+                <div class="inquiry-date">2026/05/18 09:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #888; text-align: center; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">問い合わせが0件の場合</div>
+        <div class="screen-mock">
+          <div class="screen-inner">
+            <div class="app-bar">お問い合わせ</div>
+            <div class="screen-body">
+              <div class="description-text">お問い合わせの一覧です。タップで詳細を確認できます。</div>
+              <div class="new-inquiry-btn">+ 新規お問い合わせ</div>
+              <div class="empty-state-text">まだお問い合わせがありません</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC別 実装内容 -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">GET /api/inquiries でログインユーザーの問い合わせ一覧が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>InquiryRepositoryImpl.fetchInquiries()</code> が <code>GET /api/inquiries</code> を呼び出し、レスポンスの <code>{"items": [...]}</code> ラッパー形式からリストを取得する。<code>InquiryListNotifier.build()</code> の初期化時に <code>Future.microtask</code> で非同期ロードを開始する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/data/inquiry_repository.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>  Future&lt;List&lt;InquirySummaryDto&gt;&gt; fetchInquiries() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>      final response = await _dio.get&lt;Map&lt;String, dynamic&gt;&gt;('/api/inquiries');</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>      final data = response.data!;</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>      return (data['items'] as List&lt;dynamic&gt;)</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>          .map((e) =&gt; InquirySummaryDto.fromJson(e as Map&lt;String, dynamic&gt;))</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>          .toList();</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>    } on DioException catch (e) {</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>      if (e.error is AppException) throw e.error!;</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>      throw NetworkException(e.message ?? 'Network error');</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>Dio の型パラメータに <code>Map&lt;String, dynamic&gt;</code> を明示。<code>&lt;dynamic&gt;</code> のままにすると2段階キャストが必要になるため規約通り具体型を指定した。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_list/inquiry_list_notifier.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>class InquiryListNotifier extends AutoDisposeNotifier&lt;InquiryListState&gt; {</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>  @override</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>  InquiryListState build() {</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>    Future.microtask(_fetchInquiries);</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>    return const InquiryListState();</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>AutoDisposeNotifier</code> を採用。画面離脱後にプロバイダーを自動破棄し、次回アクセス時は常に最新データを取得する設計。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">各アイテムに「件名（#ID: タイトル）」「カテゴリバッジ」「ステータスバッジ」「作成日時」が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>一覧アイテムに4つの情報を縦積みで表示。タイトルは <code>overflow: TextOverflow.ellipsis</code> で長文を省略。作成日時は ISO 文字列を <code>yyyy/MM/dd HH:mm</code> 形式に変換して表示する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_list/inquiry_list_page.dart</span>
+            <span class="diff-stat">新規（一部抜粋）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">118</span><span class="line-prefix">+</span><span>                // タイトル</span></div>
+            <div class="code-line line-add"><span class="line-num">119</span><span class="line-prefix">+</span><span>                Text(</span></div>
+            <div class="code-line line-add"><span class="line-num">120</span><span class="line-prefix">+</span><span>                  '#${inquiry.inquiryId}: ${inquiry.title}',</span></div>
+            <div class="code-line line-add"><span class="line-num">121</span><span class="line-prefix">+</span><span>                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(</span></div>
+            <div class="code-line line-add"><span class="line-num">122</span><span class="line-prefix">+</span><span>                    fontWeight: FontWeight.w600,</span></div>
+            <div class="code-line line-add"><span class="line-num">123</span><span class="line-prefix">+</span><span>                    color: colors.textHeading,</span></div>
+            <div class="code-line line-add"><span class="line-num">124</span><span class="line-prefix">+</span><span>                  ),</span></div>
+            <div class="code-line line-add"><span class="line-num">125</span><span class="line-prefix">+</span><span>                  overflow: TextOverflow.ellipsis,</span></div>
+            <div class="code-line line-add"><span class="line-num">126</span><span class="line-prefix">+</span><span>                  maxLines: 1,</span></div>
+            <div class="code-line line-add"><span class="line-num">127</span><span class="line-prefix">+</span><span>                ),</span></div>
+            <div class="code-line line-add"><span class="line-num">128</span><span class="line-prefix">+</span><span>                const SizedBox(height: 6),</span></div>
+            <div class="code-line line-add"><span class="line-num">129</span><span class="line-prefix">+</span><span>                // カテゴリバッジ + ステータスバッジ</span></div>
+            <div class="code-line line-add"><span class="line-num">130</span><span class="line-prefix">+</span><span>                Row(</span></div>
+            <div class="code-line line-add"><span class="line-num">131</span><span class="line-prefix">+</span><span>                  children: [</span></div>
+            <div class="code-line line-add"><span class="line-num">132</span><span class="line-prefix">+</span><span>                    InquiryCategoryBadge(categoryCode: inquiry.category),</span></div>
+            <div class="code-line line-add"><span class="line-num">133</span><span class="line-prefix">+</span><span>                    const Spacer(),</span></div>
+            <div class="code-line line-add"><span class="line-num">134</span><span class="line-prefix">+</span><span>                    InquiryStatusBadge(statusCode: inquiry.status),</span></div>
+            <div class="code-line line-add"><span class="line-num">135</span><span class="line-prefix">+</span><span>                  ],</span></div>
+            <div class="code-line line-add"><span class="line-num">136</span><span class="line-prefix">+</span><span>                ),</span></div>
+            <div class="code-line line-add"><span class="line-num">137</span><span class="line-prefix">+</span><span>                const SizedBox(height: 4),</span></div>
+            <div class="code-line line-add"><span class="line-num">138</span><span class="line-prefix">+</span><span>                // 作成日時</span></div>
+            <div class="code-line line-add"><span class="line-num">139</span><span class="line-prefix">+</span><span>                Text(_formatDateTime(inquiry.createdAt), ...),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">カテゴリバッジ・ステータスバッジが仕様通りの色で表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>共通バッジウィジェット <code>InquiryCategoryBadge</code>・<code>InquiryStatusBadge</code> を新規作成。<code>InquiryCategory</code> / <code>InquiryStatus</code> enum の <code>fromCode()</code> でコード値を変換し、enum 別に背景色・文字色を切り替える。</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">カテゴリバッジ色</div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <tr style="background: #f9fafb;"><th style="padding: 6px 8px; border: 1px solid #e5e5e5; text-align: left;">カテゴリ</th><th style="padding: 6px 8px; border: 1px solid #e5e5e5; text-align: left;">色</th></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">一般</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #f3f4f6; color: #374151; padding: 1px 6px; border-radius: 10px; font-size: 11px;">一般</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">家事</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 10px; font-size: 11px;">家事</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">買い物</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #d1fae5; color: #065f46; padding: 1px 6px; border-radius: 10px; font-size: 11px;">買い物</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">アカウント</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #dbeafe; color: #1e40af; padding: 1px 6px; border-radius: 10px; font-size: 11px;">アカウント</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">バグ報告</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #fce7f3; color: #9d174d; padding: 1px 6px; border-radius: 10px; font-size: 11px;">バグ報告</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">その他</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #f3f4f6; color: #9ca3af; padding: 1px 6px; border-radius: 10px; font-size: 11px;">その他</span></td></tr>
+            </table>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">ステータスバッジ色</div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <tr style="background: #f9fafb;"><th style="padding: 6px 8px; border: 1px solid #e5e5e5; text-align: left;">ステータス</th><th style="padding: 6px 8px; border: 1px solid #e5e5e5; text-align: left;">色</th></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">オープン</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #dbeafe; color: #1e40af; padding: 1px 6px; border-radius: 10px; font-size: 11px;">オープン</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">AI回答済み</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #ede9fe; color: #5b21b6; padding: 1px 6px; border-radius: 10px; font-size: 11px;">AI回答済み</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">スタッフ対応中</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 10px; font-size: 11px;">スタッフ対応中</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">スタッフ回答済み</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #d1fae5; color: #065f46; padding: 1px 6px; border-radius: 10px; font-size: 11px;">スタッフ回答済み</span></td></tr>
+              <tr><td style="padding: 6px 8px; border: 1px solid #e5e5e5;">クローズ</td><td style="padding: 6px 8px; border: 1px solid #e5e5e5;"><span style="background: #f3f4f6; color: #9ca3af; padding: 1px 6px; border-radius: 10px; font-size: 11px;">クローズ</span></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/widgets/inquiry_category_badge.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>    final category = InquiryCategory.fromCode(categoryCode);</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>    final (label, bg, textColor) = _style(category, l10n, colors);</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix"> </span><span>    // switch で各カテゴリの（ラベル, 背景色, 文字色）を返す</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>    switch (category) {</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>      case InquiryCategory.general: return (l10n.inquiryCategoryGeneral, colors.surfaceSubtle, colors.textBody);</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>      case InquiryCategory.housework: return (l10n.inquiryCategoryHousework, colors.paletteAmberSoft, colors.paletteAmberText);</span></div>
+            <div class="code-line line-add"><span class="line-num">   </span><span class="line-prefix"> </span><span>      // ... 以下同様</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>マジックストリングを使わず、<code>core/models/InquiryCategory.fromCode()</code> で enum 変換してから switch。知らないコード値は <code>null</code> となり「その他」扱いになる。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">問い合わせ0件時に「まだお問い合わせがありません」が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>ローディング完了後かつ件数0件の場合に空状態ウィジェットを表示。ローディング中（<code>isLoading: true</code>）とは明確に区別し、0件でスピナーが消えない問題（Sprint 47 で発生した同種のバグ）を回避している。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_list/inquiry_list_page.dart</span>
+            <span class="diff-stat">新規（一部抜粋）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">77</span><span class="line-prefix">+</span><span>    if (state.isLoading) {</span></div>
+            <div class="code-line line-add"><span class="line-num">78</span><span class="line-prefix">+</span><span>      return const Center(child: CircularProgressIndicator());</span></div>
+            <div class="code-line line-add"><span class="line-num">79</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">80</span><span class="line-prefix">+</span><span>    if (state.inquiries.isEmpty) {</span></div>
+            <div class="code-line line-add"><span class="line-num">81</span><span class="line-prefix">+</span><span>      return Center(</span></div>
+            <div class="code-line line-add"><span class="line-num">82</span><span class="line-prefix">+</span><span>        key: const Key('emptyState'),</span></div>
+            <div class="code-line line-add"><span class="line-num">83</span><span class="line-prefix">+</span><span>        child: Text(</span></div>
+            <div class="code-line line-add"><span class="line-num">84</span><span class="line-prefix">+</span><span>          l10n.inquiryListEmpty,  // 「まだお問い合わせがありません」</span></div>
+            <div class="code-line line-add"><span class="line-num">85</span><span class="line-prefix">+</span><span>          style: TextStyle(color: colors.textMuted),</span></div>
+            <div class="code-line line-add"><span class="line-num">86</span><span class="line-prefix">+</span><span>        ),</span></div>
+            <div class="code-line line-add"><span class="line-num">87</span><span class="line-prefix">+</span><span>      );</span></div>
+            <div class="code-line line-add"><span class="line-num">88</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">89</span><span class="line-prefix">+</span><span>    return ListView.separated(key: const Key('inquiryList'), ...);</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>loading / data(0件) / data(1件以上) を必ず3ケースで分岐。Sprint 47 の反省を踏まえ、<code>isLoading</code> の判定を最優先に置いた。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">各アイテムタップで問い合わせ詳細へ遷移する</div>
+      </div>
+      <div class="ac-body">
+        <p>各アイテムを <code>InkWell</code> でラップし、<code>onTap</code> で <code>context.push(AppRoutes.settingsInquiryDetail(inquiryId))</code> を呼ぶ。一覧 → 詳細のナビゲーションは <code>push</code>（スタックに積む）で実装し、詳細から戻ると一覧に戻る。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_list/inquiry_list_page.dart</span>
+            <span class="diff-stat">新規（一部抜粋）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">95</span><span class="line-prefix">+</span><span>        return InkWell(</span></div>
+            <div class="code-line line-add"><span class="line-num">96</span><span class="line-prefix">+</span><span>          key: ValueKey(inquiry.inquiryId),</span></div>
+            <div class="code-line line-add"><span class="line-num">97</span><span class="line-prefix">+</span><span>          borderRadius: BorderRadius.circular(12),</span></div>
+            <div class="code-line line-add"><span class="line-num">98</span><span class="line-prefix">+</span><span>          onTap: () =&gt; context.push(</span></div>
+            <div class="code-line line-add"><span class="line-num">99</span><span class="line-prefix">+</span><span>            AppRoutes.settingsInquiryDetail(inquiry.inquiryId.toString()),</span></div>
+            <div class="code-line line-add"><span class="line-num">100</span><span class="line-prefix">+</span><span>          ),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">「新規お問い合わせ」ボタンタップで問い合わせ新規作成へ遷移する</div>
+      </div>
+      <div class="ac-body">
+        <p>一覧上部に全幅の「新規お問い合わせ」ボタンを配置。<code>context.push(AppRoutes.settingsInquiriesNew)</code> で新規作成画面へ push する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_list/inquiry_list_page.dart</span>
+            <span class="diff-stat">新規（一部抜粋）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>            SizedBox(</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>              width: double.infinity,</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>              child: ElevatedButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>                key: const Key('newInquiryButton'),</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>                onPressed: () =&gt; context.push(AppRoutes.settingsInquiriesNew),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC7 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC7</div>
+        <div class="ac-text">カバレッジ 95% 以上</div>
+      </div>
+      <div class="ac-body">
+        <p>Repository impl テスト・Notifier テスト・Page ウィジェットテストを全件実装。一覧画面の全テスト合計：Repository impl 14件中 #139 関連分 + Notifier 7件 + Page 5件 = 合計 16件 (PASS)。</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 8px;">
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 22px; font-weight: 700; color: #166534;">14</div>
+            <div style="font-size: 11px; color: #166534; font-weight: 600;">Repository テスト</div>
+            <div style="font-size: 10px; color: #6b7280;">(#139/#140/#141 共通)</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 22px; font-weight: 700; color: #166534;">7</div>
+            <div style="font-size: 11px; color: #166534; font-weight: 600;">Notifier テスト</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 22px; font-weight: 700; color: #166534;">5</div>
+            <div style="font-size: 11px; color: #166534; font-weight: 600;">Page テスト</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認ポイント -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>設定 > お問い合わせ から一覧画面が開くこと</strong>
+          <span>設定トップから「お問い合わせ」をタップして画面が表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>問い合わせが一覧表示されること（件名・カテゴリバッジ・ステータスバッジ・作成日時）</strong>
+          <span>各カードに「#N: タイトル」「カテゴリバッジ（色付き）」「ステータスバッジ（色付き）」「yyyy/MM/dd HH:mm 形式の日時」が正しく表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>問い合わせが0件の場合に「まだお問い合わせがありません」が表示されること</strong>
+          <span>ローディングスピナーではなく空状態テキストが表示されること（スピナーが残り続けないこと）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>一覧アイテムをタップすると詳細画面へ遷移すること</strong>
+          <span>タップした問い合わせの詳細画面（#N: タイトルが表示）に遷移すること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>「新規お問い合わせ」ボタンで新規作成画面へ遷移すること</strong>
+          <span>ボタンタップで新規作成画面が開くこと</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 改修スコープ確認 -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>inquiry_repository.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>Repository interface + impl（全 API メソッド）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_summary_dto.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>一覧アイテムのデータモデル</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_list_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>一覧 Notifier（AutoDisposeNotifier） + State</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_list_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>一覧 Page UI</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_category_badge.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>カテゴリバッジ共通ウィジェット</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_status_badge.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ステータスバッジ共通ウィジェット</td>
+      </tr>
+      <tr>
+        <td><code>app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>仮ルート → 実画面ルートに差し替え</td>
+      </tr>
+      <tr>
+        <td><code>app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>問い合わせ系 i18n キー追加</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

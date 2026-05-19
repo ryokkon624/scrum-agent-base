@@ -548,6 +548,7 @@ final accountSettingsNotifierProvider =
 - `authNotifierProvider` など認証状態 Provider
 
 > **背景（Sprint 45 レビュー）**: `accountSettingsNotifierProvider` に `autoDispose` が未設定のまま実装していた。
+> **背景（Sprint 48 レビュー）**: `InquiryListNotifier`（一覧画面）も `NotifierProvider.autoDispose` にすべきところ、`NotifierProvider`（非 autoDispose）で実装していた。詳細・設定系画面に限らず、**一覧画面の Notifier も autoDispose が必要**。
 
 ### IndexedStack 配下の一覧画面における invalidate（重要）
 
@@ -576,6 +577,9 @@ ref.invalidate(shoppingListNotifierProvider);
 - 認証状態（`authNotifierProvider`）を `redirect` で監視し、未認証→`/login` へリダイレクト
 - ディープリンクパス（`/email-verify`・`/invite/:token`・`/password/reset`）は `_publicPrefixes` に含め、認証不要として扱う
 - `context.go()` と `context.push()` を使い分ける（履歴スタックを置き換えるか積むか）
+  - `context.push()`: 詳細閲覧など「戻る操作が自然」な遷移に使う
+  - `context.go()`: フォーム送信成功後など「前の画面に戻ってほしくない」遷移に使う
+  - **⚠️ 新規作成成功後の詳細画面遷移は `context.go()` を使う**: `context.push()` を使うと戻るスタックに新規作成画面が残り、「←」で新規作成画面に戻ってしまう（Sprint 48 #149）
 
 ---
 

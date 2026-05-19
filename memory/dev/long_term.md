@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-19（Sprint 47 Retro）
+**最終更新**: 2026-05-19（Sprint 48 Retro）
 
 ---
 
@@ -37,7 +37,8 @@
 | ユーザーアイコン表示に `UserAvatar` 共通ウィジェットを使わずにテキストラベルで実装 | 40, 41, 45 | `lib/core/ui/user_avatar.dart` の `UserAvatar` を使う。新機能でアイコン表示が必要なときに再実装しない。`iconUrl: null` のハードコードは「未割当表示」専用であり、ラベル（`displayName`）も親から渡すこと。ハードコード文字列（`'U'` 等）は禁止 |
 | ウィジェットテストで日本語テキストを直接検証（`find.text('日本語')` 等） | 45 | `find.byKey(const Key('xxx'))` を使い Key ベースで検証する。ARB 変更に強く、多言語対応のテストになる |
 | `debugPrint` でエラーオブジェクト（`$e`）全体を出力 | 45 | スタックトレース・内部状態がログに露出するためセキュリティリスク。固定の警告文字列のみ出力する（例: `debugPrint('Google sign-in failed')`）|
-| `AsyncNotifierProvider` の AutoDispose 未設定（画面離脱後もメモリに残る） | 45 | アカウント設定などユーザー操作完了後に破棄してよい画面は `AsyncNotifierProvider.autoDispose` にする。グローバル共有 Provider（未読数等）は AutoDispose なしで実装 |
+| `AsyncNotifierProvider` / `NotifierProvider` の AutoDispose 未設定（画面離脱後もメモリに残る） | 45, 48 | 画面固有の Provider は `AsyncNotifierProvider.autoDispose` / `NotifierProvider.autoDispose` にする。一覧画面の `Notifier` も対象（`InquiryListNotifier` 実績）。グローバル共有 Provider（未読数等）は AutoDispose なしで実装 |
+| メソッドシグネチャのパラメータ型に `dynamic` を使用（型明示漏れ） | 48 | `Widget _buildBody(dynamic state)` のように `dynamic` でパラメータ型を書かず、`InquiryDetailState` 等の具体的な型を明示する。`dynamic` / `var` の乱用は全箇所で禁止 |
 | 空データ（0件）をローディング中と区別せずに「読み込み中」表示のまま放置 | 47 | `AsyncValue` の状態遷移を正確にハンドリングする。`data.isEmpty` の場合は空状態ウィジェット（EmptyState）を表示する。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースをすべて確認すること |
 | フォームにテンプレート等から値を流し込む際に TextEditingController への反映漏れ | 47 | State の値を更新するだけでなく、対応する `TextEditingController.text = newValue` も必ずセットで更新すること。また横展開で「同じフォーム内に複数フィールドがある場合、全フィールドの反映漏れ」を確認すること |
 | 月と日を個別入力するフォームで存在しない日付（例: 2月30日）の入力を許可してしまう | 47 | 月と日を組み合わせた日付の整合性バリデーションを実装すること。`DateTime(year, month, day).month == month` で存在チェックできる（Dartの`DateTime`は28日がない月に31日を指定すると自動繰り越しするため、チェック後の月が入力した月と一致しない場合は無効） |
@@ -187,3 +188,4 @@
 | Sprint 45 | backend-conventions | 例外メッセージに内部IDを含めない・N+1問題防止パターンを追記 | Sprint 45 レビュー指摘（セキュリティ・パフォーマンス） |
 | Sprint 46 | mobile-conventions | `build()` 内フラグ事前計算の適用場面に `bool` フィールドを追記・Dio 型パラメータ具体型指定ルール追加・`copyWith` 全フィールド列挙ルール追加 | Sprint 46 #122 2回目レビュー指摘（パフォーマンス・型安全性・不完全 copyWith） |
 | Sprint 47 | mobile-conventions | 空状態ハンドリングルール・TextEditingController 反映漏れ防止ルール・月日整合性バリデーションルールを追記 | Sprint 47 Sprint Review指摘（#136 空状態/読み込み中区別・#137 テンプレート選択時反映漏れ・#138 日付バリデーション漏れ） |
+| Sprint 48 | mobile-conventions | AutoDispose 設定ルールの背景に「一覧画面 Notifier も対象」の実績を追記（Sprint 48 背景） | Sprint 48 レビュー指摘（`InquiryListNotifier` が `NotifierProvider` 非 autoDispose で実装されていた実績）|

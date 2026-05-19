@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 48 Review — #140 問い合わせ新規作成画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #e0f2fe; color: #0369a1; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1d4ed8; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* validation flow */
+  .validation-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .validation-table th { padding: 6px 10px; background: #f9fafb; border: 1px solid #e5e5e5; text-align: left; font-size: 11px; font-weight: 700; color: #6b7280; }
+  .validation-table td { padding: 8px 10px; border: 1px solid #e5e5e5; color: #374151; }
+  .err-tag { font-size: 11px; background: #fce7f3; color: #9d174d; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+
+  /* screen mock */
+  .screen-mock { background: #1a1a2e; border-radius: 24px; padding: 16px; max-width: 360px; margin: 0 auto; }
+  .screen-inner { background: #f8f7f5; border-radius: 12px; overflow: hidden; }
+  .app-bar { background: white; padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-weight: 700; font-size: 16px; color: #1a1a1a; }
+  .screen-body { padding: 16px; }
+  .form-card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 12px; }
+  .form-label { font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+  .form-field { border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
+  .form-select { border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; font-size: 12px; color: #9ca3af; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .form-textarea { border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; font-size: 12px; color: #9ca3af; min-height: 60px; margin-bottom: 10px; }
+  .form-error { font-size: 10px; color: #dc2626; margin-top: -8px; margin-bottom: 8px; }
+  .form-buttons { display: flex; gap: 8px; margin-top: 4px; }
+  .btn-cancel { flex: 1; border: 1px solid #d1d5db; border-radius: 6px; padding: 7px; text-align: center; font-size: 12px; color: #374151; }
+  .btn-submit { flex: 1; background: #059669; border-radius: 6px; padding: 7px; text-align: center; font-size: 12px; color: white; font-weight: 600; }
+  .btn-submit-disabled { flex: 1; background: #9ca3af; border-radius: 6px; padding: 7px; text-align: center; font-size: 12px; color: white; font-weight: 600; }
+  .description-text { font-size: 11px; color: #888; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 48 Review</div>
+  <h1>#140 — 問い合わせ新規作成画面を実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 48</span>
+    <span class="badge badge-issue">#140</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- なぜこの機能が必要だったか -->
+  <section>
+    <h2>なぜこの機能が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>問い合わせ一覧（#23）の「新規お問い合わせ」ボタン遷移先として必要。ユーザーがアプリの質問・不具合報告をサポートへ送信できる手段がなかった。カテゴリ・件名・内容の3項目フォームと送信後の詳細画面遷移を実装する。</p>
+    </div>
+
+    <div>
+      <div style="font-size: 11px; font-weight: 700; color: #888; text-align: center; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">新規作成画面</div>
+      <div class="screen-mock">
+        <div class="screen-inner">
+          <div class="app-bar">お問い合わせ新規作成</div>
+          <div class="screen-body">
+            <div class="description-text">カテゴリを選択し、件名とお問い合わせ内容を入力してください。</div>
+            <div class="form-card">
+              <div class="form-label">カテゴリ</div>
+              <div class="form-select"><span>カテゴリを選択してください</span><span>&#9660;</span></div>
+              <div class="form-label">件名</div>
+              <div class="form-field">件名を入力してください（200文字以内）</div>
+              <div class="form-label">お問い合わせ内容</div>
+              <div class="form-textarea">お問い合わせの内容を詳しく入力してください</div>
+              <div class="form-buttons">
+                <div class="btn-cancel">キャンセル</div>
+                <div class="btn-submit">送信</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC別 実装内容 -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">カテゴリ・件名・お問い合わせ内容の必須バリデーションが動作する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>InquiryCreateNotifier.submit()</code> が「送信」ボタン押下時に呼ばれ、バリデーションエラーがあれば <code>errorMessage</code> を i18n キーで state にセット。Page 側で対応するフィールド下に ARB のエラーメッセージを表示する。</p>
+
+        <table class="validation-table">
+          <tr>
+            <th>チェック内容</th>
+            <th>エラーキー（ARB）</th>
+            <th>表示場所</th>
+          </tr>
+          <tr>
+            <td>カテゴリ未選択</td>
+            <td><span class="err-tag">inquiryCreateErrorCategoryRequired</span></td>
+            <td>カテゴリドロップダウン下</td>
+          </tr>
+          <tr>
+            <td>件名が空</td>
+            <td><span class="err-tag">inquiryCreateErrorTitleRequired</span></td>
+            <td>件名フィールド下</td>
+          </tr>
+          <tr>
+            <td>件名が200文字超（AC2）</td>
+            <td><span class="err-tag">inquiryCreateErrorTitleTooLong</span></td>
+            <td>件名フィールド下</td>
+          </tr>
+          <tr>
+            <td>内容が空</td>
+            <td><span class="err-tag">inquiryCreateErrorBodyRequired</span></td>
+            <td>内容フィールド下</td>
+          </tr>
+        </table>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_create/inquiry_create_notifier.dart</span>
+            <span class="diff-stat">新規（バリデーション部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; submit() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>    // バリデーション</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>    if (state.selectedCategory == null || state.selectedCategory!.isEmpty) {</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>      state = state.copyWith(errorMessage: 'inquiryCreateErrorCategoryRequired');</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>      return;</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>    if (state.title.trim().isEmpty) {</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>      state = state.copyWith(errorMessage: 'inquiryCreateErrorTitleRequired');</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>      return;</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>    if (state.title.length &gt; 200) {</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>      state = state.copyWith(errorMessage: 'inquiryCreateErrorTitleTooLong');</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>      return;</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>    if (state.body.trim().isEmpty) {</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>      state = state.copyWith(errorMessage: 'inquiryCreateErrorBodyRequired');</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>      return;</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>    }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>バリデーションエラーのキーは i18n キー（ARB 定義文字列）で state に格納。Page 側でキーを判定してスナックバーには表示せず、フィールド下にインラインエラーとして表示する設計（<code>_isValidationError()</code> メソッドで判別）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">件名が200文字を超えるとバリデーションエラーが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>state.title.length &gt; 200</code> の判定でエラーキー <code>inquiryCreateErrorTitleTooLong</code> を state にセット。Page 側で件名フィールド下に ARB の日本語エラーメッセージが表示される。</p>
+        <div class="annotation" style="margin-top: 0;">
+          <span class="annotation-icon">&#128161;</span>
+          <span>AC1（必須チェック）と AC2（文字数チェック）を別々の <code>errorMessage</code> キーで管理。件名フィールド下では <code>if / else if</code> で両方のエラーを表示できるようにしている（両方同時には出ない設計）。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">POST /api/inquiries で送信され、成功後スナックバーが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>バリデーション通過後に <code>InquiryRepositoryImpl.createInquiry()</code> が <code>POST /api/inquiries</code> を呼び出す。成功すると API が返す <code>{"inquiryId": N}</code> から ID を取得して state にセット。Page 側の <code>ref.listen</code> が <code>createdInquiryId</code> の変化を検知し、スナックバーを表示する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/data/inquiry_repository.dart</span>
+            <span class="diff-stat">新規（createInquiry メソッド）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>  Future&lt;int&gt; createInquiry({</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>    required String category,</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>    required String title,</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>    required String body,</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>  }) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>      final response = await _dio.post&lt;Map&lt;String, dynamic&gt;&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>        '/api/inquiries',</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>        data: {'category': category, 'title': title, 'body': body},</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>      );</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>      return response.data!['inquiryId'] as int;</span></div>
+            <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>    } on DioException catch (e) { ... }</span></div>
+            <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_create/inquiry_create_page.dart</span>
+            <span class="diff-stat">新規（ref.listen 部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>    ref.listen(inquiryCreateNotifierProvider, (prev, next) {</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>      if (next.createdInquiryId != null &amp;&amp;</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>          next.createdInquiryId != prev?.createdInquiryId) {</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>        AppSnackBar.showSuccess(l10n.inquiryCreateSuccessMessage);</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>        context.push(</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>          AppRoutes.settingsInquiryDetail(next.createdInquiryId.toString()),</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>        );</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>      }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>createdInquiryId</code> の変化（null → 作成ID）を <code>ref.listen</code> で検知してスナックバー → 詳細画面遷移をトリガー。直接 Notifier から <code>context.go</code> は呼ばず、Page 側の listen でナビゲーションを処理する設計を守った。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">送信成功後、作成した問い合わせの詳細画面へ遷移する</div>
+      </div>
+      <div class="ac-body">
+        <p>AC3 の <code>ref.listen</code> で <code>createdInquiryId</code> の変化を検知し、<code>context.push(AppRoutes.settingsInquiryDetail(id))</code> を呼んで詳細画面へ push する。スタックに一覧→新規作成→詳細が積まれる状態になる。</p>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">キャンセルで問い合わせ一覧へ戻る</div>
+      </div>
+      <div class="ac-body">
+        <p>「キャンセル」ボタンで <code>context.go(AppRoutes.settingsInquiries)</code> を呼ぶ。<code>push</code>（スタックに積む）ではなく <code>go</code>（スタックを置き換える）を使い、キャンセル後は一覧に直接戻る設計。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_create/inquiry_create_page.dart</span>
+            <span class="diff-stat">新規（キャンセルボタン部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">174</span><span class="line-prefix">+</span><span>                      OutlinedButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">175</span><span class="line-prefix">+</span><span>                        key: const Key('cancelButton'),</span></div>
+            <div class="code-line line-add"><span class="line-num">176</span><span class="line-prefix">+</span><span>                        onPressed: () =&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">177</span><span class="line-prefix">+</span><span>                            context.go(AppRoutes.settingsInquiries),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>go</code> vs <code>push</code> の使い分け: キャンセルは一覧に戻る（スタックをリセット）ため <code>go</code> を選択。送信後の詳細遷移は <code>push</code>（後で「戻る」が使える）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">カバレッジ 95% 以上</div>
+      </div>
+      <div class="ac-body">
+        <p>Notifier テスト（バリデーション・成功・エラー各パス）と Page ウィジェットテストを実装。</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 22px; font-weight: 700; color: #166534;">12</div>
+            <div style="font-size: 11px; color: #166534; font-weight: 600;">Notifier テスト</div>
+            <div style="font-size: 10px; color: #6b7280;">(バリデーション×4・成功・エラー等)</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 22px; font-weight: 700; color: #166534;">4</div>
+            <div style="font-size: 11px; color: #166534; font-weight: 600;">Page テスト</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認ポイント -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>「送信」ボタンを押すとバリデーションエラーが表示されること（未入力）</strong>
+          <span>カテゴリ未選択・件名未入力・内容未入力の状態で送信ボタンを押すと、エラーになったフィールドの下に赤いエラーメッセージが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>件名が201文字以上のときに文字数エラーが表示されること</strong>
+          <span>件名を200文字を超えて入力して送信ボタンを押すと「件名は200文字以内で入力してください」のようなエラーが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>正常送信後にスナックバーが表示されて詳細画面へ遷移すること</strong>
+          <span>カテゴリ・件名・内容を正しく入力して送信すると「送信しました」のスナックバーが表示され、作成した問い合わせの詳細画面に自動的に遷移すること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>「キャンセル」ボタンで問い合わせ一覧に戻ること</strong>
+          <span>キャンセルボタンをタップすると問い合わせ一覧画面に戻ること（詳細画面へは遷移しないこと）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>送信中は送信ボタンが非活性（スピナー表示）になること</strong>
+          <span>送信ボタンを押した後、APIレスポンスが返るまでの間はボタンがグレーになりスピナーが表示されること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 改修スコープ確認 -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>inquiry_create_state.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>フォーム状態（カテゴリ・件名・内容・送信中フラグ・エラーメッセージ・作成ID）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_create_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>フォーム入力ハンドラ・バリデーション・POST API 呼び出し</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_create_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>新規作成フォーム UI（ドロップダウン・テキストフィールド・ボタン）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_repository.dart</code></td>
+        <td><span class="tag-unchanged">変更なし（#139 で新規作成済み）</span></td>
+        <td>createInquiry メソッドを含む Repository は #139 で既に作成</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

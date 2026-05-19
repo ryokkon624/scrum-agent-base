@@ -74,6 +74,8 @@
 - **空状態（0件）ハンドリング漏れ**: 一覧画面でデータが0件の場合に「読み込み中」が表示され続ける（Sprint 47: #145）。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースをACに明記し、実装チェックリストで確認する
 - **フォームのState更新とUI（TextEditingController）反映の切り離し**: テンプレート選択・既存データ読み込みでStateは更新されているが`TextEditingController.text`への反映が漏れ、画面に表示されない（Sprint 47: #146）。複数フィールドがある場合は全フィールドの横展開確認が必要
 - **日付の月・日組み合わせ整合性バリデーション漏れ**: 月次繰り返し設定で存在しない日付（2月30日等）を入力して保存できる（Sprint 47: #147）。`DateTime(year, month, day).month == month`チェックを必須化
+- **新規作成後の詳細画面で「←」を押すと新規作成画面に戻る（context.push/go の使い分けミス）**: 新規作成成功後の詳細画面遷移で `context.push()` を使うと、戻るスタックに新規作成画面が残る（Sprint 48: #149）。フォーム送信成功後の遷移は `context.go()` を使うよう mobile-conventions に追記済み
+- **視覚的仕様（背景色）の実機未確認**: AI・スタッフ返信バブルの背景色が同じになっていた（Sprint 48: #148）。送信者タイプ別の色指定はテストでは検証しにくく、実機確認で初めて発覚しやすい
 
 ---
 
@@ -110,3 +112,5 @@
 | Sprint 45 | sm/long_term.md | DEV指摘傾向に「dynamic型乱用」「AutoDispose未設定」「テスト日本語直接検証」を追記。Sprint Review発覚パターンに「複合画面のAPI副作用とUI反映の連動確認漏れ」を追記（SM） | Sprint 45 Sprint Reviewで3件のbugが発覚（#127/#128/#129）。複合画面の設計上の盲点として記録 |
 | Sprint 47 | mobile-conventions | 空状態ハンドリングルール（4ケースチェックリスト）・フォームUI反映漏れ防止ルール（TextEditingController横展開）・月日整合性バリデーションルールの3セクション追記（DEV実施） | Sprint 47 Sprint Reviewで3件のbugが発覚（#145/#146/#147）。一覧画面・フォーム画面の実装盲点として記録 |
 | Sprint 47 | sm/long_term.md | Sprint Review発覚パターンに空状態ハンドリング漏れ・TextEditingController反映漏れ・日付バリデーション漏れの3パターンを追記（SM） | Sprint 47 Sprint Reviewで発覚した3件のbugを記録 |
+| Sprint 48 | mobile-conventions | ナビゲーションルールに `context.go()` vs `context.push()` の使い分け詳細と新規作成後遷移の注意事項を追記（SM） | Sprint 48 Sprint Reviewで新規作成後の詳細画面「←」問題発覚（#149） |
+| Sprint 48 | sm/long_term.md | Sprint Review発覚パターンに「新規作成後の詳細画面←問題」「背景色の実機未確認」を追記（SM） | Sprint 48 Sprint Reviewで2件発覚（#148/#149） |
