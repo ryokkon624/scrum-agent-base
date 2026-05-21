@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-19（Sprint 49 Retro）
+**最終更新**: 2026-05-21（Sprint 50 Retro）
 
 ---
 
@@ -35,7 +35,7 @@
 | `Dismissible` の `background`/`secondaryBackground` の中身と `confirmDismiss` の `direction` 判定が不一致（スワイプ方向逆） | 40, 41, 42 | 3箇所をセットで確認する。`background` → startToEnd（右スワイプ）、`secondaryBackground` → endToStart（左スワイプ）に対応 |
 | `Text` ウィジェットで長い文字列が画面外にはみ出す（Overdue ラベル・タイトル等） | 41, 44 | `overflow: TextOverflow.ellipsis`（または `softWrap: true`）を設定する。特にカード内の固定幅コンテナ内のテキストは必須 |
 | ユーザーアイコン表示に `UserAvatar` 共通ウィジェットを使わずにテキストラベルで実装 | 40, 41, 45 | `lib/core/ui/user_avatar.dart` の `UserAvatar` を使う。新機能でアイコン表示が必要なときに再実装しない。`iconUrl: null` のハードコードは「未割当表示」専用であり、ラベル（`displayName`）も親から渡すこと。ハードコード文字列（`'U'` 等）は禁止 |
-| ウィジェットテストで日本語テキストを直接検証（`find.text('日本語')` 等） | 45 | `find.byKey(const Key('xxx'))` を使い Key ベースで検証する。ARB 変更に強く、多言語対応のテストになる |
+| ウィジェットテストで日本語テキストを直接検証（`find.text('日本語')` 等） | 45, 50 | `find.byKey(const Key('xxx'))` を使い Key ベースで検証する。ARB 変更に強く、多言語対応のテストになる |
 | `debugPrint` でエラーオブジェクト（`$e`）全体を出力 | 45 | スタックトレース・内部状態がログに露出するためセキュリティリスク。固定の警告文字列のみ出力する（例: `debugPrint('Google sign-in failed')`）|
 | `AsyncNotifierProvider` / `NotifierProvider` の AutoDispose 未設定（画面離脱後もメモリに残る） | 45, 48 | 画面固有の Provider は `AsyncNotifierProvider.autoDispose` / `NotifierProvider.autoDispose` にする。一覧画面の `Notifier` も対象（`InquiryListNotifier` 実績）。グローバル共有 Provider（未読数等）は AutoDispose なしで実装 |
 | メソッドシグネチャのパラメータ型に `dynamic` を使用（型明示漏れ） | 48 | `Widget _buildBody(dynamic state)` のように `dynamic` でパラメータ型を書かず、`InquiryDetailState` 等の具体的な型を明示する。`dynamic` / `var` の乱用は全箇所で禁止 |
@@ -192,3 +192,4 @@
 | Sprint 47 | mobile-conventions | 空状態ハンドリングルール・TextEditingController 反映漏れ防止ルール・月日整合性バリデーションルールを追記 | Sprint 47 Sprint Review指摘（#136 空状態/読み込み中区別・#137 テンプレート選択時反映漏れ・#138 日付バリデーション漏れ） |
 | Sprint 48 | mobile-conventions | AutoDispose 設定ルールの背景に「一覧画面 Notifier も対象」の実績を追記（Sprint 48 背景） | Sprint 48 レビュー指摘（`InquiryListNotifier` が `NotifierProvider` 非 autoDispose で実装されていた実績）|
 | Sprint 49 | mobile-conventions | `package_info_plus` でアプリバージョン取得パターン・静的コンテンツ画面の設計パターンを追記 | Sprint 49 #142〜#144 実装（アプリ情報・利用規約・プライバシーポリシー画面）で確立したパターン |
+| Sprint 50 | （更新なし）       | —                                                                        | Sprint 50 の指摘（ウィジェットテスト日本語テキスト直接検証）は既存ルール（Sprint 45 追記済み）に既に記載があるため新規追記不要。繰り返し指摘パターンの発生スプリント欄に 50 を追記のみ |

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 50 Review — #153 単体テストのカバレッジを上げたい</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-refactor { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Coverage metric */
+  .cov-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 16px; }
+  .cov-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; text-align: center; }
+  .cov-box.before { border-color: #fca5a5; }
+  .cov-box.after { border-color: #86efac; }
+  .cov-box .cov-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .cov-box .cov-value { font-size: 42px; font-weight: 700; line-height: 1; }
+  .cov-value-before { color: #ef4444; }
+  .cov-value-after { color: #22c55e; }
+  .cov-box .cov-sub { font-size: 11px; color: #6b7280; margin-top: 6px; }
+  .cov-arrow { font-size: 24px; color: #888; text-align: center; }
+
+  /* Priority table */
+  .priority-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+  .priority-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+  .priority-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .priority-table .code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .cov-bar-container { background: #f3f4f6; border-radius: 4px; height: 8px; width: 100%; }
+  .cov-bar { height: 8px; border-radius: 4px; }
+  .cov-bar-low { background: #ef4444; }
+  .cov-bar-mid { background: #f59e0b; }
+  .cov-bar-high { background: #22c55e; }
+  .cov-pct { font-size: 11px; font-weight: 700; color: #374151; text-align: right; padding-top: 2px; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* Test file list */
+  .test-group { margin-bottom: 16px; }
+  .test-group-label { font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .test-file-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 12px; align-items: flex-start; }
+  .test-file-item:last-child { border-bottom: none; }
+  .test-icon-new { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-icon-add { color: #3b82f6; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-filename { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .test-desc { font-size: 11px; color: #6b7280; margin-top: 1px; }
+  .test-lines { font-size: 10px; font-weight: 600; color: #888; margin-left: auto; flex-shrink: 0; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #e8f0fe; color: #1a56db; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 50 Review</div>
+  <h1>#153 — 単体テストのカバレッジを上げたい</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 50</span>
+    <span class="badge badge-issue">#153</span>
+    <span class="badge badge-refactor">refactor</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- なぜこの改修が必要だったか -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>カバレッジが 74.2% と低く、特に通知ウィジェット（45.9%）・世帯設定ウィジェット（59.6%）・買い物ウィジェット（72.5%）が重点的にテスト不足だった。コード変更時のリグレッション検知が「人によるレビュー頼み」になっており、客観的な品質指標が欠けていた。</p>
+    </div>
+    <div class="cov-grid">
+      <div class="cov-box before">
+        <div class="cov-label">改修前（全体ライン カバレッジ）</div>
+        <div class="cov-value cov-value-before">74.2%</div>
+        <div class="cov-sub">テスト不足の機能が複数存在</div>
+      </div>
+      <div class="cov-arrow">→</div>
+      <div class="cov-box after">
+        <div class="cov-label">改修後（全体ライン カバレッジ）</div>
+        <div class="cov-value cov-value-after">95.1%</div>
+        <div class="cov-sub">7,676 / 8,071 行カバー</div>
+      </div>
+    </div>
+
+    <!-- 優先度別カバレッジ改善 -->
+    <p style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">改修前の優先対応エリア（カバレッジが特に低かった箇所）</p>
+    <table class="priority-table">
+      <tr>
+        <th>対象エリア</th>
+        <th>改修前</th>
+        <th style="width:200px;">カバレッジバー</th>
+      </tr>
+      <tr>
+        <td class="code">notifications/presentation/widgets</td>
+        <td><strong style="color:#b91c1c;">45.9%</strong></td>
+        <td>
+          <div class="cov-bar-container"><div class="cov-bar cov-bar-low" style="width:45.9%;"></div></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="code">household_settings/presentation/widgets</td>
+        <td><strong style="color:#b91c1c;">59.6%</strong></td>
+        <td>
+          <div class="cov-bar-container"><div class="cov-bar cov-bar-low" style="width:59.6%;"></div></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="code">shopping/presentation/widgets</td>
+        <td><strong style="color:#f59e0b;">72.5%</strong></td>
+        <td>
+          <div class="cov-bar-container"><div class="cov-bar cov-bar-mid" style="width:72.5%;"></div></div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2"><strong>全体（修正後）</strong></td>
+        <td>
+          <div class="cov-bar-container"><div class="cov-bar cov-bar-high" style="width:95.1%;"></div></div>
+          <div class="cov-pct">95.1%</div>
+        </td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- AC別 実装内容 -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">coverage.ps1 を実行した結果、全体のラインカバレッジが 95% 以上になること</div>
+      </div>
+      <div class="ac-body">
+        <p>62ファイル・10,823行のテストコードを追加した結果、カバレッジが 74.2% → <strong>95.1%（7,676/8,071行）</strong> に向上。<code>coverage.ps1</code> 実行で確認済み。</p>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">優先度の高い3エリアでウィジェットテストを追加すること</div>
+      </div>
+      <div class="ac-body">
+        <p>指定された3エリアを含む全機能領域にテストを追加した。追加したテストファイルの主要なものを以下に示す。</p>
+
+        <div class="test-group">
+          <div class="test-group-label">1. notifications（優先度: 最高 / 改修前 45.9%）</div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">notification_bell_test.dart</div>
+              <div class="test-desc">未読バッジの表示・非表示、カウント表示・99+上限の検証</div>
+            </div>
+            <span class="test-lines">+94行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">notification_popover_test.dart</div>
+              <div class="test-desc">ポップオーバー開閉、通知リスト表示・空状態・既読操作</div>
+            </div>
+            <span class="test-lines">+289行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">notification_link_navigator_test.dart</div>
+              <div class="test-desc">通知タップ時のリンクナビゲーション（タスク・買い物・世帯設定各遷移先）</div>
+            </div>
+            <span class="test-lines">+277行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">notification_message_renderer_test.dart</div>
+              <div class="test-desc">動的キーディスパッチテーブル（taskAssigned・taskTaken・taskOverdue 等各キーの翻訳レンダリング）</div>
+            </div>
+            <span class="test-lines">+218行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-add">+</span>
+            <div>
+              <div class="test-filename">notification_center_page_test.dart（既存ファイルに追加）</div>
+              <div class="test-desc">reload() 呼び出し記録・状態変化の listen テスト追加</div>
+            </div>
+            <span class="test-lines">+100行</span>
+          </div>
+        </div>
+
+        <div class="test-group">
+          <div class="test-group-label">2. household_settings/widgets（優先度: 高 / 改修前 59.6%）</div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">members_section_test.dart</div>
+              <div class="test-desc">ローディング・エラー・OWNER/MEMBER 一覧表示・削除確認ダイアログ・OWNER 譲渡・未知ステータス分岐</div>
+            </div>
+            <span class="test-lines">+602行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">invitation_section_test.dart</div>
+              <div class="test-desc">招待状送信・ローディング・エラー・招待一覧・取消操作</div>
+            </div>
+            <span class="test-lines">+523行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">danger_zone_section_test.dart</div>
+              <div class="test-desc">世帯削除確認ダイアログ・退会操作・OWNER/MEMBER 権限分岐</div>
+            </div>
+            <span class="test-lines">+297行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">household_list_section_test.dart</div>
+              <div class="test-desc">世帯一覧・追加・選択中世帯のハイライト</div>
+            </div>
+            <span class="test-lines">+249行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">household_name_section_test.dart</div>
+              <div class="test-desc">世帯名編集フォーム・保存・バリデーションエラー</div>
+            </div>
+            <span class="test-lines">+173行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">nickname_section_test.dart</div>
+              <div class="test-desc">ニックネーム表示・編集・保存</div>
+            </div>
+            <span class="test-lines">+93行</span>
+          </div>
+        </div>
+
+        <div class="test-group">
+          <div class="test-group-label">3. shopping/widgets（優先度: 中 / 改修前 72.5%）</div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">image_picker_field_test.dart</div>
+              <div class="test-desc">画像選択・プレビュー表示・削除ボタン</div>
+            </div>
+            <span class="test-lines">+194行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">favorite_picker_bottom_sheet_test.dart</div>
+              <div class="test-desc">お気に入り選択・検索・選択時コールバック</div>
+            </div>
+            <span class="test-lines">+98行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">history_picker_bottom_sheet_test.dart</div>
+              <div class="test-desc">履歴選択・空状態表示・選択時コールバック</div>
+            </div>
+            <span class="test-lines">+120行</span>
+          </div>
+        </div>
+
+        <div class="test-group">
+          <div class="test-group-label">その他（AC3 追加対応 — 95% 未満だったため追加）</div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">housework_form_test.dart</div>
+              <div class="test-desc">onChanged・startDate/endDate エラー・_errorText 全分岐</div>
+            </div>
+            <span class="test-lines">+399行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">housework_card_test.dart</div>
+              <div class="test-desc">PET/OTHER カテゴリ・未知カテゴリ・週次曜日分岐</div>
+            </div>
+            <span class="test-lines">+278行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">future_tasks_section_test.dart</div>
+              <div class="test-desc">フィルタボタンタップ・不正日付分岐</div>
+            </div>
+            <span class="test-lines">+270行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-new">+</span>
+            <div>
+              <div class="test-filename">past_tasks_section_test.dart</div>
+              <div class="test-desc">一括完了・スワイプ削除・ローディング状態</div>
+            </div>
+            <span class="test-lines">+259行</span>
+          </div>
+          <div class="test-file-item">
+            <span class="test-icon-add">+</span>
+            <div>
+              <div class="test-filename">household_settings_notifier_test.dart（既存に大幅追加）</div>
+              <div class="test-desc">catch(_) ブランチ・OWNER 譲渡・世帯削除・退会の Notifier レベルテスト</div>
+            </div>
+            <span class="test-lines">+570行</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">3箇所対応後にカバレッジを再確認し、95% 未満の場合は追加対応すること</div>
+      </div>
+      <div class="ac-body">
+        <p>3エリア対応後のカバレッジが 95% に達しなかったため、他の低カバレッジ箇所にも追加でテストを実施した。全体で 62 ファイルの追加・更新により最終的に 95.1% を達成。</p>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">既存テストが全て pass すること（flutter test でエラーなし）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>flutter test</code> で 1,235件全テスト PASS を確認。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- プロダクションコードの変更（最小限） -->
+  <section>
+    <h2>プロダクションコードの変更（テスト対応のための最小修正）</h2>
+    <p style="font-size:13px;color:#4b5563;margin-bottom:16px;">テスト追加に伴い、Key を付与するための最小限の変更を1ファイルに行った。</p>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/notifications/presentation/widgets/notification_popover.dart</span>
+        <span class="diff-stat">+1 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">139</span><span class="line-prefix"> </span><span>              else if (_notifications.isEmpty)</span></div>
+        <div class="code-line line-ctx"><span class="line-num">140</span><span class="line-prefix"> </span><span>                Padding(</span></div>
+        <div class="code-line line-add"><span class="line-num">141</span><span class="line-prefix">+</span><span>                  key: const Key('notificationEmpty'),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">142</span><span class="line-prefix"> </span><span>                  padding: const EdgeInsets.all(32),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">143</span><span class="line-prefix"> </span><span>                  child: Text(l10n.notificationsEmpty, ...),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>通知が0件の場合の空状態表示に <code>Key('notificationEmpty')</code> を追加。テストで <code>find.byKey</code> による空状態確認を行うため（日本語テキスト直接検証を避けるルール準拠）。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認ポイント -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>flutter test が全件 PASS で終了すること</strong>
+          <span><code>flutter test</code> を実行して 1,235件（または追加後の件数）すべてが PASS になることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>coverage.ps1 でカバレッジが 95% 以上になること</strong>
+          <span>PowerShell で <code>.\coverage.ps1</code> を実行し、出力ログで全体ライン カバレッジが 95.1% 以上と表示されることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>通知ベルのポップオーバーが正常に動作すること</strong>
+          <span>通知がある場合にリストが表示され、通知が0件の場合に「通知はありません」等の空状態メッセージが表示されること（notification_popover.dart の Key 追加が視覚的に影響していないか確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>既存機能に目に見えるデグレがないこと</strong>
+          <span>プロダクションコードの変更は notification_popover.dart への Key 追加1行のみのため、影響範囲は最小。通知画面の見た目が変わっていないことを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 改修スコープ確認 -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>変更種別</th>
+        <th>ファイル数</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><span class="tag-new">テスト新規追加</span></td>
+        <td>約 55 ファイル</td>
+        <td>各機能の Repository / Notifier / Page / Widget テスト</td>
+      </tr>
+      <tr>
+        <td><span class="tag-changed">テスト追記（既存）</span></td>
+        <td>約 7 ファイル</td>
+        <td>household_settings_notifier_test 等、既存ファイルへのテストケース追加</td>
+      </tr>
+      <tr>
+        <td><span class="tag-changed">プロダクションコード変更</span></td>
+        <td>1 ファイル</td>
+        <td>notification_popover.dart（空状態 Padding に Key を追加）</td>
+      </tr>
+      <tr>
+        <td><span class="tag-new">ユーティリティ追加</span></td>
+        <td>2 ファイル</td>
+        <td>coverage_detail.js / filter_lcov.js（カバレッジレポート可視化ツール）</td>
+      </tr>
+      <tr>
+        <td><span class="tag-unchanged">ロジックの変更</span></td>
+        <td>なし</td>
+        <td>既存の動作・APIは一切変更なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>
