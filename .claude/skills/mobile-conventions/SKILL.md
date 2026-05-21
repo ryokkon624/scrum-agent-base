@@ -755,6 +755,9 @@ when(mockDio.get(...)).thenAnswer((_) async => Response(data: {"items": [{"id": 
 expect(find.text('パスワード変更'), findsOneWidget);
 expect(find.text('保存'), findsOneWidget);
 
+// NG: キャスト経由の日本語テキスト検証も同様に禁止
+expect((tester.widget(find.byType(Text).first) as Text).data, '通知メッセージ');
+
 // OK: Key ベースで検証 → 表示文字列に依存しない
 // ウィジェット側
 PasswordChangeSection(key: const Key('passwordChangeSection'), ...),
@@ -774,6 +777,7 @@ expect(find.byKey(const Key('saveButton')), findsOneWidget);
 - テスト用のルーティング先 Scaffold の body テキスト（例: `Text('signup-page')`）など、テスト専用プレースホルダーは引き続き `find.text` で参照可
 
 > **背景（Sprint 45 レビュー）**: `account_settings_page_test.dart` で `find.text('パスワード変更')` 等の日本語テキスト直接検証を多用していた。ARB 変更や多言語テスト環境への対応として Key ベース検証に全面移行した。
+> **背景（Sprint 53 レビュー）**: `notification_message_renderer_test.dart` で `(tester.widget(...) as Text).data == '日本語'` 形式（キャスト経由の日本語テキスト検証）を使っていた。`find.text()` と同様に禁止。`find.byKey(const Key('...'))` に修正した。
 
 ### ウィジェットテストのヘルパー
 

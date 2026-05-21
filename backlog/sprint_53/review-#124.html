@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 53 Review — #124 通知ベルのポップオーバーにi18nキーがそのまま表示される</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-popover { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; font-size: 13px; }
+  .mock-popover-header { background: #f3f4f6; padding: 8px 12px; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
+  .bell-icon { font-size: 14px; }
+  .mock-notif-item { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+  .mock-notif-item:last-child { border-bottom: none; }
+  .mock-notif-title-bad { font-size: 12px; font-weight: 600; color: #b91c1c; font-family: 'SF Mono', 'Fira Code', monospace; word-break: break-all; background: #fef2f2; padding: 3px 5px; border-radius: 3px; }
+  .mock-notif-title-good { font-size: 12px; font-weight: 600; color: #166534; }
+  .mock-notif-body-bad { font-size: 11px; color: #b91c1c; font-family: 'SF Mono', 'Fira Code', monospace; word-break: break-all; background: #fef2f2; padding: 2px 5px; border-radius: 3px; margin-top: 3px; }
+  .mock-notif-body-good { font-size: 11px; color: #6b7280; margin-top: 3px; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .cause-body code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; color: #374151; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #ef4444; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 32px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+  .ac-body code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; color: #374151; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 53 Review &middot; Bug Fix</div>
+  <h1>#124 &mdash; 通知ベルのポップオーバーに<br>i18nキーがそのまま表示される</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 53</span>
+    <span class="badge badge-issue">#124</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-popover">
+          <div class="mock-popover-header"><span class="bell-icon">&#x1F514;</span> 通知</div>
+          <div class="mock-notif-item">
+            <div class="mock-notif-title-bad">notifications.messages.yourTaskWasTaken.title</div>
+            <div class="mock-notif-body-bad">notifications.messages.yourTaskWasTaken.body</div>
+          </div>
+          <div class="mock-notif-item">
+            <div class="mock-notif-title-bad">notifications.messages.taskAssigned.title</div>
+            <div class="mock-notif-body-bad">notifications.messages.taskAssigned.body</div>
+          </div>
+          <div class="mock-notif-item">
+            <div class="mock-notif-title-bad">notifications.messages.acceptInvitation.title</div>
+            <div class="mock-notif-body-bad">notifications.messages.acceptInvitation.body</div>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-popover">
+          <div class="mock-popover-header"><span class="bell-icon">&#x1F514;</span> 通知</div>
+          <div class="mock-notif-item">
+            <div class="mock-notif-title-good">タスクを引き取りました</div>
+            <div class="mock-notif-body-good">田中さんが「お皿洗い」を完了しました</div>
+          </div>
+          <div class="mock-notif-item">
+            <div class="mock-notif-title-good">タスクが割り当てられました</div>
+            <div class="mock-notif-body-good">田中さんが「ゴミ捨て」をあなたに割り当てました</div>
+          </div>
+          <div class="mock-notif-item">
+            <div class="mock-notif-title-good">招待を承認しました</div>
+            <div class="mock-notif-body-good">山田さんがわが家に参加しました</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#x1F50D;</span>
+        <span class="title">バックエンドのキー形式とモバイル側の switch ケース値が不一致</span>
+      </div>
+      <div class="cause-body">
+        <p>
+          バックエンドの <code>NotificationPublisher</code> / <code>NotificationAggregationService</code> は、
+          DBに保存する <code>title_key</code> / <code>body_key</code> として
+          <strong>フルパス形式</strong>（例: <code>notifications.messages.yourTaskWasTaken.title</code>）を使用している。
+        </p>
+        <p>
+          一方、Flutter の <code>NotificationMessageRenderer</code> の <code>switch</code> 文は
+          <strong>短いキー形式</strong>（例: <code>yourTaskWasTaken</code>）で照合していたため、
+          どのケースにもマッチせず fallback の <code>_ =&gt; titleKey</code> が実行されてキー文字列がそのまま表示されていた。
+        </p>
+        <table class="mismatch-table">
+          <tr>
+            <th>通知種別</th>
+            <th>Flutter 側の switch ケース（修正前・誤）</th>
+            <th></th>
+            <th>バックエンドが DB に保存するキー（実際）</th>
+          </tr>
+          <tr>
+            <td>招待承認</td>
+            <td class="code mismatch">'acceptInvitation'</td>
+            <td class="arrow-cell">&#x2260;</td>
+            <td class="code match">'notifications.messages.acceptInvitation.title'</td>
+          </tr>
+          <tr>
+            <td>タスク割り当て</td>
+            <td class="code mismatch">'taskAssigned'</td>
+            <td class="arrow-cell">&#x2260;</td>
+            <td class="code match">'notifications.messages.taskAssigned.title'</td>
+          </tr>
+          <tr>
+            <td>タスク引き取り</td>
+            <td class="code mismatch">'yourTaskWasTaken'</td>
+            <td class="arrow-cell">&#x2260;</td>
+            <td class="code match">'notifications.messages.yourTaskWasTaken.title'</td>
+          </tr>
+          <tr>
+            <td>（全10種共通）</td>
+            <td class="code mismatch">短いキー形式</td>
+            <td class="arrow-cell">&#x2260;</td>
+            <td class="code match">notifications.messages.{name}.{title|body}</td>
+          </tr>
+        </table>
+        <p style="font-size:12px;color:#6b7280;">
+          Sprint 43 でこのクラスを実装した際、バックエンドが実際に DB に登録するキー値を確認せず ARB キーと命名規則を一致させようとした設計が原因。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/notifications/presentation/widgets/notification_message_renderer.dart</span>
+        <span class="diff-stat">+35 / -20</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">18</span><span class="line-prefix"> </span><span>  String renderTitle(String titleKey, Map&lt;String, dynamic&gt; params) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>    return switch (titleKey) {</span></div>
+        <div class="code-line line-del"><span class="line-num">20</span><span class="line-prefix">-</span><span>      'acceptInvitation' =&gt; l10n.notificationsAcceptInvitationTitle,</span></div>
+        <div class="code-line line-del"><span class="line-num">21</span><span class="line-prefix">-</span><span>      'declineInvitation' =&gt; l10n.notificationsDeclineInvitationTitle,</span></div>
+        <div class="code-line line-del"><span class="line-num">22</span><span class="line-prefix">-</span><span>      'taskAssigned' =&gt; l10n.notificationsTaskAssignedTitle,</span></div>
+        <div class="code-line line-del"><span class="line-num">23</span><span class="line-prefix">-</span><span>      'yourTaskWasTaken' =&gt; l10n.notificationsYourTaskWasTakenTitle,</span></div>
+        <div class="code-line line-del"><span class="line-num">24</span><span class="line-prefix">-</span><span>      'generic' =&gt; l10n.notificationsGenericTitle,</span></div>
+        <div class="code-line line-del"><span class="line-num">25</span><span class="line-prefix">-</span><span>      // ... 他 5 種も短いキー形式</span></div>
+        <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>      'notifications.messages.acceptInvitation.title' =&gt;</span></div>
+        <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>        l10n.notificationsAcceptInvitationTitle,</span></div>
+        <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>      'notifications.messages.declineInvitation.title' =&gt;</span></div>
+        <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>        l10n.notificationsDeclineInvitationTitle,</span></div>
+        <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>      'notifications.messages.taskAssigned.title' =&gt;</span></div>
+        <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>        l10n.notificationsTaskAssignedTitle,</span></div>
+        <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>      'notifications.messages.yourTaskWasTaken.title' =&gt;</span></div>
+        <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>        l10n.notificationsYourTaskWasTakenTitle,</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>      'notifications.messages.generic.title' =&gt; l10n.notificationsGenericTitle,</span></div>
+        <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>      // ... 他 5 種も同様にフルパス形式に変更</span></div>
+        <div class="code-line line-ctx"><span class="line-num">39</span><span class="line-prefix"> </span><span>      _ =&gt; titleKey,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">40</span><span class="line-prefix"> </span><span>    };</span></div>
+        <div class="code-line line-ctx"><span class="line-num">41</span><span class="line-prefix"> </span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#x1F4A1;</span>
+        <span>
+          <code>renderTitle</code> と <code>renderBody</code> の両メソッドで全10種（acceptInvitation / declineInvitation / removedFromHousehold / leftHousehold / assigned2Owner / taskAssigned / beDumpedTasks / yourTaskWasTaken / generic / inquiryReplied）のケース値をフルパス形式に置換した。
+          ARB キー（<code>notificationsAcceptInvitationTitle</code> 等）は変更なし。未知キーのフォールバック（<code>_ =&gt; titleKey</code>）も引き続き機能する。
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#x2713;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">通知ベルのポップオーバーで通知タイトルと本文がi18nキーではなく翻訳された文字列で表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>NotificationMessageRenderer.renderTitle()</code> / <code>renderBody()</code> の switch ケース値をフルパス形式に修正したことで、ポップオーバー内の全通知が正しく翻訳された文字列で表示されるようになった。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#x2713;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">通知センター画面でも同様に翻訳された文字列で表示される</div>
+      </div>
+      <div class="ac-body">
+        通知センター画面も同じ <code>NotificationMessageRenderer</code> を使用しているため、同一の修正で対応済み。ポップオーバーと通知センターの両方で翻訳文字列が表示される。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>通知ベルアイコンをタップしてポップオーバーを開いたとき、通知タイトルと本文が日本語で表示されること</strong>
+          <span>「notifications.messages.xxx.title」のような文字列ではなく「タスクが割り当てられました」等の翻訳文字列が表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>通知センター画面でも同様に翻訳された文字列が表示されること</strong>
+          <span>ポップオーバーと通知センターの両画面で同じ内容が正しく表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>通知が0件の場合でもポップオーバー・通知センターが正常に表示されること</strong>
+          <span>通知なし状態でクラッシュしないことを確認（デグレ確認）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>根本原因は「計画フェーズでバックエンドが実際に返すキー値を確認しないまま実装した」こと。今後は計画フェーズでバックエンドDBの実際のキー値（<code>t_notification.title_key</code> の値）を確認してから ARB キーとの突き合わせを行う。既存テストを修正し、フルパスキーでの正常動作を検証している。</p>
+      <div class="test-item">
+        <span class="test-icon">&#x2713;</span>
+        <div>
+          <div class="test-name">notification_message_renderer_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">全10種の通知タイプについてフルパス titleKey / bodyKey を入力したとき正しい翻訳文字列が返ることを検証。params（actorName・household・date・count 等）のプレースホルダー展開も確認</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#x2713;</span>
+        <div>
+          <div class="test-name">notification_message_renderer_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">未知のキーが来た場合にフォールバックとしてキー文字列をそのまま返すことを確認（<code>_ =&gt; titleKey</code> の挙動検証）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-21（Sprint 51 Retro）
+**最終更新**: 2026-05-21（Sprint 53 Retro）
 
 ---
 
@@ -56,7 +56,7 @@
 |---|---|---|
 | マジックストリング（enum未使用） | Sprint 34, 35 | status/flag値を `'0'`/`'1'` で直接比較。`core/models/` の生成済みenum を使う |
 | i18n ハードコード | Sprint 33, 34, 37 | 日本語・英語文字列をウィジェットに直書き。Sprint 37 は main_shell.dartのナビゲーションラベルで発生（既存コードだがファイルを触ったタイミングで指摘） |
-| テストで日本語テキスト直接検証 | Sprint 45, 50 | `find.text('パスワード変更')` 等の日本語直接検索 → `find.byKey(const Key('...'))` に変更。Key付与を実装時の標準チェック項目にする。新規テスト追加時・既存ファイルのメンテナンス時に繰り返し発生 |
+| テストで日本語テキスト直接検証 | Sprint 45, 50, 53 | `find.text('パスワード変更')` 等の日本語直接検索 → `find.byKey(const Key('...'))` に変更。Key付与を実装時の標準チェック項目にする。新規テスト追加時・既存ファイルのメンテナンス時に繰り返し発生。ウィジェットテスト新規追加時は必ずKeyベース検証を使うよう developer-workflow に追記を検討 |
 | `catch (_) {}` 握りつぶし | Sprint 34（規約化）, 35（再発） | rethrow または AppException 変換が必要。ただし Notifier 層は catch → errorMessage 格納が正解（Sprint 36 で規約を層別化） |
 | `dynamic` 型の乱用（`as dynamic`） | Sprint 45 | Future.wait の結果を `as dynamic` でキャスト → `as UserProfileDto` 等の明示型キャストに変更。型推論が効かない場面で発生しやすい |
 | `AutoDispose` 未設定 | Sprint 45, 48, 51 | 画面固有の Provider に `AutoDispose` が未設定。画面遷移後もメモリに残り古い state が引き継がれる（Sprint 51 #125: ログアウト後に `loginNotifierProvider` の `isLoading: true` が残りスピナー表示が続いた）。個人情報を持つ Provider・認証系 Provider・一覧画面 Notifier は必ず `autoDispose` にする |
@@ -117,3 +117,4 @@
 | Sprint 48 | sm/long_term.md | Sprint Review発覚パターンに「新規作成後の詳細画面←問題」「背景色の実機未確認」を追記（SM） | Sprint 48 Sprint Reviewで2件発覚（#148/#149） |
 | Sprint 49 | mobile-conventions | package_info_plus 採用実績（AsyncNotifier + Future.wait並行取得）・静的コンテンツ画面は StatelessWidget のみで実装する設計パターンを追記（DEV実施） | Sprint 49 でアプリ情報・利用規約・プライバシーポリシー画面を実装し確立したパターンを規約化 |
 | Sprint 51 | scrum-master-workflow | reviewer 起動プロンプトの変更ファイル確認方法を `git show [branch]:filepath` 方式に更新（SM） | convention-reviewer が Read ツールでワーキングディレクトリ（別ブランチ）のファイルを読み、実装済みコードを「未実装」と誤報告した実績（#125）。`git show` 明示指示で回避できることを確認 |
+| Sprint 53 | scrum-master-workflow | convention-reviewer git失敗時の SendMessage リカバリ手順を追記（SM） | ファイル一覧を渡してもgit操作に失敗する場合がある。SMが `git show` でファイル内容を取得して SendMessage で送ると継続できることをSprint 53で確認 |
