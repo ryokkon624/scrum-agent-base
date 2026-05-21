@@ -1,12 +1,18 @@
 # Sprint 52 作業メモ
 
 ## 担当Issue
-- #126: [bug/mobile] プロフィール画像を登録済みのユーザーのuser_iconに画像が表示されない
-- #127: [bug/mobile] アカウント設定画面でプロフィール画像登録後に画面の画像が更新されない
-- #130: [feature/mobile] アカウント設定画面に外観設定セクションを追加
+- #126: [bug/mobile] プロフィール画像を登録済みのユーザーのuser_iconに画像が表示されない ✅ 完了
+- #127: [bug/mobile] アカウント設定画面でプロフィール画像登録後に画面の画像が更新されない ✅ 完了
+- #130: [feature/mobile] アカウント設定画面に外観設定セクションを追加 ✅ 完了
 
 ## 作業順
 1. #126 → 2. #127 → 3. #130
+
+## Sprint 52 全Issue完了
+- #126: `fix/126-mobile-user-icon-image-not-displayed` ブランチ → push 済み
+- #127: `fix/127-mobile-account-settings-icon-not-refreshed` ブランチ → push 済み
+- #130: `feature/130-mobile-appearance-settings` ブランチ → push 済み（2026-05-21）
+- 全テスト通過（1256件 / flutter test）
 
 ---
 
