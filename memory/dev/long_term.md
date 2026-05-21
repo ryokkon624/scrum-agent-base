@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-21（Sprint 53 Retro）
+**最終更新**: 2026-05-21（Sprint 54 Retro）
 
 ---
 
@@ -161,6 +161,9 @@
 - デバッグ環境（LocalStack/エミュレーター）向けの URL 変換は `kDebugMode` フラグでガードし、`core/network/` 配下の単一クラス（`S3UrlResolver`）に閉じ込めると変換漏れを防げる。`localhost`/`127.0.0.1` → `10.0.2.2` のような変換はアップロード時だけでなく表示用 URL にも適用が必要（アップロード成功後も画像が表示されない問題の根本原因）（Sprint 52 #126）
 - アプリレベルのグローバル設定（テーマモード等）は `SharedPreferences` でデバイスローカルに保存し、ログイン後に DB 値を取得して上書きする二層設計が堅牢。未ログイン時もデバイスローカルの設定を適用できる（Sprint 52 #130）
 - 外観設定のような「ユーザーが選択 → 即座に全画面に反映」が必要な設定は、`main.dart` の `MaterialApp.themeMode` を `ref.watch(themeModeNotifierProvider)` で参照することで実現できる。`ThemeModeNotifier`（`AsyncNotifier`）が state を更新すると自動的に全画面が再描画される（Sprint 52 #130）
+- `TextFormField(initialValue: ...)` は最初の build 時にしか反映されず、その後 State が変化しても表示は更新されない。テンプレート選択・既存データ読み込みで後から値を流し込む必要があるフォームは `StatefulWidget` に変更し、`TextEditingController` を内部で管理する。`didUpdateWidget` で `widget.form.name != oldWidget.form.name` を検知して `_nameController.text = widget.form.name` に反映するパターンが確実。既存値と一致する場合はスキップして無限ループを防ぐ（Sprint 54 #146）
+- YYYY-MM-DD 形式のテキスト入力で日付有効性チェックが必要な場合、`DateTime.tryParse(value) == null` で書式チェックし、さらに `result.toIso8601String().substring(0, 10) != value` で自動繰り越し検知（例: `2026-02-30` → `2026-03-02` になる）ができる。この2段階チェックで存在しない日付を確実に弾ける。月・日個別入力の `DateTime(year, month, day).month == month` チェックとは別パターンとして使い分ける（Sprint 54 #147）
+- `AsyncValue.data` が空リストの場合は空状態ウィジェット（EmptyState）を表示する。カテゴリフィルタ等の絞り込み状態に応じて「データなし（未登録）」と「絞り込み結果なし」を出し分けることで UX が改善される。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースを必ず区別すること（Sprint 54 #145）
 
 ### hw-hub-backend
 
@@ -200,3 +203,4 @@
 | Sprint 51 | mobile-conventions | pull-to-refresh（RefreshIndicator）実装必須ルールを追記                  | Sprint 51 #151 で8画面に RefreshIndicator が未実装だった実績。`AlwaysScrollableScrollPhysics` との組み合わせを含む実装チェックリストを追加 |
 | Sprint 52 | mobile-conventions | 操作ロジックを持つウィジェットのウィジェットテスト必須ルールを追記        | Sprint 52 #130 convention-reviewer 指摘（`AppearanceSection` の SegmentedButton 選択 → Notifier 呼び出し確認テスト未追加） |
 | Sprint 53 | mobile-conventions | 日本語テキスト直接検証禁止ルールの NG パターンに `(tester.widget(...) as Text).data` 形式を追記・背景欄に Sprint 53 事例を追記 | Sprint 53 #124 指摘（`notification_message_renderer_test.dart` でキャスト経由の日本語テキスト検証を行っていた）|
+| Sprint 54 | mobile-conventions | StatefulWidget + didUpdateWidget による TextEditingController 更新パターン追記・YYYY-MM-DD 形式テキスト入力の日付有効性チェック（DateTime.tryParse + ISO8601 ラウンドトリップ）追記 | Sprint 54 #146（HouseworkForm StatefulWidget 化）・#147（日付バリデーション）の実装で確立したパターン |

@@ -38,6 +38,7 @@
 - 指摘対応後は必ず再レビューを実施してから Sprint Review に進む。省略禁止
 - 横展開確認でスコープ外問題を発見した場合は即 Issue 化する
 - **複数ブランチにまたがる実装の場合、修正が含まれるブランチをreviewerに明示すること（Sprint 44で発生）**: 例えばIssue Aの修正が `feature/A-xxx` にのみあり `feature/B-xxx` にない場合、「Issue Aの修正は `feature/A-xxx` ブランチで確認してください」と明示しないとreviewerが誤って未修正と判断する
+- **スタック型ブランチ（A→B→Cと順次ブランチして実装）は `git diff main...最上位ブランチ` に全Issueの変更が含まれる（Sprint 54で確認）**: 最上位ブランチだけ渡すとreviewerが全変更をまとめてスコープ外か判別できない。SMが `git show [コミットハッシュ] --name-only --format=""` でコミット単位の変更ファイルを取得し、各Issue固有のファイルリストをreviewerに渡す
 
 ### Sprint Review / Retro
 
@@ -118,3 +119,4 @@
 | Sprint 49 | mobile-conventions | package_info_plus 採用実績（AsyncNotifier + Future.wait並行取得）・静的コンテンツ画面は StatelessWidget のみで実装する設計パターンを追記（DEV実施） | Sprint 49 でアプリ情報・利用規約・プライバシーポリシー画面を実装し確立したパターンを規約化 |
 | Sprint 51 | scrum-master-workflow | reviewer 起動プロンプトの変更ファイル確認方法を `git show [branch]:filepath` 方式に更新（SM） | convention-reviewer が Read ツールでワーキングディレクトリ（別ブランチ）のファイルを読み、実装済みコードを「未実装」と誤報告した実績（#125）。`git show` 明示指示で回避できることを確認 |
 | Sprint 53 | scrum-master-workflow | convention-reviewer git失敗時の SendMessage リカバリ手順を追記（SM） | ファイル一覧を渡してもgit操作に失敗する場合がある。SMが `git show` でファイル内容を取得して SendMessage で送ると継続できることをSprint 53で確認 |
+| Sprint 54 | scrum-master-workflow | スタック型ブランチのレビュー対応注意事項を追記（SM） | DEVが複数IssueをスタックブランチでHouseworkForm系を実装。`git diff main...最上位ブランチ` に全変更が含まれることを確認。コミット単位の変更ファイル取得パターンを明文化 |

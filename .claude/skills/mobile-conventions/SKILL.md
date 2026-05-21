@@ -456,6 +456,82 @@ void applyTemplate(HouseworkTemplate template) {
 
 > **背景（Sprint 47 #137 Sprint Review）**: テンプレート選択時に家事名が画面に反映されなかった（画面非表示だがDB登録はされていた）。State の更新はできていたが、`_nameController.text = ...` への反映が漏れていた。説明欄も同様のリスクがあることが横展開確認で判明した。
 
+#### `TextFormField(initialValue: ...)` から `StatefulWidget + TextEditingController` への移行パターン
+
+`TextFormField(initialValue: ...)` は最初の build 時にしか反映されない。後から State 変化（テンプレート選択・画面間遷移での Props 変化）で値を流し込む必要がある場合は、`StatefulWidget` に変更して `TextEditingController` を内部で管理し、`didUpdateWidget` で親からの値変化を検知して反映すること。
+
+```dart
+// NG: TextFormField(initialValue: ...) → State が変化しても表示が更新されない
+class HouseworkForm extends StatelessWidget {
+  const HouseworkForm({super.key, required this.form, ...});
+  final HouseworkFormState form;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      initialValue: form.name,  // 初回 build 時にしか反映されない
+      ...
+    );
+  }
+}
+
+// OK: StatefulWidget + TextEditingController + didUpdateWidget
+class HouseworkForm extends StatefulWidget {
+  const HouseworkForm({super.key, required this.form, ...});
+  final HouseworkFormState form;
+
+  @override
+  State<HouseworkForm> createState() => _HouseworkFormState();
+}
+
+class _HouseworkFormState extends State<HouseworkForm> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.form.name);
+    _descriptionController = TextEditingController(text: widget.form.description ?? '');
+  }
+
+  @override
+  void didUpdateWidget(HouseworkForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 既存値と一致する場合はスキップ（無限ループ防止）
+    if (widget.form.name != oldWidget.form.name) {
+      _nameController.text = widget.form.name;
+    }
+    if (widget.form.description != oldWidget.form.description) {
+      _descriptionController.text = widget.form.description ?? '';
+    }
+    // 全フィールドを横展開すること
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: _nameController,  // initialValue ではなく controller を使う
+      ...
+    );
+  }
+}
+```
+
+適用すべき場面:
+- テンプレート選択で複数フィールドを一括更新するフォーム
+- 編集画面で初期データを読み込むフォーム（既存データが非同期で取得される場合）
+- 同じフォームウィジェットを登録・編集で共用する場合（Props が後から変化する）
+
+> **背景（Sprint 54 #146）**: `HouseworkForm` が `TextFormField(initialValue: form.name)` を使っていたため、テンプレート選択後に Notifier の state は更新されていたが画面上のテキスト欄は空欄のまま残っていた。`StatefulWidget` 化 + `didUpdateWidget` パターンに移行することで解決した。
+
 ### 月と日を個別に入力するフォームの日付整合性バリデーション
 
 「繰り返し設定」「有効期間」など、月と日を個別入力するフォームでは**存在しない日付**（例: 2月30日、4月31日）を弾くバリデーションを必ず実装すること。
@@ -492,6 +568,37 @@ bool _validate() {
 **注意**: 「月末」を `dayOfMonth=31` 等の特殊値で表現している場合（バックエンド仕様）は、特殊値を除外してからチェックすること。
 
 > **背景（Sprint 47 #138 Sprint Review）**: 家事編集画面の月次繰り返し日設定で、2月30日などを入力した状態で保存ボタンが押下できた。フロント側に月・日の組み合わせ整合性バリデーションがなかった。
+
+#### YYYY-MM-DD 形式テキスト入力の日付有効性チェック
+
+月・日の個別入力ではなく YYYY-MM-DD 形式のテキスト入力（`TextFormField`）で日付を受け取る場合は、`DateTime.tryParse()` + ISO8601 ラウンドトリップの2段階チェックで存在しない日付を弾くこと。
+
+Dart の `DateTime` は存在しない日付を自動繰り越しするため（例: `2026-02-30` → `2026-03-02`）、parse 結果をそのまま使うと無効な入力を受け入れてしまう。
+
+```dart
+// YYYY-MM-DD テキスト入力の日付有効性チェック
+bool isValidDate(String value) {
+  // Step1: 書式チェック（parse できない場合は null）
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return false;
+  // Step2: ラウンドトリップチェック（自動繰り越し検知）
+  // 2026-02-30 → parsed は 2026-03-02 になるため、stringify が元の値と一致しない
+  return parsed.toIso8601String().substring(0, 10) == value;
+}
+
+// Notifier の validate() での利用例
+if (startDate.isNotEmpty && !isValidDate(startDate)) {
+  return state.copyWith(
+    startDateError: 'houseworkCreateErrorInvalidDate',  // ARBキー
+  );
+}
+```
+
+使い分け:
+- `TextFormField` に YYYY-MM-DD 形式で直接入力させる場合 → `DateTime.tryParse()` + ISO8601 ラウンドトリップ
+- Dropdown で月と日を個別選択させる場合 → `DateTime(year, month, day).month == month` チェック
+
+> **背景（Sprint 54 #147）**: 家事設定画面の有効期間（startDate / endDate）入力欄で `2026-02-30` のような存在しない日付を入力しても保存できた。Notifier の `validate()` に書式チェックしかなく、自動繰り越し検知が未実装だった。
 
 ### build() 内の重い計算を Notifier 側で事前計算する（パフォーマンス必須）
 
