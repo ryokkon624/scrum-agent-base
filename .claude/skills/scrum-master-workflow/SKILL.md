@@ -139,8 +139,12 @@ git diff main...[ブランチ名] --name-only
 git diff [sprint-start-commit]^...HEAD --name-only
 ```
 
-> ⚠️ **convention-reviewerはWindows環境でgitコマンドを実行できない場合がある（Sprint 36で発生）。**
+> ⚠️ **convention-reviewerはWindows環境でgitコマンドを実行できない場合がある（Sprint 36, 52で発生）。**
 > SMが変更ファイル一覧を事前取得してreviewerの起動プロンプトに含めることで失敗を防ぐ。
+>
+> ⚠️ **reviewerへのプロンプトにコードを渡す場合、省略記法（`...` など）を絶対に使わないこと（Sprint 52で発生）。**
+> 省略コードを実際のコードと誤認識したreviewerが「テスト未実装」と誤判断するリスクがある。
+> `git show [ブランチ名]:[ファイルパス]` で取得した実際のコードをそのまま渡すこと。
 
 4. **3つのreviewerを並列でteammateとして起動する：**
 

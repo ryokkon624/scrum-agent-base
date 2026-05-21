@@ -720,7 +720,13 @@ final items = (res.data!['items'] as List<dynamic>).cast<Map<String, dynamic>>()
 | Repository impl | **必須** | 成功パス + DioException→AppException 変換 |
 | Notifier | **必須** | 各操作の状態遷移（成功・エラー） |
 | Page（ウィジェット） | **必須** | 主要な表示確認・ユーザー操作のゴールデンパス |
+| 操作ロジックを持つウィジェット | **必須** | ユーザー操作 → コールバック（Notifier 呼び出し等）を含む子ウィジェットはページ外でもウィジェットテスト必須（例: `SegmentedButton` 選択 → `onThemeModeChanged` 呼び出しを確認） |
+| 見た目のみの子ウィジェット | **不要** | 表示ロジックがない純粋な描画ウィジェット（ラベル・装飾等）はテスト対象外 |
 | 自動生成ファイル（`.g.dart` / `.mocks.dart`） | **不要** | 除外対象 |
+
+**判断基準**: コールバック引数（`onXxx`）が Notifier 呼び出しや状態変更を含む場合はウィジェットテスト必須。純粋に表示だけなら不要。
+
+> **背景（Sprint 52 #130 convention-reviewer 指摘）**: `AppearanceSection`（`SegmentedButton` で外観設定を選択するウィジェット）に「選択時に `setThemeMode()` が呼ばれること」を確認するウィジェットテストが未追加だった。Page のゴールデンパステストでカバーできていると判断していたが、独立したウィジェットとして操作ロジックを持つ場合はそのウィジェット単体のテストも必要。
 
 ### Repository impl テスト時のモック構造確認（重要）
 

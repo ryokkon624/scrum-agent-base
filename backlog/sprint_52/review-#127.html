@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 52 Review — #127 アカウント設定画面でプロフィール画像登録後に画面の画像が更新されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  .mock-settings-page { background: #f7f8f6; border-radius: 8px; padding: 12px; }
+  .mock-page-title { font-size: 12px; font-weight: 700; color: #1a1a1a; margin-bottom: 10px; border-bottom: 1px solid #e5e5e5; padding-bottom: 6px; }
+  .mock-section { background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .mock-avatar-bad { width: 48px; height: 48px; border-radius: 50%; background: #d1d5db; display: flex; align-items: center; justify-content: center; color: #6b7280; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .mock-avatar-good { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #3b82f6); display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; }
+  .mock-avatar-info { font-size: 11px; }
+  .mock-avatar-name { font-weight: 600; color: #1a1a1a; }
+  .mock-avatar-note { color: #6b7280; }
+  .mock-header-row { display: flex; align-items: center; justify-content: space-between; background: #1a2e1a; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
+  .mock-header-title-sm { color: white; font-weight: 700; font-size: 11px; }
+  .mock-icon-initials { width: 28px; height: 28px; border-radius: 50%; background: #4a6d4a; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 10px; }
+  .mock-icon-photo { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .mock-badge { font-size: 10px; color: #b91c1c; background: #fef2f2; border: 1px solid #fca5a5; padding: 2px 6px; border-radius: 3px; margin-top: 6px; display: inline-block; }
+  .mock-badge-good { font-size: 10px; color: #166534; background: #f0fdf4; border: 1px solid #86efac; padding: 2px 6px; border-radius: 3px; margin-top: 6px; display: inline-block; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .cause-ac { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; }
+  .cause-ac-label { font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 4px; }
+  .cause-ac p { font-size: 13px; color: #4b5563; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* Implementation notes */
+  .impl-note { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
+  .impl-note-label { font-size: 11px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .impl-note p { font-size: 13px; color: #1e3a5f; }
+
+  /* info box */
+  .info-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #166534; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 52 Review · Bug Fix</div>
+  <h1>#127 — アカウント設定画面でプロフィール画像登録後に<br>画面の画像が更新されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 52</span>
+    <span class="badge badge-issue">#127</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-header-row">
+          <span class="mock-header-title-sm">HwHub</span>
+          <div class="mock-icon-initials">た</div>
+        </div>
+        <div class="mock-settings-page">
+          <div class="mock-page-title">アカウント設定</div>
+          <div class="mock-section">
+            <div class="mock-avatar-bad">た</div>
+            <div class="mock-avatar-info">
+              <div class="mock-avatar-name">田中 太郎</div>
+              <div class="mock-avatar-note">画像アップロード後も<br>古い状態のまま</div>
+            </div>
+          </div>
+        </div>
+        <div class="mock-badge">アップロード成功後も画面が更新されない</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-header-row">
+          <span class="mock-header-title-sm">HwHub</span>
+          <div class="mock-icon-photo">📸</div>
+        </div>
+        <div class="mock-settings-page">
+          <div class="mock-page-title">アカウント設定</div>
+          <div class="mock-section">
+            <div class="mock-avatar-good">📸</div>
+            <div class="mock-avatar-info">
+              <div class="mock-avatar-name">田中 太郎</div>
+              <div class="mock-avatar-note">アップロード後に<br>新しい画像が表示される</div>
+            </div>
+          </div>
+        </div>
+        <div class="mock-badge-good">アップロード後にアカウント設定・ヘッダー両方が更新</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">2つの独立した問題が存在していた</span>
+      </div>
+      <div class="cause-body">
+        <div class="cause-ac">
+          <div class="cause-ac-label">AC1 の原因（#126 と同根）</div>
+          <p><code>uploadIcon()</code> Step4 で <code>fetchProfile()</code> を呼び出して最新プロフィールを取得しても、<code>iconUrl</code> が <code>localhost</code> URLのまま画像ロードに失敗していた。
+          これは #126 で修正した「表示用URLへの変換未適用」と同じ原因であり、#126 の修正で自動解消する。</p>
+        </div>
+        <div class="cause-ac">
+          <div class="cause-ac-label">AC2 の原因（ヘッダーアイコンが更新されない）</div>
+          <p>ヘッダーの <code>UserAvatar</code> は <code>authNotifierProvider</code> の state（<code>AuthUser.iconUrl</code>）を参照している。
+          しかし <code>uploadIcon()</code> 成功後に <code>authNotifierProvider</code> が invalidate されていなかったため、
+          ヘッダーのアイコンには古い state が残り続けていた。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="info-box">
+      AC1: #126 の修正（fetchProfile() の iconUrl に S3UrlResolver.resolve() を適用）で自動解消。このブランチでの追加変更は AC2 のみ。
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/account_settings/presentation/account_settings/account_settings_notifier.dart</span>
+        <span class="diff-stat">+4 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">126</span><span class="line-prefix"> </span><span>      // Step4: プロフィールを再取得してアカウント設定画面の表示を更新</span></div>
+        <div class="code-line line-ctx"><span class="line-num">127</span><span class="line-prefix"> </span><span>      final updatedProfile = await _repo.fetchProfile();</span></div>
+        <div class="code-line line-ctx"><span class="line-num">128</span><span class="line-prefix"> </span><span>      state = AsyncData(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">129</span><span class="line-prefix"> </span><span>        current.copyWith(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">130</span><span class="line-prefix"> </span><span>          profile: updatedProfile,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">131</span><span class="line-prefix"> </span><span>          successMessage: 'accountSettingsIconUploadSuccess',</span></div>
+        <div class="code-line line-ctx"><span class="line-num">132</span><span class="line-prefix"> </span><span>          clearError: true,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">133</span><span class="line-prefix"> </span><span>        ),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">134</span><span class="line-prefix"> </span><span>      );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">135</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">136</span><span class="line-prefix">+</span><span>      // Step5: authNotifier を invalidate してヘッダーのアイコンを更新する（AC2）</span></div>
+        <div class="code-line line-add"><span class="line-num">137</span><span class="line-prefix">+</span><span>      ref.invalidate(authNotifierProvider);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">138</span><span class="line-prefix"> </span><span>    } on AppException catch (e) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">139</span><span class="line-prefix"> </span><span>      state = AsyncData(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">140</span><span class="line-prefix"> </span><span>        current.copyWith(errorMessage: e.message),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">141</span><span class="line-prefix"> </span><span>      );</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>state = AsyncData(...)</code> で成功状態をセットした直後に <code>ref.invalidate(authNotifierProvider)</code> を呼ぶ設計にした。エラー時（<code>on AppException catch</code> ブロック）では invalidate しない（意図的）。invalidate によって <code>authNotifierProvider</code> が再ビルドされ、<code>/me</code> API が再コールされてヘッダーのアイコンに最新の iconUrl が反映される。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note">
+      <div class="impl-note-label">判断1（AC1の処理）</div>
+      <p><strong>AC1 は #126 の修正で自動解消</strong><br>
+      <code>fetchProfile()</code> の <code>iconUrl</code> に URL 変換が適用されるようになったため、<code>uploadIcon()</code> Step4 の <code>fetchProfile()</code> で正しいURLが返るようになった。このブランチでは追加対応不要。</p>
+    </div>
+    <div class="impl-note">
+      <div class="impl-note-label">判断2（invalidate のタイミング）</div>
+      <p><strong>成功状態セット後に invalidate する順番で設計</strong><br>
+      <code>state = AsyncData(...)</code> で成功状態をセットした後に <code>ref.invalidate(authNotifierProvider)</code> を呼ぶことで、ヘッダーの再取得が成功確認後にトリガーされる。エラー時には invalidate しない（ユーザーへの不整合な状態更新を防ぐため）。</p>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">アカウント設定画面でプロフィール画像を変更した後、画面上のプロフィール画像が変更後の画像に更新される</div>
+      </div>
+      <div class="ac-body">
+        <code>uploadIcon()</code> Step4 の <code>fetchProfile()</code> で取得する <code>iconUrl</code> に URL 変換が適用される（#126 の修正）。
+        取得した <code>updatedProfile</code> を state にセットするため、アカウント設定画面の画像が即座に更新される。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">ヘッダーのユーザーアイコンにも変更後の画像が反映される</div>
+      </div>
+      <div class="ac-body">
+        <code>uploadIcon()</code> 成功後に <code>ref.invalidate(authNotifierProvider)</code> を追加。
+        これにより <code>authNotifierProvider</code> が再ビルドされて <code>/me</code> API が再コールされ、
+        ヘッダーの <code>UserAvatar</code> が参照する <code>AuthUser.iconUrl</code> が最新の値に更新される。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>アカウント設定画面でプロフィール画像を変更したとき、画面内のアイコンが新しい画像に切り替わること</strong>
+          <span>アップロード成功後、設定画面のアイコンセクションに新しい画像が表示されるか確認（旧画像・イニシャルが表示されたままにならないこと）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>アカウント設定画面でプロフィール画像を変更したとき、ヘッダーのアイコンも新しい画像に切り替わること</strong>
+          <span>画面内アイコンとヘッダーアイコンの両方が同時に更新されるか確認。アカウント設定画面の外（他のタブ）に戻ってもヘッダーアイコンが変わっているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>アップロードに失敗した場合、ヘッダーは古い状態のまま（不整合な更新が発生しない）こと</strong>
+          <span>エラー時に invalidate されないため、ヘッダーに意図しない状態変化が起きないことを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>ヘッダーアイコン更新漏れを防ぐため、<code>uploadIcon()</code> の invalidate を検証するテストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">test/features/account_settings/account_settings_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;"><code>uploadIcon()</code> 成功後に <code>authNotifierProvider</code> が invalidate されて再ビルドされることをカウンターで検証するテストを追加。<code>_FakeAuthNotifier</code>（build呼び出し回数を記録）を使い、uploadIcon前後でカウントが増えることを確認。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

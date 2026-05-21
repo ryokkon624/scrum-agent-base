@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 52 Review — #126 プロフィール画像を登録済みのユーザーのuser_iconに画像が表示されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-header { display: flex; align-items: center; justify-content: space-between; background: #1a2e1a; border-radius: 8px; padding: 10px 14px; }
+  .mock-header-title { color: white; font-weight: 700; font-size: 13px; }
+  .mock-icon-bad { width: 36px; height: 36px; border-radius: 50%; background: #4a6d4a; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; border: 2px solid rgba(255,255,255,0.3); }
+  .mock-icon-good { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #ec4899); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid rgba(255,255,255,0.5); }
+  .mock-icon-photo { width: 100%; height: 100%; object-fit: cover; background: linear-gradient(135deg, #10b981, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .mock-badge { font-size: 10px; color: #b91c1c; background: #fef2f2; border: 1px solid #fca5a5; padding: 2px 6px; border-radius: 3px; margin-top: 10px; display: inline-block; }
+  .mock-badge-good { font-size: 10px; color: #166534; background: #f0fdf4; border: 1px solid #86efac; padding: 2px 6px; border-radius: 3px; margin-top: 10px; display: inline-block; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #ef4444; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* Implementation notes */
+  .impl-note { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
+  .impl-note-label { font-size: 11px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .impl-note p { font-size: 13px; color: #1e3a5f; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 52 Review · Bug Fix</div>
+  <h1>#126 — プロフィール画像を登録済みのユーザーの<br>user_iconに画像が表示されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 52</span>
+    <span class="badge badge-issue">#126</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-header">
+          <span class="mock-header-title">HwHub</span>
+          <div class="mock-icon-bad">た</div>
+        </div>
+        <div class="mock-badge">画像が登録済みでもイニシャル表示</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-header">
+          <span class="mock-header-title">HwHub</span>
+          <div class="mock-icon-good">
+            <div class="mock-icon-photo">📸</div>
+          </div>
+        </div>
+        <div class="mock-badge-good">登録した画像がアイコンに表示される</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">表示用URLへのLocalhostアドレス変換が適用されていなかった</span>
+      </div>
+      <div class="cause-body">
+        <p>開発環境ではLocalStackを使用しており、バックエンドがS3のURLとして <code>http://localhost:4566/...</code> を返す。
+        Androidエミュレーターから <code>localhost</code> は到達不能（= ホストPCではなくエミュレーター自身を指す）のため、
+        画像ロードが失敗してイニシャル表示にフォールバックしていた。</p>
+        <p>アップロード用のPresigned URLには変換が存在していたが（<code>AccountSettingsRepositoryImpl._resolveS3Url()</code>）、
+        <strong>プロフィール取得時（fetchProfile / getMyProfile）の戻り値には変換が適用されていなかった</strong>のが根本原因。</p>
+        <table class="mismatch-table">
+          <tr>
+            <th>処理</th>
+            <th>修正前</th>
+            <th></th>
+            <th>修正後</th>
+          </tr>
+          <tr>
+            <td>アップロード用URL（uploadToS3）</td>
+            <td class="code match">変換あり</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">変換あり（共通化）</td>
+          </tr>
+          <tr>
+            <td>fetchProfile の iconUrl</td>
+            <td class="code mismatch">変換なし（バグ）</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">変換あり（修正）</td>
+          </tr>
+          <tr>
+            <td>updateProfile の iconUrl</td>
+            <td class="code mismatch">変換なし（バグ）</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">変換あり（修正）</td>
+          </tr>
+          <tr>
+            <td>getMyProfile の iconUrl（AuthUser）</td>
+            <td class="code mismatch">変換なし（バグ）</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">変換あり（修正）</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <!-- 新規: S3UrlResolver -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/core/network/s3_url_resolver.dart（新規作成）</span>
+        <span class="diff-stat">+20 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-add"><span class="line-num"> 1</span><span class="line-prefix">+</span><span>class S3UrlResolver {</span></div>
+        <div class="code-line line-add"><span class="line-num"> 2</span><span class="line-prefix">+</span><span>  const S3UrlResolver({required this.isDebug});</span></div>
+        <div class="code-line line-add"><span class="line-num"> 3</span><span class="line-prefix">+</span><span>  final bool isDebug;</span></div>
+        <div class="code-line line-add"><span class="line-num"> 4</span><span class="line-prefix">+</span><span></span></div>
+        <div class="code-line line-add"><span class="line-num"> 5</span><span class="line-prefix">+</span><span>  String? resolve(String? url) {</span></div>
+        <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>    if (url == null) return null;</span></div>
+        <div class="code-line line-add"><span class="line-num"> 7</span><span class="line-prefix">+</span><span>    if (!isDebug) return url;</span></div>
+        <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span>    return url</span></div>
+        <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>        .replaceFirst('localhost', '10.0.2.2')</span></div>
+        <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>        .replaceFirst('127.0.0.1', '10.0.2.2');</span></div>
+        <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>  }</span></div>
+        <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>}</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>従来は <code>AccountSettingsRepositoryImpl</code> 内にプライベートメソッド <code>_resolveS3Url()</code> があったが、表示用URLにも必要になったため共通クラスとして切り出した。<code>kDebugMode</code> の値を外から注入する設計でテストが書きやすい。</span>
+      </div>
+    </div>
+
+    <!-- auth_repository.dart の変更 -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/auth/data/auth_repository.dart</span>
+        <span class="diff-stat">+14 / -3</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-del"><span class="line-num">47</span><span class="line-prefix">-</span><span>  const AuthRepositoryImpl({required AuthApi api}) : _api = api;</span></div>
+        <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>  const AuthRepositoryImpl({</span></div>
+        <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>    required AuthApi api,</span></div>
+        <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>    required S3UrlResolver s3UrlResolver,</span></div>
+        <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>  }) : _api = api, _s3UrlResolver = s3UrlResolver;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">51</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">55</span><span class="line-prefix"> </span><span>  @override</span></div>
+        <div class="code-line line-ctx"><span class="line-num">56</span><span class="line-prefix"> </span><span>  Future&lt;AuthUser&gt; getMyProfile() async {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">57</span><span class="line-prefix"> </span><span>    try {</span></div>
+        <div class="code-line line-del"><span class="line-num">58</span><span class="line-prefix">-</span><span>      return await _api.getMyProfile();</span></div>
+        <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>      final user = await _api.getMyProfile();</span></div>
+        <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>      return AuthUser(</span></div>
+        <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>        userId: user.userId,</span></div>
+        <div class="code-line line-add"><span class="line-num">61</span><span class="line-prefix">+</span><span>        email: user.email,</span></div>
+        <div class="code-line line-add"><span class="line-num">62</span><span class="line-prefix">+</span><span>        displayName: user.displayName,</span></div>
+        <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>        iconUrl: _s3UrlResolver.resolve(user.iconUrl),</span></div>
+        <div class="code-line line-add"><span class="line-num">64</span><span class="line-prefix">+</span><span>      );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">65</span><span class="line-prefix"> </span><span>    } on DioException catch (e) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">66</span><span class="line-prefix"> </span><span>      throw _convert(e);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">67</span><span class="line-prefix"> </span><span>    }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">68</span><span class="line-prefix"> </span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>ヘッダーの <code>UserAvatar</code> は <code>authNotifierProvider</code> の <code>AuthUser.iconUrl</code> を参照している。<code>getMyProfile()</code> の戻り値で URL 変換することで、アプリ起動時（token復元後の /me コール）とログイン後の両方で変換が適用される。</span>
+      </div>
+    </div>
+
+    <!-- account_settings_repository.dart の変更（fetchProfile・updateProfile） -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/account_settings/data/account_settings_repository.dart</span>
+        <span class="diff-stat">+28 / -14</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num"> 62</span><span class="line-prefix"> </span><span>class AccountSettingsRepositoryImpl implements AccountSettingsRepository {</span></div>
+        <div class="code-line line-del"><span class="line-num"> 63</span><span class="line-prefix">-</span><span>  AccountSettingsRepositoryImpl(this._dio, this._s3Dio);</span></div>
+        <div class="code-line line-add"><span class="line-num"> 63</span><span class="line-prefix">+</span><span>  AccountSettingsRepositoryImpl(this._dio, this._s3Dio, this._s3UrlResolver);</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 64</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 69</span><span class="line-prefix"> </span><span>  Future&lt;UserProfileDto&gt; fetchProfile() async {</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 70</span><span class="line-prefix"> </span><span>    try {</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 71</span><span class="line-prefix"> </span><span>      final response = await _dio.get&lt;dynamic&gt;('/api/users/me/profile');</span></div>
+        <div class="code-line line-del"><span class="line-num"> 72</span><span class="line-prefix">-</span><span>      return UserProfileDto.fromJson(response.data as Map&lt;String, dynamic&gt;);</span></div>
+        <div class="code-line line-add"><span class="line-num"> 72</span><span class="line-prefix">+</span><span>      final dto = UserProfileDto.fromJson(</span></div>
+        <div class="code-line line-add"><span class="line-num"> 73</span><span class="line-prefix">+</span><span>        response.data as Map&lt;String, dynamic&gt;,</span></div>
+        <div class="code-line line-add"><span class="line-num"> 74</span><span class="line-prefix">+</span><span>      );</span></div>
+        <div class="code-line line-add"><span class="line-num"> 75</span><span class="line-prefix">+</span><span>      return UserProfileDto(</span></div>
+        <div class="code-line line-add"><span class="line-num"> 76</span><span class="line-prefix">+</span><span>        userId: dto.userId, email: dto.email,</span></div>
+        <div class="code-line line-add"><span class="line-num"> 77</span><span class="line-prefix">+</span><span>        authProvider: dto.authProvider, displayName: dto.displayName,</span></div>
+        <div class="code-line line-add"><span class="line-num"> 78</span><span class="line-prefix">+</span><span>        locale: dto.locale,</span></div>
+        <div class="code-line line-add"><span class="line-num"> 79</span><span class="line-prefix">+</span><span>        iconUrl: _s3UrlResolver.resolve(dto.iconUrl),</span></div>
+        <div class="code-line line-add"><span class="line-num"> 80</span><span class="line-prefix">+</span><span>      );</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 81</span><span class="line-prefix"> </span><span>    } on DioException catch (e) { ... }</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 82</span><span class="line-prefix"> </span><span>  }</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 83</span><span class="line-prefix"> </span><span>  // updateProfile も同様に iconUrl を変換して返す（省略）</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 84</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-del"><span class="line-num">148</span><span class="line-prefix">-</span><span>  String _resolveS3Url(String url) {</span></div>
+        <div class="code-line line-del"><span class="line-num">149</span><span class="line-prefix">-</span><span>    if (!kDebugMode) return url;</span></div>
+        <div class="code-line line-del"><span class="line-num">150</span><span class="line-prefix">-</span><span>    return url.replaceFirst('localhost', '10.0.2.2')...;</span></div>
+        <div class="code-line line-del"><span class="line-num">151</span><span class="line-prefix">-</span><span>  }</span></div>
+        <div class="code-line line-add"><span class="line-num">155</span><span class="line-prefix">+</span><span>  // _resolveS3Url() を削除し、S3UrlResolver を共通利用</span></div>
+        <div class="code-line line-ctx"><span class="line-num">156</span><span class="line-prefix"> </span><span>  final resolved = _s3UrlResolver.resolve(uploadUrl) ?? uploadUrl;</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>プライベートメソッド <code>_resolveS3Url()</code> を削除して <code>S3UrlResolver</code> に統一。これにより変換ロジックが1箇所にまとまり、今後も漏れなく適用できる。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note">
+      <div class="impl-note-label">判断1</div>
+      <p><strong>S3UrlResolver をシングルトン <code>const</code> クラスで実装</strong><br>
+      <code>isDebug</code> を外から注入する設計にすることで、テストで <code>const S3UrlResolver(isDebug: true)</code> として使いやすくなった。Providerからは <code>S3UrlResolver(isDebug: kDebugMode)</code> として毎回生成する。</p>
+    </div>
+    <div class="impl-note">
+      <div class="impl-note-label">判断2</div>
+      <p><strong>AccountSettingsRepositoryImpl は positional パラメータ（既存パターン踏襲）</strong><br>
+      AuthRepositoryImpl は named パラメータだが、AccountSettingsRepositoryImpl は既存コードが <code>(Dio, Dio)</code> の positional 形式だったため、3番目に <code>S3UrlResolver</code> を positional で追加して既存パターンに合わせた。</p>
+    </div>
+    <div class="impl-note">
+      <div class="impl-note-label">判断3</div>
+      <p><strong>UserProfileDto に <code>copyWith</code> がないため全フィールドを明示して新インスタンスを生成</strong><br>
+      <code>UserProfileDto</code> は <code>const</code> コンストラクタを持つ不変 DTO で <code>copyWith</code> が未定義。変換後の <code>iconUrl</code> だけ差し替えるために全フィールドを明示して新しいインスタンスを生成した。</p>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">プロフィール画像を登録済みのユーザーのヘッダーアイコンに、登録した画像が円形で表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>getMyProfile()</code> の戻り値 <code>AuthUser.iconUrl</code> に <code>S3UrlResolver.resolve()</code> を適用。
+        ヘッダーの <code>UserAvatar</code> が参照する <code>authNotifierProvider</code> の state 経由で変換済みURLが使われるようになった。
+        <code>fetchProfile()</code>（アカウント設定画面）も同様に変換を適用。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">プロフィール画像が未登録のユーザーは従来通りdisplay_nameの先頭2文字が表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>S3UrlResolver.resolve(null)</code> は <code>null</code> を返す。<code>iconUrl == null</code> の場合、<code>UserAvatar</code> は従来通りイニシャル表示にフォールバックするため、未登録ユーザーへの影響はない。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>プロフィール画像を登録済みのアカウントでログインしたとき、ヘッダーのアイコンに画像が表示されること</strong>
+          <span>イニシャル文字ではなく登録した画像が円形で表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>アカウント設定画面を開いたとき、プロフィール画像セクションに登録済みの画像が表示されること</strong>
+          <span>fetchProfile() の変換も適用されているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>プロフィール画像が未登録のアカウントでは、従来通りイニシャルが表示されること</strong>
+          <span>デグレ確認。display_nameの先頭2文字が表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>アプリを再起動しても画像が引き続き表示されること</strong>
+          <span>token復元後の /me コール（getMyProfile）にも変換が適用されているか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>根本原因は「表示用URLへの変換が適用されていなかった」こと。URL変換ロジックを <code>S3UrlResolver</code> 共通クラスに集約し、テストで動作を保証した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">test/core/network/s3_url_resolver_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">null返却・localhost変換・127.0.0.1変換・本番URL（変換なし）・isDebug=falseの全5ケースを網羅</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">test/features/auth/data/auth_repository_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">getMyProfile() の iconUrl に S3UrlResolver.resolve() が適用されることを確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">test/features/account_settings/account_settings_repository_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">fetchProfile() / updateProfile() の iconUrl に変換が適用されることを確認するテストを追加</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

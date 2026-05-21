@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-21（Sprint 51 Retro）
+**最終更新**: 2026-05-21（Sprint 52 Retro）
 
 ---
 
@@ -42,6 +42,7 @@
 | 空データ（0件）をローディング中と区別せずに「読み込み中」表示のまま放置 | 47 | `AsyncValue` の状態遷移を正確にハンドリングする。`data.isEmpty` の場合は空状態ウィジェット（EmptyState）を表示する。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースをすべて確認すること |
 | フォームにテンプレート等から値を流し込む際に TextEditingController への反映漏れ | 47 | State の値を更新するだけでなく、対応する `TextEditingController.text = newValue` も必ずセットで更新すること。また横展開で「同じフォーム内に複数フィールドがある場合、全フィールドの反映漏れ」を確認すること |
 | 月と日を個別入力するフォームで存在しない日付（例: 2月30日）の入力を許可してしまう | 47 | 月と日を組み合わせた日付の整合性バリデーションを実装すること。`DateTime(year, month, day).month == month` で存在チェックできる（Dartの`DateTime`は28日がない月に31日を指定すると自動繰り越しするため、チェック後の月が入力した月と一致しない場合は無効） |
+| 操作ロジックを持つウィジェット（SegmentedButton 等）のウィジェットテスト漏れ | 52 | 「見た目の変更のみ」はテスト不要だが、「ユーザー操作 → Notifier 呼び出し」のロジックを持つウィジェットはウィジェットテスト必須。テスト対象の判断基準: コールバック（`onThemeModeChanged` 等）が Notifier への呼び出しを含む場合はテストを書く |
 
 ### hw-hub-backend
 
@@ -157,6 +158,9 @@
 - OWNER 判定・他アクティブメンバー存在確認など「ウィジェットが分岐に使うフラグ」は `bool isCurrentUserOwner`・`bool hasOtherActiveMembers` のように State に明示的なフィールドとして持たせ、Notifier でデータ変化時に再計算する。`build()` 内で `members.any(...)` を呼び出すのはパフォーマンス違反（Sprint 46 #122 2回目レビュー）
 - `package_info_plus` パッケージの `PackageInfo.fromPlatform()` は非同期のため `AsyncNotifier.build()` 内で `await` して使う。バックエンドAPI呼び出しと並行させる場合は `Future.wait([api.getServerVersion(), PackageInfo.fromPlatform()])` で同時取得するとレイテンシを最小化できる（Sprint 49 #142 アプリ情報画面）
 - API呼び出しも状態管理も不要な情報表示画面（利用規約・プライバシーポリシー等）は `StatelessWidget` + `SingleChildScrollView` のみで実装する。Notifier / Repository / State の3点セットを作る必要はない。ウィジェットテストも「キーワードKey が存在するか」の確認だけで十分（Sprint 49 #143/#144）
+- デバッグ環境（LocalStack/エミュレーター）向けの URL 変換は `kDebugMode` フラグでガードし、`core/network/` 配下の単一クラス（`S3UrlResolver`）に閉じ込めると変換漏れを防げる。`localhost`/`127.0.0.1` → `10.0.2.2` のような変換はアップロード時だけでなく表示用 URL にも適用が必要（アップロード成功後も画像が表示されない問題の根本原因）（Sprint 52 #126）
+- アプリレベルのグローバル設定（テーマモード等）は `SharedPreferences` でデバイスローカルに保存し、ログイン後に DB 値を取得して上書きする二層設計が堅牢。未ログイン時もデバイスローカルの設定を適用できる（Sprint 52 #130）
+- 外観設定のような「ユーザーが選択 → 即座に全画面に反映」が必要な設定は、`main.dart` の `MaterialApp.themeMode` を `ref.watch(themeModeNotifierProvider)` で参照することで実現できる。`ThemeModeNotifier`（`AsyncNotifier`）が state を更新すると自動的に全画面が再描画される（Sprint 52 #130）
 
 ### hw-hub-backend
 
@@ -194,3 +198,4 @@
 | Sprint 49 | mobile-conventions | `package_info_plus` でアプリバージョン取得パターン・静的コンテンツ画面の設計パターンを追記 | Sprint 49 #142〜#144 実装（アプリ情報・利用規約・プライバシーポリシー画面）で確立したパターン |
 | Sprint 50 | （更新なし）       | —                                                                        | Sprint 50 の指摘（ウィジェットテスト日本語テキスト直接検証）は既存ルール（Sprint 45 追記済み）に既に記載があるため新規追記不要。繰り返し指摘パターンの発生スプリント欄に 50 を追記のみ |
 | Sprint 51 | mobile-conventions | pull-to-refresh（RefreshIndicator）実装必須ルールを追記                  | Sprint 51 #151 で8画面に RefreshIndicator が未実装だった実績。`AlwaysScrollableScrollPhysics` との組み合わせを含む実装チェックリストを追加 |
+| Sprint 52 | mobile-conventions | 操作ロジックを持つウィジェットのウィジェットテスト必須ルールを追記        | Sprint 52 #130 convention-reviewer 指摘（`AppearanceSection` の SegmentedButton 選択 → Notifier 呼び出し確認テスト未追加） |
