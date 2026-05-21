@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-21（Sprint 54 Retro）
+**最終更新**: 2026-05-21（Sprint 55 Retro）
 
 ---
 
@@ -43,6 +43,7 @@
 | フォームにテンプレート等から値を流し込む際に TextEditingController への反映漏れ | 47 | State の値を更新するだけでなく、対応する `TextEditingController.text = newValue` も必ずセットで更新すること。また横展開で「同じフォーム内に複数フィールドがある場合、全フィールドの反映漏れ」を確認すること |
 | 月と日を個別入力するフォームで存在しない日付（例: 2月30日）の入力を許可してしまう | 47 | 月と日を組み合わせた日付の整合性バリデーションを実装すること。`DateTime(year, month, day).month == month` で存在チェックできる（Dartの`DateTime`は28日がない月に31日を指定すると自動繰り越しするため、チェック後の月が入力した月と一致しない場合は無効） |
 | 操作ロジックを持つウィジェット（SegmentedButton 等）のウィジェットテスト漏れ | 52 | 「見た目の変更のみ」はテスト不要だが、「ユーザー操作 → Notifier 呼び出し」のロジックを持つウィジェットはウィジェットテスト必須。テスト対象の判断基準: コールバック（`onThemeModeChanged` 等）が Notifier への呼び出しを含む場合はテストを書く |
+| `ref.listen` コールバック内で `_controller.text` を直接更新しても UI が再描画されない（`setState()` 呼び出し漏れ） | 55 | `StatefulWidget` 内の `ref.listen` コールバックで `TextEditingController.text` 等を更新する場合は必ず `setState(() { _controller.text = newValue; })` でラップすること。`setState()` なしでは `controller.text` は更新されるが Flutter のフレームが再描画されず画面に反映されない |
 
 ### hw-hub-backend
 
@@ -204,3 +205,4 @@
 | Sprint 52 | mobile-conventions | 操作ロジックを持つウィジェットのウィジェットテスト必須ルールを追記        | Sprint 52 #130 convention-reviewer 指摘（`AppearanceSection` の SegmentedButton 選択 → Notifier 呼び出し確認テスト未追加） |
 | Sprint 53 | mobile-conventions | 日本語テキスト直接検証禁止ルールの NG パターンに `(tester.widget(...) as Text).data` 形式を追記・背景欄に Sprint 53 事例を追記 | Sprint 53 #124 指摘（`notification_message_renderer_test.dart` でキャスト経由の日本語テキスト検証を行っていた）|
 | Sprint 54 | mobile-conventions | StatefulWidget + didUpdateWidget による TextEditingController 更新パターン追記・YYYY-MM-DD 形式テキスト入力の日付有効性チェック（DateTime.tryParse + ISO8601 ラウンドトリップ）追記 | Sprint 54 #146（HouseworkForm StatefulWidget 化）・#147（日付バリデーション）の実装で確立したパターン |
+| Sprint 55 | mobile-conventions | `ref.listen` コールバック内での `setState()` 必須ルールを追記 | Sprint 55 #131 レビュー指摘（`NicknameSection` の `ref.listen` コールバックで `setState()` 漏れ）|

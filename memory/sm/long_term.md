@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-21（Sprint 53 Retro）
+**最終更新**: 2026-05-21（Sprint 55 Retro）
 
 ---
 
@@ -120,3 +120,4 @@
 | Sprint 51 | scrum-master-workflow | reviewer 起動プロンプトの変更ファイル確認方法を `git show [branch]:filepath` 方式に更新（SM） | convention-reviewer が Read ツールでワーキングディレクトリ（別ブランチ）のファイルを読み、実装済みコードを「未実装」と誤報告した実績（#125）。`git show` 明示指示で回避できることを確認 |
 | Sprint 53 | scrum-master-workflow | convention-reviewer git失敗時の SendMessage リカバリ手順を追記（SM） | ファイル一覧を渡してもgit操作に失敗する場合がある。SMが `git show` でファイル内容を取得して SendMessage で送ると継続できることをSprint 53で確認 |
 | Sprint 54 | scrum-master-workflow | スタック型ブランチのレビュー対応注意事項を追記（SM） | DEVが複数IssueをスタックブランチでHouseworkForm系を実装。`git diff main...最上位ブランチ` に全変更が含まれることを確認。コミット単位の変更ファイル取得パターンを明文化 |
+| Sprint 55 | scrum-master-workflow / developer-workflow | 複数Issue実装は1ブランチ方針に更新（SM） | スタック型ブランチのPR漏れ（`fix/149` が `fix/131` スタックと独立）を根本解決。DEVは1ブランチにIssue単位コミットを積む方針に変更 |

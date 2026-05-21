@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 55 Review — #149 問い合わせ新規作成後に詳細画面の「←」を押すと新規作成画面に戻る</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* モックUI */
+  .mock-screen { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 12px; overflow: hidden; }
+  .mock-app-bar { background: white; border-bottom: 1px solid #e5e5e5; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .mock-back-btn { font-size: 16px; color: #3b82f6; cursor: pointer; }
+  .mock-app-bar-title { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+  .mock-body { padding: 16px; font-size: 13px; color: #4b5563; }
+  .mock-stack-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin-bottom: 6px; }
+  .mock-stack { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .mock-stack-item { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-family: monospace; display: flex; align-items: center; gap: 6px; }
+  .stack-icon-bad { color: #ef4444; }
+  .stack-icon-good { color: #22c55e; }
+  .mock-arrow-note { font-size: 11px; color: #6b7280; padding: 8px; background: #fef2f2; border-radius: 6px; border-left: 3px solid #f87171; }
+  .mock-arrow-note-good { font-size: 11px; color: #15803d; padding: 8px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #86efac; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .nav-compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; }
+  .nav-box { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; }
+  .nav-box.bad { border-color: #fca5a5; background: #fef2f2; }
+  .nav-box.good { border-color: #86efac; background: #f0fdf4; }
+  .nav-box .nav-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .nav-step { font-size: 12px; color: #374151; padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+  .nav-step-icon { font-size: 12px; }
+  .nav-arrow { text-align: center; font-size: 20px; color: #888; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 55 Review · Bug Fix</div>
+  <h1>#149 — 問い合わせ新規作成後に詳細画面の「←」を押すと<br>新規作成画面に戻る</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 55</span>
+    <span class="badge badge-issue">#149</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-app-bar">
+            <span class="mock-back-btn">&#8592;</span>
+            <span class="mock-app-bar-title">問い合わせ詳細</span>
+          </div>
+          <div class="mock-body">
+            <div class="mock-stack-label">ナビゲーションスタック</div>
+            <div class="mock-stack">
+              <div class="mock-stack-item"><span class="stack-icon-bad">&#9726;</span>問い合わせ一覧</div>
+              <div class="mock-stack-item"><span class="stack-icon-bad">&#9726;</span>新規作成画面 ← 残ってしまう</div>
+              <div class="mock-stack-item" style="background:#fef2f2;border-color:#fca5a5;font-weight:700;">&#9726; 問い合わせ詳細（現在）</div>
+            </div>
+            <div class="mock-arrow-note">「←」を押すと…新規作成画面に戻ってしまう</div>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-app-bar">
+            <span class="mock-back-btn">&#8592;</span>
+            <span class="mock-app-bar-title">問い合わせ詳細</span>
+          </div>
+          <div class="mock-body">
+            <div class="mock-stack-label">ナビゲーションスタック</div>
+            <div class="mock-stack">
+              <div class="mock-stack-item"><span class="stack-icon-good">&#9726;</span>問い合わせ一覧</div>
+              <div class="mock-stack-item" style="background:#f0fdf4;border-color:#86efac;font-weight:700;">&#9726; 問い合わせ詳細（現在）</div>
+            </div>
+            <div class="mock-arrow-note-good">「←」を押すと…問い合わせ一覧に戻る（正常）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">context.push() を使ったためスタックに新規作成画面が残る</span>
+      </div>
+      <div class="cause-body">
+        <p>
+          送信成功後の詳細画面遷移で <code>context.push()</code> を使っていた。
+          <code>push</code> はナビゲーションスタックに新しいルートを追加するため、
+          「一覧 → 新規作成 → 詳細」の3段スタックになる。
+          詳細画面で「←」を押すと1つ前の新規作成画面に戻ってしまっていた。
+        </p>
+        <div class="nav-compare">
+          <div class="nav-box bad">
+            <div class="nav-title">修正前: context.push()</div>
+            <div class="nav-step"><span class="nav-step-icon">1.</span> 一覧画面</div>
+            <div class="nav-step"><span class="nav-step-icon">2.</span> 新規作成画面（push）</div>
+            <div class="nav-step"><span class="nav-step-icon">3.</span> 詳細画面（push）← スタックに積まれる</div>
+            <div style="margin-top:8px;font-size:11px;color:#b91c1c;">Back → 新規作成画面に戻る（バグ）</div>
+          </div>
+          <div class="nav-arrow">&#8594;</div>
+          <div class="nav-box good">
+            <div class="nav-title">修正後: context.go()</div>
+            <div class="nav-step"><span class="nav-step-icon">1.</span> 一覧画面</div>
+            <div class="nav-step"><span class="nav-step-icon">2.</span> 詳細画面（go = replace）</div>
+            <div style="margin-top:8px;font-size:11px;color:#166534;">Back → 一覧画面に戻る（正常）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/inquiry/presentation/inquiry_create/inquiry_create_page.dart</span>
+        <span class="diff-stat">+1 / -1</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">44</span><span class="line-prefix"> </span><span>    ref.listen(inquiryCreateNotifierProvider, (prev, next) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">45</span><span class="line-prefix"> </span><span>      if (next.createdInquiryId != null &amp;&amp;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">46</span><span class="line-prefix"> </span><span>          next.createdInquiryId != prev?.createdInquiryId) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">47</span><span class="line-prefix"> </span><span>        AppSnackBar.showSuccess(l10n.inquiryCreateSuccessMessage);</span></div>
+        <div class="code-line line-del"><span class="line-num">48</span><span class="line-prefix">-</span><span>        context.push(</span></div>
+        <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>        context.go(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">49</span><span class="line-prefix"> </span><span>          AppRoutes.settingsInquiryDetail(next.createdInquiryId.toString()),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">50</span><span class="line-prefix"> </span><span>        );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">51</span><span class="line-prefix"> </span><span>      }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>
+          <code>context.go()</code> はスタックを置き換える（replace）動作のため、
+          新規作成画面がスタックから除去される。
+          詳細画面から Back すると一覧画面に戻る。
+          一覧から詳細を開く既存フロー（<code>context.push()</code>）は変更なし。
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">問い合わせ新規作成後に詳細画面に遷移した際、「←」を押すと問い合わせ一覧画面に遷移する</div>
+      </div>
+      <div class="ac-body">
+        <code>context.push</code> を <code>context.go</code> に変更することで、新規作成画面がスタックから除去され、詳細画面からの Back が一覧画面に遷移するようになった。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">問い合わせ一覧から詳細に遷移した場合も「←」で一覧画面に戻る（デグレなし確認）</div>
+      </div>
+      <div class="ac-body">
+        一覧画面 → 詳細画面の遷移は <code>context.push()</code> のまま変更なし。既存フローに影響なし。ウィジェットテストでも一覧から詳細を開いた場合の Back 動作を確認。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>問い合わせを新規作成 → 「送信する」 → 詳細画面で「←」を押すと一覧画面に戻ること</strong>
+          <span>新規作成画面に戻らないことを確認してください</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>問い合わせ一覧 → 詳細を開く → 「←」を押すと一覧に戻ること（デグレ確認）</strong>
+          <span>既存の一覧→詳細フローが壊れていないことを確認してください</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>新規作成後の詳細画面で送信成功スナックバーが表示されること</strong>
+          <span>「送信しました」等のメッセージが表示されるか確認してください</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>
+        新規作成成功後の遷移で <code>context.push</code> と <code>context.go</code> を使い分けるルールを
+        mobile-conventions に追記した。
+        今回のバグを防ぐためにウィジェットテストを追加した。
+      </p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">inquiry_create_page_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「送信成功時: 詳細画面から戻ると新規作成画面ではなく一覧画面が表示される」テストを追加。一覧→新規作成→詳細の3段スタックを構築し、詳細から Back したときに一覧が表示されることを確認。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

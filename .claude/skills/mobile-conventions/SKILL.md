@@ -532,6 +532,33 @@ class _HouseworkFormState extends State<HouseworkForm> {
 
 > **背景（Sprint 54 #146）**: `HouseworkForm` が `TextFormField(initialValue: form.name)` を使っていたため、テンプレート選択後に Notifier の state は更新されていたが画面上のテキスト欄は空欄のまま残っていた。`StatefulWidget` 化 + `didUpdateWidget` パターンに移行することで解決した。
 
+### `ref.listen` コールバック内で StatefulWidget の状態を更新する場合は `setState()` でラップする
+
+`StatefulWidget` 内の `ref.listen` コールバックで `TextEditingController.text` 等を変更する際は、必ず `setState()` でラップすること。`setState()` なしで `controller.text` を更新しても Flutter のビルドサイクルがトリガーされず、画面表示が更新されない。
+
+```dart
+// NG: setState() なし → controller.text は更新されるが画面は再描画されない
+ref.listen(householdNotifierProvider, (previous, next) {
+  final nextNickname = next.selectedHousehold?.nickname;
+  _controller.text = nextNickname ?? '';  // 画面に反映されない
+});
+
+// OK: setState() でラップ → controller.text の変化が Flutter フレームに通知される
+ref.listen(householdNotifierProvider, (previous, next) {
+  final nextNickname = next.selectedHousehold?.nickname;
+  setState(() {
+    _controller.text = nextNickname ?? '';
+  });
+});
+```
+
+適用すべき場面:
+- `ref.listen` コールバック内で `TextEditingController.text` を変更するとき
+- `ref.listen` コールバック内で `setState` 管理下の変数（`_selectedValue` 等）を変更するとき
+- Riverpod の Provider 変化に追従して StatefulWidget の内部状態を更新するとき全般
+
+> **背景（Sprint 55 #131 レビュー）**: `NicknameSection`（`StatefulWidget`）の `ref.listen` コールバックで `_controller.text = nextNickname` を直接代入していたため、世帯切り替え後もニックネームが画面上で更新されなかった。`setState(() { _controller.text = nextNickname; })` に修正して解決した。
+
 ### 月と日を個別に入力するフォームの日付整合性バリデーション
 
 「繰り返し設定」「有効期間」など、月と日を個別入力するフォームでは**存在しない日付**（例: 2月30日、4月31日）を弾くバリデーションを必ず実装すること。
