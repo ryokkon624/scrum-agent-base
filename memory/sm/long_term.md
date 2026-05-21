@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-21（Sprint 50 Retro）
+**最終更新**: 2026-05-21（Sprint 51 Retro）
 
 ---
 
@@ -33,7 +33,8 @@
 - 既存ブランチ継続時は `git show --name-only [コミットハッシュ...]` で今スプリントの変更ファイルを特定してから、レビュアーへの指示にコミット範囲（`git diff <sprint-start-commit>^...HEAD`）を明示する
 - レビュアーへの指示に「スコープ外ファイルは指摘不要」と明記する（Sprint 20, 35 で誤指摘発生）
 - **reviewer起動前に `git diff --name-only` で変更ファイル一覧をSMが取得し、プロンプトに含める**（Sprint 36でconvention-reviewerがWindows環境でgit実行できず、後から提供する必要が生じた）
-- **reviewerの指摘は実ファイルを確認してから対応要否を判断する**: convention-reviewerが実装済みコードを「未実装」と誤報告するケースが複数スプリントで発生（Sprint 38も#109で発生）。指摘を受けたらSMが実ファイルを確認し、実装済みであればスコープ外として対応不要と判断する
+- **reviewerの指摘は実ファイルを確認してから対応要否を判断する**: convention-reviewerが実装済みコードを「未実装」と誤報告するケースが複数スプリントで発生（Sprint 38も#109で発生、Sprint 51 #125でも発生）。指摘を受けたらSMが `git show [branch]:filepath` で実ファイルを確認し、実装済みであれば対応不要と判断する
+- **reviewer へのファイル確認指示は `git show [branch]:filepath` を明示すること（Sprint 51 で確立）**: Read ツールやワーキングディレクトリのファイルは現在チェックアウトされているブランチの内容が見えるため、レビュー対象ブランチのファイルとは異なる内容になる場合がある。reviewer 起動プロンプトに `git show [ブランチ名]:ファイルパス` でファイルを確認するよう明示的に指示することで誤報告を防げる
 - 指摘対応後は必ず再レビューを実施してから Sprint Review に進む。省略禁止
 - 横展開確認でスコープ外問題を発見した場合は即 Issue 化する
 - **複数ブランチにまたがる実装の場合、修正が含まれるブランチをreviewerに明示すること（Sprint 44で発生）**: 例えばIssue Aの修正が `feature/A-xxx` にのみあり `feature/B-xxx` にない場合、「Issue Aの修正は `feature/A-xxx` ブランチで確認してください」と明示しないとreviewerが誤って未修正と判断する
@@ -58,7 +59,7 @@
 | テストで日本語テキスト直接検証 | Sprint 45, 50 | `find.text('パスワード変更')` 等の日本語直接検索 → `find.byKey(const Key('...'))` に変更。Key付与を実装時の標準チェック項目にする。新規テスト追加時・既存ファイルのメンテナンス時に繰り返し発生 |
 | `catch (_) {}` 握りつぶし | Sprint 34（規約化）, 35（再発） | rethrow または AppException 変換が必要。ただし Notifier 層は catch → errorMessage 格納が正解（Sprint 36 で規約を層別化） |
 | `dynamic` 型の乱用（`as dynamic`） | Sprint 45 | Future.wait の結果を `as dynamic` でキャスト → `as UserProfileDto` 等の明示型キャストに変更。型推論が効かない場面で発生しやすい |
-| `AutoDispose` 未設定 | Sprint 45 | 個人情報を持つ Provider に `AutoDispose` が未設定。画面離脱時にメモリから破棄されない。個人情報を扱う Provider は必ず `AutoDisposeAsyncNotifierProvider` を使う |
+| `AutoDispose` 未設定 | Sprint 45, 48, 51 | 画面固有の Provider に `AutoDispose` が未設定。画面遷移後もメモリに残り古い state が引き継がれる（Sprint 51 #125: ログアウト後に `loginNotifierProvider` の `isLoading: true` が残りスピナー表示が続いた）。個人情報を持つ Provider・認証系 Provider・一覧画面 Notifier は必ず `autoDispose` にする |
 | IndexedStack invalidate 漏れ | Sprint 35 Review, Sprint 36 | 詳細・作成画面からの操作後に一覧 Provider を invalidate していない。#93/#107/#108 で3回修正。詳細画面実装時の標準チェック項目 |
 
 ---
@@ -115,3 +116,4 @@
 | Sprint 48 | mobile-conventions | ナビゲーションルールに `context.go()` vs `context.push()` の使い分け詳細と新規作成後遷移の注意事項を追記（SM） | Sprint 48 Sprint Reviewで新規作成後の詳細画面「←」問題発覚（#149） |
 | Sprint 48 | sm/long_term.md | Sprint Review発覚パターンに「新規作成後の詳細画面←問題」「背景色の実機未確認」を追記（SM） | Sprint 48 Sprint Reviewで2件発覚（#148/#149） |
 | Sprint 49 | mobile-conventions | package_info_plus 採用実績（AsyncNotifier + Future.wait並行取得）・静的コンテンツ画面は StatelessWidget のみで実装する設計パターンを追記（DEV実施） | Sprint 49 でアプリ情報・利用規約・プライバシーポリシー画面を実装し確立したパターンを規約化 |
+| Sprint 51 | scrum-master-workflow | reviewer 起動プロンプトの変更ファイル確認方法を `git show [branch]:filepath` 方式に更新（SM） | convention-reviewer が Read ツールでワーキングディレクトリ（別ブランチ）のファイルを読み、実装済みコードを「未実装」と誤報告した実績（#125）。`git show` 明示指示で回避できることを確認 |

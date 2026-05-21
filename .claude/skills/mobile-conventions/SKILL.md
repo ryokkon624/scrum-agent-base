@@ -392,6 +392,39 @@ Widget build(BuildContext context, WidgetRef ref) {
 
 > **背景（Sprint 47 #136 Sprint Review）**: 家事設定一覧画面で家事が0件の場合に `CircularProgressIndicator` が表示され続けた。`data` が空リストであっても `loading` と同じ表示になっていた。
 
+### 一覧画面への pull-to-refresh（RefreshIndicator）実装（必須）
+
+スクロール可能な一覧画面（`ListView`・`SingleChildScrollView` 等）には `RefreshIndicator` でラップして pull-to-refresh を実装すること。データが最新化されない問題はユーザー体験を著しく損なう。
+
+```dart
+// NG: RefreshIndicator なし
+body: ListView.builder(
+  itemCount: state.items.length,
+  itemBuilder: (context, index) => _ItemCard(item: state.items[index]),
+)
+
+// OK: RefreshIndicator でラップ + AlwaysScrollableScrollPhysics
+body: RefreshIndicator(
+  onRefresh: () async {
+    await ref.read(notifierProvider.notifier).reload();
+    // または: ref.invalidate(notifierProvider);
+  },
+  child: ListView.builder(
+    physics: const AlwaysScrollableScrollPhysics(), // コンテンツが画面未満でもスワイプ可
+    itemCount: state.items.length,
+    itemBuilder: (context, index) => _ItemCard(item: state.items[index]),
+  ),
+)
+```
+
+実装チェックリスト（スクロール可能な一覧・詳細画面を実装するたびに確認）:
+- [ ] `RefreshIndicator` でスクロール可能領域をラップしているか
+- [ ] `onRefresh` は `async`（`Future<void>`）で実装しているか
+- [ ] `physics: const AlwaysScrollableScrollPhysics()` を指定しているか（コンテンツが少ない場合でもスワイプ可能にするため）
+- [ ] `onRefresh` 内で Notifier の reload メソッドまたは `ref.invalidate(provider)` を呼んでいるか
+
+> **背景（Sprint 51 #151）**: 8画面で `RefreshIndicator` が未実装だった。一覧画面だけでなく詳細画面（`inquiry_detail_page.dart`）にも適用が必要。
+
 ### フォームにテンプレートや既存データから値を流し込む際の反映チェック
 
 テンプレート選択・既存データ読み込みなどで State を一括更新する場合、`TextEditingController.text` への反映も必ずセットで行うこと。State の更新だけでは、`TextEditingController` をベースにしたウィジェット（`TextFormField` 等）の表示が更新されない。

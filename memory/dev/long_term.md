@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-21（Sprint 50 Retro）
+**最終更新**: 2026-05-21（Sprint 51 Retro）
 
 ---
 
@@ -37,7 +37,7 @@
 | ユーザーアイコン表示に `UserAvatar` 共通ウィジェットを使わずにテキストラベルで実装 | 40, 41, 45 | `lib/core/ui/user_avatar.dart` の `UserAvatar` を使う。新機能でアイコン表示が必要なときに再実装しない。`iconUrl: null` のハードコードは「未割当表示」専用であり、ラベル（`displayName`）も親から渡すこと。ハードコード文字列（`'U'` 等）は禁止 |
 | ウィジェットテストで日本語テキストを直接検証（`find.text('日本語')` 等） | 45, 50 | `find.byKey(const Key('xxx'))` を使い Key ベースで検証する。ARB 変更に強く、多言語対応のテストになる |
 | `debugPrint` でエラーオブジェクト（`$e`）全体を出力 | 45 | スタックトレース・内部状態がログに露出するためセキュリティリスク。固定の警告文字列のみ出力する（例: `debugPrint('Google sign-in failed')`）|
-| `AsyncNotifierProvider` / `NotifierProvider` の AutoDispose 未設定（画面離脱後もメモリに残る） | 45, 48 | 画面固有の Provider は `AsyncNotifierProvider.autoDispose` / `NotifierProvider.autoDispose` にする。一覧画面の `Notifier` も対象（`InquiryListNotifier` 実績）。グローバル共有 Provider（未読数等）は AutoDispose なしで実装 |
+| `AsyncNotifierProvider` / `NotifierProvider` の AutoDispose 未設定（画面離脱後もメモリに残る） | 45, 48, 51 | 画面固有の Provider は `AsyncNotifierProvider.autoDispose` / `NotifierProvider.autoDispose` にする。一覧画面の `Notifier` も対象（`InquiryListNotifier` 実績）。グローバル共有 Provider（未読数等）は AutoDispose なしで実装 |
 | メソッドシグネチャのパラメータ型に `dynamic` を使用（型明示漏れ） | 48 | `Widget _buildBody(dynamic state)` のように `dynamic` でパラメータ型を書かず、`InquiryDetailState` 等の具体的な型を明示する。`dynamic` / `var` の乱用は全箇所で禁止 |
 | 空データ（0件）をローディング中と区別せずに「読み込み中」表示のまま放置 | 47 | `AsyncValue` の状態遷移を正確にハンドリングする。`data.isEmpty` の場合は空状態ウィジェット（EmptyState）を表示する。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースをすべて確認すること |
 | フォームにテンプレート等から値を流し込む際に TextEditingController への反映漏れ | 47 | State の値を更新するだけでなく、対応する `TextEditingController.text = newValue` も必ずセットで更新すること。また横展開で「同じフォーム内に複数フィールドがある場合、全フィールドの反映漏れ」を確認すること |
@@ -193,3 +193,4 @@
 | Sprint 48 | mobile-conventions | AutoDispose 設定ルールの背景に「一覧画面 Notifier も対象」の実績を追記（Sprint 48 背景） | Sprint 48 レビュー指摘（`InquiryListNotifier` が `NotifierProvider` 非 autoDispose で実装されていた実績）|
 | Sprint 49 | mobile-conventions | `package_info_plus` でアプリバージョン取得パターン・静的コンテンツ画面の設計パターンを追記 | Sprint 49 #142〜#144 実装（アプリ情報・利用規約・プライバシーポリシー画面）で確立したパターン |
 | Sprint 50 | （更新なし）       | —                                                                        | Sprint 50 の指摘（ウィジェットテスト日本語テキスト直接検証）は既存ルール（Sprint 45 追記済み）に既に記載があるため新規追記不要。繰り返し指摘パターンの発生スプリント欄に 50 を追記のみ |
+| Sprint 51 | mobile-conventions | pull-to-refresh（RefreshIndicator）実装必須ルールを追記                  | Sprint 51 #151 で8画面に RefreshIndicator が未実装だった実績。`AlwaysScrollableScrollPhysics` との組み合わせを含む実装チェックリストを追加 |

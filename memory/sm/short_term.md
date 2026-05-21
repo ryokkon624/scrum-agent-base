@@ -1,15 +1,18 @@
 # SM 短期記憶
 
-**スプリント**: Sprint 50（完了）
+**スプリント**: Sprint 51（完了）
 **最終更新**: 2026-05-21
 
 ---
 
-Sprint 50 完了。次スプリント開始時にリセット済み。
+Sprint 51 完了。次スプリント開始時にリセット済み。
 
 ## 引き継ぎ事項
 
-- `fix/154-flutter-analyze` PR: mobile #32 はりょこさんのマージ待ち
-- `refactor/153-test-coverage` PR: mobile #33 はりょこさんのマージ待ち
+- `fix/125-mobile-logout-login-spinner` PR: mobile #34 はりょこさんのマージ待ち
+- `fix/151-pull-to-refresh` PR: mobile #35 はりょこさんのマージ待ち
+- `refactor/150-shopping-directory` PR: mobile #36 はりょこさんのマージ待ち
+- Sprint 50 引き継ぎ: `fix/154-flutter-analyze` PR: mobile #32 はりょこさんのマージ待ち
+- Sprint 50 引き継ぎ: `refactor/153-test-coverage` PR: mobile #33 はりょこさんのマージ待ち
 - Sprint 49 引き継ぎ: `feature/142-app-info` PR: mobile #30 はりょこさんのマージ待ち
 - Sprint 48 引き継ぎ: `feature/139-mobile-inquiry` PR: mobile #29 はりょこさんのマージ待ち
