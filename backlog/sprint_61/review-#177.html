@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 61 Review — #177 [mobile] tasks feature のフォルダ名とファイル名が my_tasks で混在している</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-refactor { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; margin-top: 40px; }
+  .flow-item { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: #374151; padding: 2px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Rename summary */
+  .rename-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .rename-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .rename-table td { padding: 8px 12px; border: 1px solid #e5e5e5; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .rename-table .before-path { color: #b91c1c; background: #fef2f2; }
+  .rename-table .after-path { color: #15803d; background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #888; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* count box */
+  .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .count-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; }
+  .count-box .label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .count-box .count { font-size: 36px; font-weight: 700; line-height: 1; }
+  .count-box .sublabel { font-size: 11px; color: #888; margin-top: 4px; }
+  .count-rename { color: #7e22ce; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 61 Review</div>
+  <h1>#177 — [mobile] tasks feature のフォルダ名と<br>ファイル名が my_tasks で混在している</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 61</span>
+    <span class="badge badge-issue">#177</span>
+    <span class="badge badge-refactor">refactor</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p><code>features/tasks/</code> というフォルダ名に対して、配下のファイル名・クラス名がほぼ全て <code>my_tasks_</code> プレフィックスになっており、一貫性がなかった。<code>tasks</code> という名前は「全タスク管理機能」と誤解させる可能性があり、実態（自分に割り当てられたタスクの一覧）と乖離していた。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前（不一致）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>features/tasks/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← フォルダ名</div>
+        <div class="flow-item"><span class="dot dot-red"></span>  my_tasks_providers.dart</div>
+        <div class="flow-item"><span class="dot dot-red"></span>  presentation/my_tasks_notifier.dart</div>
+        <div class="flow-item"><span class="dot dot-red"></span>  presentation/my_tasks_page.dart</div>
+        <div class="flow-item"><span class="dot dot-red"></span>  data/my_tasks_repository.dart</div>
+        <div class="flow-item" style="margin-top:4px; color: #ef4444;">フォルダ名 tasks ≠ ファイル名 my_tasks_</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後（統一）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>features/my_tasks/ &nbsp;&nbsp;← フォルダ名をリネーム</div>
+        <div class="flow-item"><span class="dot dot-green"></span>  my_tasks_providers.dart</div>
+        <div class="flow-item"><span class="dot dot-green"></span>  presentation/my_tasks_notifier.dart</div>
+        <div class="flow-item"><span class="dot dot-green"></span>  presentation/my_tasks_page.dart</div>
+        <div class="flow-item"><span class="dot dot-green"></span>  data/my_tasks_repository.dart</div>
+        <div class="flow-item" style="margin-top:4px; color: #22c55e;">フォルダ名 my_tasks = ファイル名 my_tasks_</div>
+      </div>
+    </div>
+    <div class="count-grid">
+      <div class="count-box">
+        <div class="label">リネームしたファイル・フォルダ数</div>
+        <div class="count count-rename">24</div>
+        <div class="sublabel">lib/ + test/ 合計</div>
+      </div>
+      <div class="count-box">
+        <div class="label">クラス名・ロジックの変更</div>
+        <div class="count" style="color:#22c55e;">0</div>
+        <div class="sublabel">パス変更のみ。動作への影響なし</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">フォルダ名 features/tasks/ が features/my_tasks/ にリネームされる（ファイル名に合わせる）</div>
+      </div>
+      <div class="ac-body">
+        <p>選択肢A（フォルダ名をファイル名に合わせる）を採用。<code>lib/features/tasks/</code> → <code>lib/features/my_tasks/</code> にリネーム。クラス名・ロジックへの変更はなし。</p>
+        <table class="rename-table">
+          <tr>
+            <th>変更前</th>
+            <th></th>
+            <th>変更後</th>
+          </tr>
+          <tr>
+            <td class="before-path">lib/features/tasks/</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">lib/features/my_tasks/</td>
+          </tr>
+          <tr>
+            <td class="before-path">lib/features/tasks/data/my_tasks_repository.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">lib/features/my_tasks/data/my_tasks_repository.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">lib/features/tasks/data/models/housework_task_dto.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">lib/features/my_tasks/data/models/housework_task_dto.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">lib/features/tasks/my_tasks_providers.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">lib/features/my_tasks/my_tasks_providers.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">lib/features/tasks/presentation/my_tasks_notifier.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">lib/features/my_tasks/presentation/my_tasks_notifier.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">lib/features/tasks/presentation/my_tasks_page.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">lib/features/my_tasks/presentation/my_tasks_page.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">lib/features/tasks/presentation/my_tasks_state.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">lib/features/my_tasks/presentation/my_tasks_state.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">lib/features/tasks/presentation/widgets/...</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">lib/features/my_tasks/presentation/widgets/...</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">または、配下の全ファイル・クラス名が tasks_ プレフィックスに統一される（選択肢A採用）</div>
+      </div>
+      <div class="ac-body">
+        <p>選択肢A（フォルダ名をファイル名に合わせる）を採用したため、選択肢B（ファイル名をフォルダ名に合わせる）は実施しない。フォルダリネームのみで影響範囲が最小で済む。クラス名（<code>MyTasksNotifier</code>、<code>MyTasksPage</code> 等）はそのまま維持。</p>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">router / provider / import パスが全ファイルで更新される</div>
+      </div>
+      <div class="ac-body">
+        <p>フォルダリネームに伴い、<code>features/tasks/</code> を参照していた全 import パスを <code>features/my_tasks/</code> に更新。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/app_router.dart</span>
+            <span class="diff-stat">+1 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">22</span><span class="line-prefix"> </span><span>import 'features/housework_assign/presentation/housework_assign_page.dart';</span></div>
+            <div class="code-line line-ctx"><span class="line-num">23</span><span class="line-prefix"> </span><span>import 'features/notifications/presentation/notification_center/notification_center_page.dart';</span></div>
+            <div class="code-line line-del"><span class="line-num">24</span><span class="line-prefix">-</span><span>import 'features/tasks/presentation/my_tasks_page.dart';</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>import 'features/my_tasks/presentation/my_tasks_page.dart';</span></div>
+            <div class="code-line line-ctx"><span class="line-num">25</span><span class="line-prefix"> </span><span>import 'features/household_settings/presentation/household_settings_page.dart';</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>app_router.dart の import が唯一の外部参照箇所。他は feature 内の相対パスで完結している。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/data/housework_assign_repository.dart</span>
+            <span class="diff-stat">+2 / -2</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">7</span><span class="line-prefix">-</span><span>import '../../../features/tasks/data/models/housework_task_dto.dart';</span></div>
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>import '../../../features/my_tasks/data/models/housework_task_dto.dart';</span></div>
+            <div class="code-line line-ctx"><span class="line-num">8</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-ctx"><span class="line-num">9</span><span class="line-prefix"> </span><span>export '../../../features/home/data/models/household_member_dto.dart';</span></div>
+            <div class="code-line line-del"><span class="line-num">10</span><span class="line-prefix">-</span><span>export '../../../features/tasks/data/models/housework_task_dto.dart';</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>export '../../../features/my_tasks/data/models/housework_task_dto.dart';</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>housework_assign</code> feature は <code>HouseworkTaskDto</code> を <code>tasks/data/models/</code> から import していた。<code>my_tasks/data/models/</code> に更新。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">テストファイルの命名・配置も同様に更新される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>test/features/tasks/</code> → <code>test/features/my_tasks/</code> にリネーム。テスト内の import パスも全て更新。</p>
+        <table class="rename-table">
+          <tr>
+            <th>変更前</th>
+            <th></th>
+            <th>変更後</th>
+          </tr>
+          <tr>
+            <td class="before-path">test/features/tasks/data/my_tasks_repository_test.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">test/features/my_tasks/data/my_tasks_repository_test.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">test/features/tasks/presentation/my_tasks_notifier_test.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">test/features/my_tasks/presentation/my_tasks_notifier_test.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">test/features/tasks/presentation/my_tasks_page_test.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">test/features/my_tasks/presentation/my_tasks_page_test.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">test/features/tasks/presentation/widgets/*.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">test/features/my_tasks/presentation/widgets/*.dart</td>
+          </tr>
+          <tr>
+            <td class="before-path">test/features/tasks/tasks_mocks.dart</td>
+            <td class="arrow-cell">→</td>
+            <td class="after-path">test/features/my_tasks/tasks_mocks.dart</td>
+          </tr>
+        </table>
+        <div class="annotation">
+          <span class="annotation-icon">&#128161;</span>
+          <span><code>housework_assign</code> テスト側が <code>tasks/</code> の DTO を import しているファイルも合わせて更新（<code>housework_assign_mocks.mocks.dart</code>、<code>assignable_task_card_test.dart</code>、<code>swipe_mode_card_test.dart</code>）。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>「マイタスク」タブが正常に表示されること</strong>
+          <span>フォルダリネームのみで動作は変わらないはずだが、タスク一覧が正常にロードされているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>タスクの完了・スキップ操作が正常に動作すること</strong>
+          <span>スワイプ操作でタスクの状態変更ができることを確認（ロジック変更はないが念のため）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>家事割り当て画面が正常に表示されること</strong>
+          <span>housework_assign が my_tasks の DTO に依存しているため、割り当て画面も影響確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル / フォルダ</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>lib/features/tasks/ → my_tasks/</code></td>
+        <td><span class="tag-changed">リネーム</span></td>
+        <td>フォルダ名のみ変更。内部ファイル名・クラス名・ロジックに変更なし</td>
+      </tr>
+      <tr>
+        <td><code>lib/app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>import パスを tasks → my_tasks に更新</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/data/housework_assign_repository.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>import/export パスを tasks/data/models → my_tasks/data/models に更新</td>
+      </tr>
+      <tr>
+        <td><code>test/features/tasks/ → my_tasks/</code></td>
+        <td><span class="tag-changed">リネーム</span></td>
+        <td>テストフォルダをリネーム。import パスを全ファイル更新</td>
+      </tr>
+      <tr>
+        <td><code>test/features/housework_assign/ 配下のテスト</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>tasks → my_tasks の import パス更新（4ファイル）</td>
+      </tr>
+      <tr>
+        <td>クラス名・ロジック</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>MyTasksNotifier / MyTasksPage 等のクラス名、全てのロジック・テスト内容は変更なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

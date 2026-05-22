@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-22（Sprint 59 Retro）
+**最終更新**: 2026-05-22（Sprint 61 Retro）
 
 ---
 
@@ -29,6 +29,7 @@
 - Issue別個別コミット方針はコミット履歴の可読性が高く有効。bug Sprint でも継続採用
 - **mobile の EmptyState 文言はWeb版 i18n（en.json/ja.json の対応キー）を参照基準にする（Sprint 57確立）**: 計画フェーズで Web版 `home.household.empty` を確認し、モバイルの文言を合わせた
 - **同一ファイルへの複数Issue改修は計画フェーズで順序を明示する（Sprint 57）**: #161と#163が同一ファイルを変更。コミット順序の設計が必要なため、計画フェーズでDEVに改修順序を明示する
+- **バックログ記述と現状の乖離を計画フェーズで検出できる（Sprint 61）**: #176でバックログ「data/直下に散乱」と現状「既にmodels/配下に整理済み」の乖離をDEV調査で発見。No-op判断を早期確定し不要実装を回避。Planningの現状調査ステップが有効に機能した
 
 ### レビュー
 
@@ -131,3 +132,4 @@
 | Sprint 58 | mobile-conventions | ログアウト時の `ref.invalidate` タイミングルール追加（DEV実施） | logout()でinvalidate前にstateを未認証設定しないと401ループ（#172）。saveTokens()でinvalidateしないとエラー状態継続（#158） |
 | Sprint 59 | developer-workflow | モバイルセルフチェックリストに「ListViewのValueKey付与」「テストの日本語テキスト直接検証禁止」を追記（SM実施） | Sprint 38, 59 でValueKey漏れ・Sprint 45, 50, 53, 59 でテスト日本語直接検証が繰り返し発生。規約には存在するがDEVチェックで見落とされるため、developer-workflowのチェックリストに明示 |
 | Sprint 59 | mobile-conventions | 「リスト生成時のkey付与」セクションに `ListView.builder` itemBuilder パターンを追記（DEV実施） | Sprint 38 で items.map() パターンを規約化済みだったが Sprint 59 で ListView.builder でも同様の指摘が発生 |
+| Sprint 61 | なし | Skills更新なし（全レビュー指摘なし・Sprint Review指摘なし） | リファクタリング＋バグ修正スプリント。安定稼働 |
