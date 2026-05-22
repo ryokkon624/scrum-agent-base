@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-22（Sprint 56 Retro）
+**最終更新**: 2026-05-22（Sprint 57 Retro）
 
 ---
 
@@ -27,6 +27,8 @@
 - ACが曖昧・未定義な場合は実装前にりょこさんに確認するよう DEV への指示に含める
 - Retro Issue起票前に `list_issues`（state: open）で既存Issue一覧を確認し、重複がないことを確認してから起票する（Sprint 34 で重複起票が発生）
 - Issue別個別コミット方針はコミット履歴の可読性が高く有効。bug Sprint でも継続採用
+- **mobile の EmptyState 文言はWeb版 i18n（en.json/ja.json の対応キー）を参照基準にする（Sprint 57確立）**: 計画フェーズで Web版 `home.household.empty` を確認し、モバイルの文言を合わせた
+- **同一ファイルへの複数Issue改修は計画フェーズで順序を明示する（Sprint 57）**: #161と#163が同一ファイルを変更。コミット順序の設計が必要なため、計画フェーズでDEVに改修順序を明示する
 
 ### レビュー
 
@@ -122,3 +124,5 @@
 | Sprint 54 | scrum-master-workflow | スタック型ブランチのレビュー対応注意事項を追記（SM） | DEVが複数IssueをスタックブランチでHouseworkForm系を実装。`git diff main...最上位ブランチ` に全変更が含まれることを確認。コミット単位の変更ファイル取得パターンを明文化 |
 | Sprint 55 | scrum-master-workflow / developer-workflow | 複数Issue実装は1ブランチ方針に更新（SM） | スタック型ブランチのPR漏れ（`fix/149` が `fix/131` スタックと独立）を根本解決。DEVは1ブランチにIssue単位コミットを積む方針に変更 |
 | Sprint 56 | なし | Skills更新なし（レビュー指摘なし・シンプルな修正スプリント） | 全レビュアー指摘なし・Sprint Review指摘なし。1ブランチ方針・bugラベルフロー・2フェーズモデルがすべてスムーズに機能 |
+| Sprint 57 | sm/long_term.md | モバイルEmptyState文言のWeb版i18n参照方針・同一ファイル複数Issue改修時の順序明示を追記（SM） | #163でWeb版文言参照フローが有効と確認。#161/#163が同一ファイルを変更し順序設計が必要になった |
+| Sprint 57 | agents/developer.md | DEVのtoolsに `mcp__discord__discord_send` を追加（SM） | DEVが #skills-changelog（Textチャンネル）に投稿できない問題が毎回発生していた。`discord_reply_to_forum` しか持っておらず、Textチャンネル投稿には `discord_send` が必要 |

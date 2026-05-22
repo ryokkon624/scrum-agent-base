@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-21（Sprint 55 Retro）
+**最終更新**: 2026-05-22（Sprint 57 Retro）
 
 ---
 
@@ -91,6 +91,8 @@
 - `showDialog` ベースのポップオーバーで `barrierColor: transparent` を指定するとタップ外で閉じるが、`Navigator.pop` の引数は必ずダイアログの `BuildContext`（`builder: (dialogContext)` で受け取る）を使うこと。外側の `context` を使うと go_router 環境でページごと閉じる
 - `AppLifecycleObserver`（`WidgetsBindingObserver`）で `didChangeAppLifecycleState` を使う場合、`main.dart` で `WidgetsBinding.instance.addObserver(observer)` を呼ぶ際は `observer` のライフサイクル管理（`removeObserver`）も必ずセットで行うこと。Notifier の dispose で removeObserver しないとメモリリークになる
 - Flutter の `AppLocalizations` は動的なキー参照（`AppLocalizations.of(context)[key]`）をサポートしない。通知メッセージのような動的キーディスパッチが必要な場合は `Map<String, String Function(AppLocalizations, ...)>` 形式のテーブルを実装して switch/lookup する（`NotificationMessageRenderer` パターン）
+- `StatefulShellRoute.indexedStack` のシェル外独立ルートからシェル内ルートへ `context.push()` すると、両方の Navigator に Hero（AppBar の戻る矢印等）が同時に乗り `HeroController` のアサーション失敗でクラッシュする。シェル外ルートから遷移する場合は必ず `context.pop()` で現在画面を閉じてから `context.push(遷移先)` を呼ぶこと（Sprint 57 #157: 通知センターからタスク画面への遷移）
+- fl_chart の `BarChart` で「データ0件の日に最小バー（`0.001` 等）を表示する」実装をすると、`BarChartData.maxY` を未指定の場合に fl_chart が `0.001` を最大値と見なして全バーがMAX表示になる。`maxY` には `groups` 内の最大値を計算して明示的に指定すること（最大値が0の場合は `maxY: 1` のような最小値を設定）（Sprint 57 #163）
 
 ### hw-hub-backend
 
@@ -165,6 +167,8 @@
 - `TextFormField(initialValue: ...)` は最初の build 時にしか反映されず、その後 State が変化しても表示は更新されない。テンプレート選択・既存データ読み込みで後から値を流し込む必要があるフォームは `StatefulWidget` に変更し、`TextEditingController` を内部で管理する。`didUpdateWidget` で `widget.form.name != oldWidget.form.name` を検知して `_nameController.text = widget.form.name` に反映するパターンが確実。既存値と一致する場合はスキップして無限ループを防ぐ（Sprint 54 #146）
 - YYYY-MM-DD 形式のテキスト入力で日付有効性チェックが必要な場合、`DateTime.tryParse(value) == null` で書式チェックし、さらに `result.toIso8601String().substring(0, 10) != value` で自動繰り越し検知（例: `2026-02-30` → `2026-03-02` になる）ができる。この2段階チェックで存在しない日付を確実に弾ける。月・日個別入力の `DateTime(year, month, day).month == month` チェックとは別パターンとして使い分ける（Sprint 54 #147）
 - `AsyncValue.data` が空リストの場合は空状態ウィジェット（EmptyState）を表示する。カテゴリフィルタ等の絞り込み状態に応じて「データなし（未登録）」と「絞り込み結果なし」を出し分けることで UX が改善される。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースを必ず区別すること（Sprint 54 #145）
+- fl_chart のウィジェット内でツールチップ生成ロジックが複雑な場合（メンバーごとの件数構築・未割当の扱い等）は、`_buildTooltipText(members, dailyOverview, l10n)` のような純粋関数として別ファイル（`overview_tooltip_builder.dart` 等）に切り出すとウィジェットテストで直接検証できる。flutter_test では `BarChart` のツールチップ実動作はテスト困難なため、ロジックを純粋関数に分離してユニットテストするのがベストプラクティス（Sprint 57 #161）
+- シェル外独立ルートからシェル内ルートへ遷移する場合は必ず先に `context.pop()` してから `context.push(遷移先)` を呼ぶこと。両 Navigator に Hero が同時に乗ると `HeroController` のアサーション失敗でクラッシュする。`GoRouterState.of(context).matchedLocation` でシェル外ルートかどうか判定できる（Sprint 57 #157）
 
 ### hw-hub-backend
 
@@ -206,3 +210,4 @@
 | Sprint 53 | mobile-conventions | 日本語テキスト直接検証禁止ルールの NG パターンに `(tester.widget(...) as Text).data` 形式を追記・背景欄に Sprint 53 事例を追記 | Sprint 53 #124 指摘（`notification_message_renderer_test.dart` でキャスト経由の日本語テキスト検証を行っていた）|
 | Sprint 54 | mobile-conventions | StatefulWidget + didUpdateWidget による TextEditingController 更新パターン追記・YYYY-MM-DD 形式テキスト入力の日付有効性チェック（DateTime.tryParse + ISO8601 ラウンドトリップ）追記 | Sprint 54 #146（HouseworkForm StatefulWidget 化）・#147（日付バリデーション）の実装で確立したパターン |
 | Sprint 55 | mobile-conventions | `ref.listen` コールバック内での `setState()` 必須ルールを追記 | Sprint 55 #131 レビュー指摘（`NicknameSection` の `ref.listen` コールバックで `setState()` 漏れ）|
+| Sprint 57 | mobile-conventions | シェル外ルートからシェル内ルートへ push するときの HeroController 衝突対処法を追記 | Sprint 57 #157 バグ修正（通知センターからタスク画面遷移でアプリクラッシュ）で確立したパターン |

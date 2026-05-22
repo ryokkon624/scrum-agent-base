@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 57 Review — #157 通知センターで通知をクリックするとエラーが発生する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* Screen mockup */
+  .mock-screen { background: #1a1a2e; border-radius: 12px; padding: 16px; }
+  .mock-screen-bar { height: 4px; background: #374151; border-radius: 2px; margin-bottom: 10px; }
+  .mock-notification { background: #1f2d3d; border: 1px solid #374151; border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; }
+  .mock-notification-title { font-size: 11px; color: #e5e7eb; font-weight: 600; }
+  .mock-notification-body { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+  .error-overlay { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; border-radius: 6px; padding: 10px 12px; margin-top: 8px; }
+  .error-label { font-size: 10px; color: #f87171; font-weight: 700; margin-bottom: 4px; }
+  .error-msg { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 9px; color: #fca5a5; line-height: 1.5; }
+  .success-overlay { background: rgba(34,197,94,0.15); border: 1px solid #22c55e; border-radius: 6px; padding: 10px 12px; margin-top: 8px; }
+  .success-label { font-size: 10px; color: #86efac; font-weight: 700; margin-bottom: 4px; }
+  .success-msg { font-size: 10px; color: #bbf7d0; }
+  .mock-tasks-screen { background: #1f2d3d; border-radius: 6px; padding: 10px 12px; margin-top: 8px; }
+  .mock-tasks-title { font-size: 11px; color: #e5e7eb; font-weight: 600; margin-bottom: 6px; }
+  .mock-task-row { font-size: 10px; color: #9ca3af; padding: 3px 0; border-bottom: 1px solid #374151; }
+  .mock-task-row:last-child { border-bottom: none; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .cause-body p:last-child { margin-bottom: 0; }
+
+  .nav-diagram { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin: 12px 0; font-size: 12px; color: #374151; }
+  .nav-diagram-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .nav-box { background: white; border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 8px; font-size: 11px; white-space: nowrap; }
+  .nav-box.shell { border-color: #6366f1; color: #4f46e5; }
+  .nav-box.independent { border-color: #f59e0b; color: #d97706; }
+  .nav-box.problem { border-color: #ef4444; color: #dc2626; background: #fef2f2; }
+  .nav-arrow { color: #9ca3af; font-size: 16px; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* Implementation notes */
+  .impl-note { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
+  .impl-note-title { font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 6px; }
+  .impl-note p { font-size: 13px; color: #0c4a6e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 57 Review · Bug Fix</div>
+  <h1>#157 — 通知センターで通知をクリックすると<br>エラーが発生する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 57</span>
+    <span class="badge badge-issue">#157</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-bar"></div>
+          <div class="mock-notification">
+            <div class="mock-notification-title">あなたのタスクが引き受けられました</div>
+            <div class="mock-notification-body">タップして確認する</div>
+          </div>
+          <div class="error-overlay">
+            <div class="error-label">AssertionError</div>
+            <div class="error-msg">'!keyReservation.contains(key)'<br>is not true.<br>HeroControllerScope</div>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-bar"></div>
+          <div class="mock-notification">
+            <div class="mock-notification-title">あなたのタスクが引き受けられました</div>
+            <div class="mock-notification-body">タップして確認する</div>
+          </div>
+          <div class="success-overlay">
+            <div class="success-label">通知センターが閉じて画面遷移</div>
+          </div>
+          <div class="mock-tasks-screen">
+            <div class="mock-tasks-title">マイタスク</div>
+            <div class="mock-task-row">家事Aを片付ける</div>
+            <div class="mock-task-row">買い物に行く</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">go_router 14.x の Navigator ツリー競合による Hero キー重複</span>
+      </div>
+      <div class="cause-body">
+        <p><code>/notifications</code>（通知センター）は <code>StatefulShellRoute.indexedStack</code> の<strong>シェル外の独立ルート</strong>として定義されている。そこから <code>NotificationLinkNavigator.navigate()</code> 内で <code>context.push(AppRoutes.tasks)</code> 等の<strong>シェル内ルート</strong>へ push すると、以下の状況が発生する：</p>
+        <div class="nav-diagram">
+          <div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:8px;">Navigator ツリーの状態（バグあり）</div>
+          <div class="nav-diagram-row">
+            <span style="font-size:11px;color:#6b7280;">シェル外 Navigator:</span>
+            <div class="nav-box independent">/notifications</div>
+            <span class="nav-arrow">+</span>
+            <div class="nav-box problem">/tasks（シェル付き）← ここが問題</div>
+          </div>
+          <div class="nav-diagram-row" style="margin-top:4px;">
+            <span style="font-size:11px;color:#6b7280;">シェル内 Navigator:</span>
+            <div class="nav-box shell">/tasks</div>
+          </div>
+          <div style="font-size:11px;color:#ef4444;margin-top:8px;">→ 両方の Navigator に暗黙 Hero（AppBar 戻る矢印）が同時に存在し、<br>　 HeroController キーが重複 → AssertionError</div>
+        </div>
+        <p>なお、ポップオーバー（<code>notification_popover.dart</code>）経由の遷移は既に <code>Navigator.of(context).pop()</code> でポップオーバーを閉じてから <code>navigate()</code> を呼んでいるため、同問題は発生しない。通知センターページ（<code>notification_center_page.dart</code>）経由の遷移のみが問題。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/notifications/presentation/widgets/notification_link_navigator.dart</span>
+        <span class="diff-stat">+7 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">20</span><span class="line-prefix"> </span><span>    final type = NotificationLinkType.fromCode(linkType);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">21</span><span class="line-prefix"> </span><span>    if (type == null || type == NotificationLinkType.none) return;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">22</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>    // 通知センター（/notifications）から遷移する場合、シェル外Navigatorとシェル内Navigatorで</span></div>
+        <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>    // HeroControllerキーが重複しアサーション失敗するため、先にpopしてから遷移先へpushする。</span></div>
+        <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>    final currentLocation = GoRouterState.of(context).matchedLocation;</span></div>
+        <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>    if (currentLocation == AppRoutes.notifications &amp;&amp; context.canPop()) {</span></div>
+        <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      context.pop();</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>    }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">29</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">30</span><span class="line-prefix"> </span><span>    switch (type) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span>      case NotificationLinkType.myTasks:</span></div>
+        <div class="code-line line-ctx"><span class="line-num">32</span><span class="line-prefix"> </span><span>        context.push(AppRoutes.tasks);</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>context.canPop()</code> チェックを追加している。テスト環境で <code>initialLocation</code> が <code>/notifications</code> の場合は pop できないため、チェックなしだと GoError が発生する。実際のアプリでは通知センターは常に他のルートから push されるため <code>canPop()</code> は常に true になるが、防御的実装として残している。</span>
+      </div>
+    </div>
+
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px 18px;margin-top:8px;">
+      <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;">修正後の遷移フロー</div>
+      <div style="font-size:13px;color:#14532d;line-height:2;">
+        1. 通知センターで通知をタップ<br>
+        2. <code>navigate()</code> 内で現在のルートが <code>/notifications</code> と判定<br>
+        3. <code>context.pop()</code> → 通知センターが閉じる（シェル外 Navigator がクリア）<br>
+        4. <code>context.push(AppRoutes.tasks)</code> → マイタスク等に遷移（Hero 重複なし）
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note">
+      <div class="impl-note-title">context.canPop() チェックの追加</div>
+      <p><code>context.pop()</code> の前に <code>canPop()</code> でスタックに戻れるルートがあるかチェックを追加した。テスト環境で <code>initialLocation</code> が <code>/notifications</code> の場合はポップできないため、チェックなしだと GoError が発生する。実際のアプリでは通知センターは他のルートからpushされるため <code>canPop()</code> は常に true になるが、防御的実装として残した。</p>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">通知センターで通知をクリックした際にエラーが発生せず、対応する画面に遷移する</div>
+      </div>
+      <div class="ac-body">通知センターを <code>context.pop()</code> で閉じてから <code>context.push()</code> で遷移することで、HeroControllerScope のアサーションエラーが発生しなくなった。全通知タイプ（myTasks / household / invitation / settings / inquiryDetail）に対応する。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>通知センターを開いて通知をタップするとエラーなく対応画面に遷移すること</strong>
+          <span>「あなたのタスクが引き受けられました」などの通知をタップし、マイタスク画面に移動するか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>通知センターが閉じてから遷移先に移動すること</strong>
+          <span>遷移後に通知センターが残っていないこと（バックボタンで戻ったときに通知センターが出てこないこと）を確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>通知ポップオーバー（ベルアイコンタップ）経由の遷移は従来通り正常に動作すること</strong>
+          <span>ポップオーバー経由は修正対象外だが、デグレしていないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>世帯設定・アカウント設定・お問い合わせ詳細など他の通知タイプでも正常遷移すること</strong>
+          <span>マイタスク以外の遷移先にも同じ修正が適用されている</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>今回の根本原因は「シェル外ルートからシェル内ルートへ push したときに Hero キーが重複する go_router 14.x の挙動」。ウィジェットテストで 2 パターンを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">notification_link_navigator_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">/notifications から遷移するとき、canPop が true の場合は pop されてから push されることを確認（ホームから /notifications へ push した状態で通知タップ → /tasks へ移動）</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">notification_link_navigator_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">/notifications 以外から navigate() を呼んだ場合は pop せずに push されることを確認（既存の popover 経由などへのデグレがないことを保証）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

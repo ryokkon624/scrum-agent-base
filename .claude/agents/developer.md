@@ -1,7 +1,7 @@
 ---
 name: developer
 description: HwHubプロジェクトのDeveloper。スプリントバックログのアイテムを実装し、ACを満たす。SMからの指示で起動する。
-tools: Read, Glob, Grep, Edit, Write, Bash, TaskCreate, TaskUpdate, SendMessage, mcp__discord__discord_login, mcp__discord__discord_reply_to_forum
+tools: Read, Glob, Grep, Edit, Write, Bash, TaskCreate, TaskUpdate, SendMessage, mcp__discord__discord_login, mcp__discord__discord_reply_to_forum, mcp__discord__discord_send
 skills:
   - developer-workflow
   - discord-operations

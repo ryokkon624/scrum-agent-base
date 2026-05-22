@@ -1,9 +1,10 @@
 # SM 短期記憶
 
-Sprint 56 完了。次スプリント開始時にリセット済み。
+Sprint 57 完了。次スプリント開始時にリセット済み。
 
 ## 引き継ぎ事項
 
+- mobile PR #47: feature/household-chart-tooltip はりょこさんのマージ待ち（Sprint 57）
 - mobile PR #46: fix/132-household-ui-sprint56 はりょこさんのマージ待ち（Sprint 56）
 - mobile PR #45: fix/149-inquiry-create-back-navigation はりょこさんのマージ待ち（Sprint 55 PR漏れ分）
 - Sprint 54 引き継ぎ: `fix/129-mobile-account-settings-google-link-not-updating-user` PR: mobile #42 はりょこさんのマージ待ち

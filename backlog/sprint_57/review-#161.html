@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 57 Review — #161 ホーム画面おうちの様子カードで棒グラフクリック時、凡例に明細を表示したい</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Tooltip mockup */
+  .tooltip-demo { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; }
+  .mock-chart-area { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; flex: 1; min-width: 200px; }
+  .mock-chart-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-bars { display: flex; align-items: flex-end; gap: 6px; height: 80px; margin-bottom: 8px; }
+  .mock-bar { border-radius: 2px 2px 0 0; flex: 1; }
+  .bar-tall { height: 70px; background: linear-gradient(to top, #059669, #34d399); }
+  .bar-active { height: 50px; background: linear-gradient(to top, #059669, #34d399); box-shadow: 0 0 0 2px #f59e0b; }
+  .bar-short { height: 25px; background: linear-gradient(to top, #059669, #34d399); }
+  .mock-tooltip { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 10px 14px; flex-shrink: 0; }
+  .mock-tooltip-title { font-size: 11px; font-weight: 700; color: #166534; margin-bottom: 6px; }
+  .mock-tooltip-row { font-size: 12px; color: #1a1a1a; padding: 2px 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #e8f0fe; color: #1a56db; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Implementation notes */
+  .impl-note { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
+  .impl-note-title { font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 6px; }
+  .impl-note p { font-size: 13px; color: #0c4a6e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 57 Review</div>
+  <h1>#161 — ホーム画面おうちの様子カードで<br>棒グラフクリック時、凡例に明細を表示したい</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 57</span>
+    <span class="badge badge-issue">#161</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>おうちの様子カードの積み上げ棒グラフはタッチが無効（<code>BarTouchData(enabled: false)</code>）になっており、各メンバーの日別タスク件数を確認するには凡例の色から目視で読み取る必要があった。Web版（<code>HouseholdSituationCard.vue</code>）では Chart.js のツールチップが既に有効になっており、モバイルでも同等の UX を実現する必要があった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前</div>
+        <div class="flow-item"><span class="dot dot-red"></span><code>BarTouchData(enabled: false)</code> — タッチ無効</div>
+        <div class="flow-item"><span class="dot dot-red"></span>棒グラフをタップしても何も起きない</div>
+        <div class="flow-item"><span class="dot dot-red"></span>内訳確認には凡例の色から目視で読み取る必要があった</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後</div>
+        <div class="flow-item"><span class="dot dot-green"></span><code>BarTouchData(enabled: true)</code> — タッチ有効化</div>
+        <div class="flow-item"><span class="dot dot-green"></span>棒グラフをタップするとツールチップが表示される</div>
+        <div class="flow-item"><span class="dot dot-green"></span>メンバー名 + 件数が一覧で表示される（0件はスキップ）</div>
+      </div>
+    </div>
+    <!-- Tooltip demo -->
+    <div class="tooltip-demo" style="margin-top:16px;">
+      <div class="mock-chart-area">
+        <div class="mock-chart-title">棒グラフ（タップ後のイメージ）</div>
+        <div class="mock-bars">
+          <div class="mock-bar bar-tall"></div>
+          <div class="mock-bar bar-active"></div>
+          <div class="mock-bar bar-short"></div>
+          <div class="mock-bar bar-tall"></div>
+          <div class="mock-bar bar-short"></div>
+        </div>
+        <div style="font-size:10px;color:#9ca3af;text-align:center;">タップした棒（選択状態）</div>
+      </div>
+      <div class="mock-tooltip">
+        <div class="mock-tooltip-title">表示されるツールチップ</div>
+        <div class="mock-tooltip-row">田中太郎: 3</div>
+        <div class="mock-tooltip-row">山田花子: 1</div>
+        <div class="mock-tooltip-row">未割り当て: 2</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">棒グラフの棒をタップするとツールチップが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>_OverviewChart</code> の <code>barTouchData</code> を <code>enabled: false</code> から <code>enabled: true</code> に変更し、<code>touchTooltipData</code>（<code>BarTouchTooltipData</code>）を設定した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/home/presentation/widgets/household_overview_card.dart</span>
+            <span class="diff-stat">+29 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">260</span><span class="line-prefix"> </span><span>        ),</span></div>
+            <div class="code-line line-del"><span class="line-num">261</span><span class="line-prefix">-</span><span>        barTouchData: BarTouchData(enabled: false),</span></div>
+            <div class="code-line line-add"><span class="line-num">261</span><span class="line-prefix">+</span><span>        barTouchData: BarTouchData(</span></div>
+            <div class="code-line line-add"><span class="line-num">262</span><span class="line-prefix">+</span><span>          enabled: true,</span></div>
+            <div class="code-line line-add"><span class="line-num">263</span><span class="line-prefix">+</span><span>          touchTooltipData: BarTouchTooltipData(</span></div>
+            <div class="code-line line-add"><span class="line-num">264</span><span class="line-prefix">+</span><span>            getTooltipColor: (_) => colors.surfaceCard,</span></div>
+            <div class="code-line line-add"><span class="line-num">265</span><span class="line-prefix">+</span><span>            getTooltipItem: (group, groupIndex, rod, rodIndex) {</span></div>
+            <div class="code-line line-add"><span class="line-num">266</span><span class="line-prefix">+</span><span>              if (group.x &lt; 0 || group.x &gt;= overview.length) return null;</span></div>
+            <div class="code-line line-add"><span class="line-num">267</span><span class="line-prefix">+</span><span>              final day = overview[group.x];</span></div>
+            <div class="code-line line-add"><span class="line-num">268</span><span class="line-prefix">+</span><span>              final lines = buildTooltipLines(</span></div>
+            <div class="code-line line-add"><span class="line-num">269</span><span class="line-prefix">+</span><span>                day, members,</span></div>
+            <div class="code-line line-add"><span class="line-num">270</span><span class="line-prefix">+</span><span>                unassignedLabel: l10n.homeOverviewUnassigned,</span></div>
+            <div class="code-line line-add"><span class="line-num">271</span><span class="line-prefix">+</span><span>                noDataLabel: l10n.homeOverviewTooltipNoData,</span></div>
+            <div class="code-line line-add"><span class="line-num">272</span><span class="line-prefix">+</span><span>              );</span></div>
+            <div class="code-line line-add"><span class="line-num">273</span><span class="line-prefix">+</span><span>              if (lines.isEmpty) return null;</span></div>
+            <div class="code-line line-add"><span class="line-num">274</span><span class="line-prefix">+</span><span>              return BarTooltipItem(lines.join('\n'), ...);</span></div>
+            <div class="code-line line-add"><span class="line-num">275</span><span class="line-prefix">+</span><span>            },</span></div>
+            <div class="code-line line-add"><span class="line-num">276</span><span class="line-prefix">+</span><span>          ),</span></div>
+            <div class="code-line line-add"><span class="line-num">277</span><span class="line-prefix">+</span><span>        ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span><code>group.x</code> は棒グラフの横軸インデックスで、<code>overview[group.x]</code> でその日の <code>DailyOverview</code> を取得できる。<code>buildTooltipLines()</code> は別ファイルに切り出した純粋関数（後述）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">ツールチップにその日付のメンバーごとのタスク件数が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>ツールチップ生成ロジックを純粋関数 <code>buildTooltipLines()</code> として <code>overview_tooltip_builder.dart</code> に切り出した。メンバーリストをループしてニックネーム優先で表示名を決定し、件数0のメンバーはスキップする。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/home/presentation/widgets/overview_tooltip_builder.dart（新規）</span>
+            <span class="diff-stat">+37 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">1</span><span class="line-prefix">+</span><span>List&lt;String&gt; buildTooltipLines(</span></div>
+            <div class="code-line line-add"><span class="line-num">2</span><span class="line-prefix">+</span><span>  DailyOverview day,</span></div>
+            <div class="code-line line-add"><span class="line-num">3</span><span class="line-prefix">+</span><span>  List&lt;HouseholdMember&gt; members, {</span></div>
+            <div class="code-line line-add"><span class="line-num">4</span><span class="line-prefix">+</span><span>  required String unassignedLabel,</span></div>
+            <div class="code-line line-add"><span class="line-num">5</span><span class="line-prefix">+</span><span>  String noDataLabel = '',</span></div>
+            <div class="code-line line-add"><span class="line-num">6</span><span class="line-prefix">+</span><span>}) {</span></div>
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>  final lines = &lt;String&gt;[];</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>  // メンバーごとの件数（0件はスキップ）</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>  for (final member in members) {</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    final count = day.countsByAssignee[member.userId] ?? 0;</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    if (count &gt; 0) {</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>      final name = member.nickname ?? member.displayName;</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>      lines.add('$name: $count');</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>  // 未割当（0件はスキップ）</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>  final unassignedCount = day.countsByAssignee[null] ?? 0;</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>  if (unassignedCount &gt; 0) lines.add('$unassignedLabel: $unassignedCount');</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>  // 全件0のとき noDataLabel を返す</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>  if (lines.isEmpty &amp;&amp; noDataLabel.isNotEmpty) return [noDataLabel];</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>  return lines;</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>l10n（AppLocalizations）に依存しない設計にするため、文字列ラベルを引数で受け取る純粋関数にした。これによりウィジェットなしで単体テストを書ける。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">件数が0のメンバーはツールチップに表示されない</div>
+      </div>
+      <div class="ac-body">
+        <p><code>buildTooltipLines()</code> 内で <code>count &gt; 0</code> の場合のみ行を追加する。<code>count == 0</code> のメンバーはループをスキップし、ツールチップには含まれない。</p>
+        <div class="annotation">
+          <span class="annotation-icon">💡</span>
+          <span>未割当も同様。<code>unassignedCount &gt; 0</code> の場合のみ末尾に追加する。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">未割当タスクがある場合、未割当の件数も表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>day.countsByAssignee[null]</code>（未割当の件数）が 1 件以上の場合、メンバー行の後ろに「未割り当て: N」を追加する。<code>null</code> キーが未割当を表すのは既存の <code>DailyOverview</code> モデルの設計に準拠している。</p>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">ツールチップの背景色がテーマに沿っている</div>
+      </div>
+      <div class="ac-body">
+        <p><code>BarTouchTooltipData(getTooltipColor: (_) =&gt; colors.surfaceCard)</code> でテーマのカード背景色を使用。テキスト色も <code>colors.textBody</code> を指定し、ライト/ダークモード両方に対応している。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/home/presentation/widgets/household_overview_card.dart（抜粋）</span>
+            <span class="diff-stat">+2 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">264</span><span class="line-prefix">+</span><span>            getTooltipColor: (_) =&gt; colors.surfaceCard,</span></div>
+            <div class="code-line line-add"><span class="line-num">281</span><span class="line-prefix">+</span><span>                    .textTheme.bodySmall?.copyWith(color: colors.textBody)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation notes -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note">
+      <div class="impl-note-title">ツールチップ生成ロジックを overview_tooltip_builder.dart に切り出し</div>
+      <p><code>BarTouchTooltipData</code> の <code>getTooltipItem</code> コールバック内にロジックを埋め込むとウィジェットテストが困難なため、<code>buildTooltipLines()</code> 関数として独立ファイルに切り出した。l10n に依存しない（文字列を引数で受け取る）純粋関数のため、ウィジェットなしで単体テストを書ける。</p>
+    </div>
+    <div class="impl-note">
+      <div class="impl-note-title">_OverviewChart に members プロパティを追加</div>
+      <p>ツールチップ生成時にメンバー名と nickname 参照が必要なため、従来の <code>memberColorMap</code> に加えて <code>members: List&lt;HouseholdMember&gt;</code> プロパティを追加した。</p>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>おうちの様子カードの棒グラフをタップするとツールチップが表示されること</strong>
+          <span>グラフ上の棒を指でタップし、ツールチップバルーンが出現するか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>ツールチップに「メンバー名: N件」形式の行が表示されること</strong>
+          <span>ニックネームが設定されているメンバーはニックネーム、未設定はdisplayNameで表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>タスクが0件のメンバーはツールチップに表示されないこと</strong>
+          <span>その日にタスクがないメンバーは行が含まれないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>未割当タスクがある日は「未割り当て: N件」が末尾に表示されること</strong>
+          <span>未割当タスクが1件以上ある日の棒をタップして確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>ツールチップの背景色がカードの背景色と同じになっていること</strong>
+          <span>テーマカラー（surfaceCard）が適用され、浮いた印象にならないか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>household_overview_card.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>BarTouchData 有効化・touchTooltipData 追加・members プロパティ追加</td>
+      </tr>
+      <tr>
+        <td><code>overview_tooltip_builder.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>buildTooltipLines() 純粋関数（ツールチップテキスト生成ロジック）</td>
+      </tr>
+      <tr>
+        <td><code>household_overview_card_test.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>buildTooltipLines() の単体テスト4ケースを追加</td>
+      </tr>
+      <tr>
+        <td><code>app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>homeOverviewTooltipNoData キー追加（「データなし」）</td>
+      </tr>
+      <tr>
+        <td><code>home_state.dart</code></td>
+        <td><span class="tag-unchanged">変更なし（#163で変更済み）</span></td>
+        <td>hasOverviewData フィールドは #163 の実装で追加済み</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>
