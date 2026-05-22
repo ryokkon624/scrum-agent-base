@@ -1,11 +1,11 @@
 # SM 短期記憶
 
-Sprint 55 完了。次スプリント開始時にリセット済み。
+Sprint 56 完了。次スプリント開始時にリセット済み。
 
 ## 引き継ぎ事項
 
+- mobile PR #46: fix/132-household-ui-sprint56 はりょこさんのマージ待ち（Sprint 56）
 - mobile PR #45: fix/149-inquiry-create-back-navigation はりょこさんのマージ待ち（Sprint 55 PR漏れ分）
-- mobile PR #44: fix/131-house-settings-switch-not-updating はりょこさんがマージ済み
 - Sprint 54 引き継ぎ: `fix/129-mobile-account-settings-google-link-not-updating-user` PR: mobile #42 はりょこさんのマージ待ち
 - Sprint 54 引き継ぎ: `fix/145-mobile-chore-settings-loading-empty-state` PR: mobile #43 はりょこさんのマージ待ち（#145/#146/#147 含む）
 - Sprint 53 引き継ぎ: `fix/124-mobile-notification-i18n-key` PR: mobile #40 はりょこさんのマージ待ち

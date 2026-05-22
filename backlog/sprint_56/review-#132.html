@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 56 Review — #132 おうち設定画面でDarkモードの場合に「現在」バッジが見えない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-card { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-card-dark { background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-card-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-card-title-dark { font-size: 11px; font-weight: 700; color: #9ca3af; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
+  .mock-item-dark { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #333; align-items: center; }
+  .mock-item:last-child { border-bottom: none; }
+  .mock-item-dark:last-child { border-bottom: none; }
+  .mock-item-name { color: #1a1a1a; }
+  .mock-item-name-dark { color: #e2e8f0; }
+  /* バグあり: Darkモードで背景色がハードコードの薄い緑 → 文字が見えない */
+  .badge-bad-dark { background: #bbf7d0; color: #bbf7d0; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid #bbf7d0; }
+  /* 修正後: カラートークンでDarkモード対応 */
+  .badge-good-dark { background: #166534; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-good-light { background: #dcfce7; color: #166534; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-switch { background: transparent; color: #6b7280; font-size: 11px; padding: 3px 8px; border: 1px solid #d1d5db; border-radius: 12px; }
+  .badge-switch-dark { background: transparent; color: #9ca3af; font-size: 11px; padding: 3px 8px; border: 1px solid #4b5563; border-radius: 12px; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #ef4444; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 56 Review · Bug Fix</div>
+  <h1>#132 — おうち設定画面でDarkモードの場合に<br>現在のおうちに表示される「現在」が見えない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 56</span>
+    <span class="badge badge-issue">#132</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（Darkモード・バグあり）</div>
+        <div class="mock-card-dark">
+          <div class="mock-card-title-dark">おうち設定</div>
+          <div class="mock-item-dark">
+            <span class="mock-item-name-dark">山田家</span>
+            <!-- 背景#bbf7d0 + 文字も同系色 → 見えない -->
+            <span class="badge-bad-dark">現在</span>
+          </div>
+          <div class="mock-item-dark">
+            <span class="mock-item-name-dark">実家</span>
+            <span class="badge-switch-dark">切り替え</span>
+          </div>
+        </div>
+        <p style="font-size:12px; color:#9ca3af; margin-top:8px;">「現在」バッジが背景色と同化して視認不可</p>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（Darkモード・正常）</div>
+        <div class="mock-card-dark">
+          <div class="mock-card-title-dark">おうち設定</div>
+          <div class="mock-item-dark">
+            <span class="mock-item-name-dark">山田家</span>
+            <span class="badge-good-dark">現在</span>
+          </div>
+          <div class="mock-item-dark">
+            <span class="mock-item-name-dark">実家</span>
+            <span class="badge-switch-dark">切り替え</span>
+          </div>
+        </div>
+        <p style="font-size:12px; color:#9ca3af; margin-top:8px;">カラートークンでDarkモードに追従し、「現在」バッジが視認可能</p>
+      </div>
+    </div>
+    <!-- Lightモードは変化なし -->
+    <div class="symptom-box" style="margin-bottom: 0;">
+      <div class="sym-label" style="color: #166534;">Lightモード（修正前後とも正常）</div>
+      <div class="mock-card">
+        <div class="mock-card-title">おうち設定</div>
+        <div class="mock-item">
+          <span class="mock-item-name">山田家</span>
+          <span class="badge-good-light">現在</span>
+        </div>
+        <div class="mock-item">
+          <span class="mock-item-name">実家</span>
+          <span class="badge-switch">切り替え</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">カラートークンを使わずLightモード前提のハードコードカラーを使っていた</span>
+      </div>
+      <div class="cause-body">
+        <p><code>household_list_section.dart</code> の <code>_HouseholdRow</code> ウィジェットで、「現在」バッジの <code>Chip</code> に <code>backgroundColor: Colors.green.shade100</code>（薄い緑）をハードコードしていた。また <code>Text</code> の文字色が未指定だったため、Darkモード時はテーマ既定の文字色（明るい色）と薄い緑背景が同化して視認できなくなっていた。</p>
+        <table class="mismatch-table">
+          <tr>
+            <th>項目</th>
+            <th>修正前（ハードコード）</th>
+            <th></th>
+            <th>修正後（カラートークン）</th>
+          </tr>
+          <tr>
+            <td>背景色</td>
+            <td class="code mismatch">Colors.green.shade100</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">colors.statusActiveBg</td>
+          </tr>
+          <tr>
+            <td>文字色</td>
+            <td class="code mismatch">（未指定・テーマ任せ）</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">colors.statusActiveText</td>
+          </tr>
+        </table>
+        <p style="font-size: 12px; color: #6b7280;">
+          <code>AppColorScheme.statusActiveBg</code> は Lightモードで <code>#dcfce7</code>（薄い緑）、Darkモードで <code>#166534</code>（濃い緑）に切り替わる。<br>
+          <code>AppColorScheme.statusActiveText</code> は Lightモードで <code>#166534</code>（濃い緑文字）、Darkモードで <code>#ffffff</code>（白文字）に切り替わる。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/household_settings/presentation/household_settings/widgets/household_list_section.dart</span>
+        <span class="diff-stat">+6 / -3</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">102</span><span class="line-prefix"> </span><span>  Widget build(BuildContext context, WidgetRef ref) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">103</span><span class="line-prefix"> </span><span>    final l10n = AppLocalizations.of(context);</span></div>
+        <div class="code-line line-add"><span class="line-num">104</span><span class="line-prefix">+</span><span>    final colors = Theme.of(context).extension&lt;AppColorScheme&gt;()!;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">105</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">106</span><span class="line-prefix"> </span><span>    return ListTile(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">107</span><span class="line-prefix"> </span><span>      contentPadding: EdgeInsets.zero,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">108</span><span class="line-prefix"> </span><span>      title: Text(household.name, overflow: TextOverflow.ellipsis),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">109</span><span class="line-prefix"> </span><span>      trailing: isCurrent</span></div>
+        <div class="code-line line-ctx"><span class="line-num">110</span><span class="line-prefix"> </span><span>          ? Chip(</span></div>
+        <div class="code-line line-del"><span class="line-num">111</span><span class="line-prefix">-</span><span>              label: Text(l10n.householdSettingsCurrentBadge),</span></div>
+        <div class="code-line line-del"><span class="line-num">112</span><span class="line-prefix">-</span><span>              backgroundColor: Colors.green.shade100,</span></div>
+        <div class="code-line line-add"><span class="line-num">111</span><span class="line-prefix">+</span><span>              label: Text(</span></div>
+        <div class="code-line line-add"><span class="line-num">112</span><span class="line-prefix">+</span><span>                l10n.householdSettingsCurrentBadge,</span></div>
+        <div class="code-line line-add"><span class="line-num">113</span><span class="line-prefix">+</span><span>                style: TextStyle(color: colors.statusActiveText),</span></div>
+        <div class="code-line line-add"><span class="line-num">114</span><span class="line-prefix">+</span><span>              ),</span></div>
+        <div class="code-line line-add"><span class="line-num">115</span><span class="line-prefix">+</span><span>              backgroundColor: colors.statusActiveBg,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">116</span><span class="line-prefix"> </span><span>            )</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>AppColorScheme</code> は既存の <code>ThemeExtension</code> として Light / Dark 両方の値が定義済み。新規カラー定義は不要で、既存トークンを参照するだけで対応できた。<code>Colors.green.shade100</code> のようなハードコードカラーは今後も <code>AppColorScheme</code> のトークンに置き換えること。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">Darkモード時に「現在」バッジが視認できる（カラートークンでDarkモード対応）</div>
+      </div>
+      <div class="ac-body">
+        <code>backgroundColor: colors.statusActiveBg</code>（Darkモードで濃い緑）と <code>TextStyle(color: colors.statusActiveText)</code>（Darkモードで白）を適用。テーマが Dark に切り替わると <code>AppColorScheme</code> の値が自動的に Dark 用の色に変わり、高コントラストで「現在」バッジが表示される。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">Lightモード時の「現在」バッジの表示に変化がない</div>
+      </div>
+      <div class="ac-body">
+        <code>AppColorScheme.light().statusActiveBg</code> は修正前の <code>Colors.green.shade100</code> と同系統の薄い緑。Lightモードでの見た目の変化はほぼなし。ウィジェットテストで Light / Dark 両モードの <code>backgroundColor</code> がカラートークン値と一致することを検証済み。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>Darkモードでおうち設定画面を開き、「現在」バッジが見えること</strong>
+          <span>端末 or シミュレーターを Darkモードに設定 → 設定 → おうち設定 → 現在選択中の世帯に濃い緑背景＋白文字の「現在」バッジが表示されることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>Lightモードでもバッジが正常に表示されること</strong>
+          <span>端末を Lightモードに戻してから同じ画面を開き、薄い緑背景＋濃い緑文字の「現在」バッジが修正前と同じように表示されることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>複数世帯がある場合に選択中の世帯だけにバッジが表示されること</strong>
+          <span>2つ以上の世帯に所属しているアカウントで確認。選択中の世帯だけ「現在」バッジが表示され、他の世帯には「切り替え」ボタンが表示されること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>カラートークンを使わないハードコードカラーはDarkモード対応漏れの温床。ウィジェットテストで Light / Dark 両テーマでトークンへの参照を検証するテストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">household_list_section_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「現在バッジのbackgroundColorがAppColorScheme.statusActiveBgになっている（Lightモード）」— Chip.backgroundColor が AppColorScheme.light().statusActiveBg と一致することを確認</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">household_list_section_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「現在バッジのbackgroundColorがDarkモードでAppColorScheme.statusActiveBgになっている」— AppTheme.dark を適用し、Chip.backgroundColor が AppColorScheme.dark().statusActiveBg と一致することを確認</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">household_list_section_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「現在バッジのlabelTextColorがAppColorScheme.statusActiveTextになっている（Lightモード）」— Chip の label Text の color が AppColorScheme.light().statusActiveText と一致することを確認</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
