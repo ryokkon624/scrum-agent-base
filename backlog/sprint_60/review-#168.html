@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 60 Review — #168 Notifier のエラーハンドリングコードが複数箇所に重複している</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-refactor { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 32px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .count-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; }
+  .count-box .label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .count-box .count { font-size: 36px; font-weight: 700; line-height: 1; }
+  .count-box .sublabel { font-size: 11px; color: #888; margin-top: 4px; }
+  .count-before { color: #ef4444; }
+  .count-after { color: #22c55e; }
+
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  .notifier-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 12px 0; }
+  .notifier-table th { text-align: left; padding: 6px 10px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .notifier-table td { padding: 8px 10px; border: 1px solid #e5e5e5; font-family: 'SF Mono', 'Fira Code', monospace; color: #374151; }
+  .notifier-table tr:hover td { background: #f9fafb; }
+
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  .impl-note { background: #f0f9ff; border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 12px; }
+  .impl-note .note-label { font-size: 11px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .impl-note p { font-size: 13px; color: #0c4a6e; margin-bottom: 6px; }
+  .impl-note p:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 60 Review</div>
+  <h1>#168 — Notifier のエラーハンドリングコードが複数箇所に重複している</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 60</span>
+    <span class="badge badge-issue">#168</span>
+    <span class="badge badge-refactor">refactor</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p><code>AppException</code> を捕捉して <code>state.copyWith(errorMessage: ...)</code> にセットする try/catch ブロックが、複数の Notifier ファイルに全く同じ形で繰り返し実装されていた。<code>shopping_list_notifier.dart</code> だけで4箇所、全体では14ファイル以上に重複が存在しており、エラーハンドリングの変更が困難だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前（各 Notifier に都度コピー）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>shopping_list_notifier に4箇所の重複 try/catch</div>
+        <div class="flow-item"><span class="dot dot-red"></span>my_tasks_notifier / household_settings_notifier / account_settings_notifier ... それぞれに同一パターン</div>
+        <div class="flow-item"><span class="dot dot-red"></span>on AppException → state に格納 / catch _ → 'errorUnexpected' の記述が各ファイルに散在</div>
+        <div class="flow-item"><span class="dot dot-red"></span>エラーハンドリングの方針変更時に全ファイルの修正が必要</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後（各 Notifier に _runCatching() ヘルパー）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>各 Notifier に private な _runCatching() メソッドを1つ定義</div>
+        <div class="flow-item"><span class="dot dot-green"></span>try/catch の定型コードはヘルパー内に集約</div>
+        <div class="flow-item"><span class="dot dot-green"></span>操作メソッドは _runCatching(current, (c) async { ... }) の1行で記述</div>
+        <div class="flow-item"><span class="dot dot-green"></span>エラーハンドリングの方針変更は _runCatching() のみ修正すればよい</div>
+      </div>
+    </div>
+    <div class="count-grid">
+      <div class="count-box">
+        <div class="label">重複 try/catch ブロック（改修前）</div>
+        <div class="count count-before">40+</div>
+        <div class="sublabel">14ファイル以上に散在</div>
+      </div>
+      <div class="count-box">
+        <div class="label">try/catch の記述箇所（改修後）</div>
+        <div class="count count-after">14</div>
+        <div class="sublabel">各 Notifier の _runCatching() 内のみ</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">shopping_list_notifier.dart の重複する try/catch ブロック（4箇所）がヘルパーに置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>moveToBasket</code> / <code>markPurchased</code> / <code>moveBackToUnpurchased</code> / <code>bulkPurchase</code> / <code>deleteItem</code> / <code>toggleFavorite</code> の6つの操作メソッドすべてを <code>_runCatching()</code> に置き換えた（当初4箇所の想定だったが全6箇所）。ヘルパーメソッドを末尾に追加した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_list/shopping_list_notifier.dart</span>
+            <span class="diff-stat">+21 / -58</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">49</span><span class="line-prefix"> </span><span>    final repo = ref.read(shoppingRepositoryProvider);</span></div>
+            <div class="code-line line-del"><span class="line-num">50</span><span class="line-prefix">-</span><span>    try {</span></div>
+            <div class="code-line line-del"><span class="line-num">51</span><span class="line-prefix">-</span><span>      await repo.updateStatus(shoppingItemId: shoppingItemId, ...);</span></div>
+            <div class="code-line line-del"><span class="line-num">52</span><span class="line-prefix">-</span><span>      state = AsyncData(current.copyWith(items: ...));</span></div>
+            <div class="code-line line-del"><span class="line-num">53</span><span class="line-prefix">-</span><span>    } on AppException catch (e) {</span></div>
+            <div class="code-line line-del"><span class="line-num">54</span><span class="line-prefix">-</span><span>      state = AsyncData(current.copyWith(errorMessage: e.message));</span></div>
+            <div class="code-line line-del"><span class="line-num">55</span><span class="line-prefix">-</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-del"><span class="line-num">56</span><span class="line-prefix">-</span><span>      state = AsyncData(current.copyWith(errorMessage: 'errorUnexpected'));</span></div>
+            <div class="code-line line-del"><span class="line-num">57</span><span class="line-prefix">-</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>    await _runCatching(current, (c) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>      await repo.updateStatus(shoppingItemId: shoppingItemId, ...);</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>      state = AsyncData(c.copyWith(items: ...));</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>    });</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> </span><span class="line-prefix"> </span><span>...</span></div>
+            <div class="code-line line-add"><span class="line-num">201</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; _runCatching(</span></div>
+            <div class="code-line line-add"><span class="line-num">202</span><span class="line-prefix">+</span><span>    ShoppingListState current,</span></div>
+            <div class="code-line line-add"><span class="line-num">203</span><span class="line-prefix">+</span><span>    Future&lt;void&gt; Function(ShoppingListState c) operation,</span></div>
+            <div class="code-line line-add"><span class="line-num">204</span><span class="line-prefix">+</span><span>  ) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">205</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">206</span><span class="line-prefix">+</span><span>      await operation(current);</span></div>
+            <div class="code-line line-add"><span class="line-num">207</span><span class="line-prefix">+</span><span>    } on AppException catch (e) {</span></div>
+            <div class="code-line line-add"><span class="line-num">208</span><span class="line-prefix">+</span><span>      state = AsyncData(current.copyWith(errorMessage: e.message));</span></div>
+            <div class="code-line line-add"><span class="line-num">209</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">210</span><span class="line-prefix">+</span><span>      state = AsyncData(current.copyWith(errorMessage: 'errorUnexpected'));</span></div>
+            <div class="code-line line-add"><span class="line-num">211</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">212</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>ヘルパーのシグネチャは <code>_runCatching(current, (c) async { ... })</code>。コールバック内で使う state のスナップショットは引数 <code>c</code> 経由で渡すことで、並行操作時の古い current 参照を防ぐ。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">my_tasks_notifier.dart の try/catch ブロックがヘルパーに置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>completeTask</code> / <code>skipTask</code> / <code>bulkCompletePastTasks</code> の3メソッドを <code>_runCatching()</code> に置き換えた。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/tasks/presentation/my_tasks_notifier.dart</span>
+            <span class="diff-stat">+22 / -29</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">72</span><span class="line-prefix"> </span><span>    final repo = ref.read(myTasksRepositoryProvider);</span></div>
+            <div class="code-line line-del"><span class="line-num">73</span><span class="line-prefix">-</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">73</span><span class="line-prefix">+</span><span>    await _runCatching(current, (c) async {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">74</span><span class="line-prefix"> </span><span>      await repo.updateTaskStatus(taskId: taskId, status: TaskStatus.done.code);</span></div>
+            <div class="code-line line-del"><span class="line-num">75</span><span class="line-prefix">-</span><span>      state = AsyncData(current.copyWith(</span></div>
+            <div class="code-line line-add"><span class="line-num">75</span><span class="line-prefix">+</span><span>      state = AsyncData(c.copyWith(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">76</span><span class="line-prefix"> </span><span>        pastTasks: c.pastTasks.where((t) => t.houseworkTaskId != taskId).toList(),</span></div>
+            <div class="code-line line-del"><span class="line-num">77</span><span class="line-prefix">-</span><span>      ));</span></div>
+            <div class="code-line line-del"><span class="line-num">78</span><span class="line-prefix">-</span><span>    } on AppException catch (e) {</span></div>
+            <div class="code-line line-del"><span class="line-num">79</span><span class="line-prefix">-</span><span>      state = AsyncData(current.copyWith(errorMessage: e.message));</span></div>
+            <div class="code-line line-del"><span class="line-num">80</span><span class="line-prefix">-</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-del"><span class="line-num">81</span><span class="line-prefix">-</span><span>      state = AsyncData(current.copyWith(errorMessage: 'errorUnexpected'));</span></div>
+            <div class="code-line line-del"><span class="line-num">82</span><span class="line-prefix">-</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">77</span><span class="line-prefix">+</span><span>      ));</span></div>
+            <div class="code-line line-add"><span class="line-num">78</span><span class="line-prefix">+</span><span>    });</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">同様のパターンを持つ他の Notifier も同じヘルパーを使うよう修正される</div>
+      </div>
+      <div class="ac-body">
+        <p>プロジェクト全体の Notifier を調査し、同パターンを持つ全ファイルに <code>_runCatching()</code> を追加した。合計14ファイルが対象となった。</p>
+        <table class="notifier-table">
+          <tr>
+            <th>Notifier ファイル</th>
+            <th>置換した箇所数</th>
+          </tr>
+          <tr><td>shopping_list_notifier.dart</td><td>6</td></tr>
+          <tr><td>shopping_item_detail_notifier.dart</td><td>6</td></tr>
+          <tr><td>shopping_item_new_notifier.dart</td><td>3</td></tr>
+          <tr><td>household_settings_notifier.dart</td><td>9</td></tr>
+          <tr><td>account_settings_notifier.dart</td><td>7</td></tr>
+          <tr><td>inquiry_detail_notifier.dart</td><td>4</td></tr>
+          <tr><td>my_tasks_notifier.dart</td><td>3</td></tr>
+          <tr><td>housework_assign_notifier.dart</td><td>3</td></tr>
+          <tr><td>inquiry_create_notifier.dart</td><td>1</td></tr>
+          <tr><td>inquiry_list_notifier.dart</td><td>1</td></tr>
+          <tr><td>notification_center_notifier.dart</td><td>1（rethrowUnexpected オプション付き）</td></tr>
+          <tr><td>login_notifier.dart</td><td>1</td></tr>
+          <tr><td>housework_create_notifier.dart</td><td>1</td></tr>
+          <tr><td>housework_edit_notifier.dart</td><td>1</td></tr>
+        </table>
+        <div class="annotation">
+          <span class="annotation-icon">💡</span>
+          <span><code>notification_center_notifier.dart</code> は元の実装で <code>catch (_) { rethrow; }</code>（予期しない例外を上位に伝播）していたため、<code>_runCatching(... rethrowUnexpected: true)</code> という専用パラメータを追加して元の挙動を維持した。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">ヘルパーを使用した後も既存のエラーハンドリング動作が変わらない</div>
+      </div>
+      <div class="ac-body">
+        <p>既存のテストがすべて通ることで動作が変わっていないことを確認した。<code>_runCatching()</code> の中身は元の try/catch と完全に等価であり、コールバック内の state 更新パターンもそのまま維持している。</p>
+        <div class="annotation">
+          <span class="annotation-icon">💡</span>
+          <span>戻り値（<code>List&lt;T&gt;</code>）があるメソッド（<code>fetchHistorySuggestions</code> / <code>fetchFavorites</code>）や、<code>AppInfoNotifier</code> のサイレント catch が仕様通りのメソッドは <code>_runCatching()</code> の対象外として個別 try/catch を維持した。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation notes -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note">
+      <div class="note-label">判断1</div>
+      <p><strong>_runCatching() のシグネチャは Notifier の種類ごとに個別定義した。</strong></p>
+      <p>共通基底クラスは不要とのりょこさん確認のため、各 Notifier に private メソッドとして追加した。Generic で共通化できるが、Dart の型システム上 <code>state.copyWith(errorMessage: msg)</code> のような呼び出しを Generic にするには <code>copyWith</code> の型を抽象化する必要があり過設計になるため見送り。</p>
+    </div>
+    <div class="impl-note">
+      <div class="note-label">判断2</div>
+      <p><strong>ShoppingItemNewNotifier の一部メソッドは _runCatching() 非適用。</strong></p>
+      <p><code>fetchHistorySuggestions</code> / <code>fetchFavorites</code> は戻り値（<code>List&lt;T&gt;</code>）があるため、エラー時に空リストを返す必要があり通常の <code>_runCatching()</code> パターンに合わない。個別 try/catch を維持した。</p>
+    </div>
+    <div class="impl-note">
+      <div class="note-label">判断3</div>
+      <p><strong>notification_center_notifier に rethrowUnexpected パラメータを追加。</strong></p>
+      <p>元の実装で <code>catch (_) { rethrow; }</code>（AppException 以外の例外を上位に伝播する挙動）があったため、<code>_runCatching(... rethrowUnexpected: true)</code> フラグで元の挙動を再現した。</p>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>買い物リストで「かごに入れる」「購入済み」「元に戻す」操作が通常通り動作すること</strong>
+          <span>エラーハンドリングの置き換えなので見た目・動作は変わらないはず。各操作が正常に反映されることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>ネットワークエラー時にエラーメッセージが表示されること</strong>
+          <span>機内モードで操作してみて、「エラーが発生しました」等のメッセージが表示されることを確認（_runCatching() が正しく state に格納することの確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>タスク完了・スキップ操作が正常に動作すること</strong>
+          <span>my_tasks 画面でタスクをスワイプして完了・スキップし、リストから消えることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>アカウント設定・世帯設定の各操作（保存・変更・削除）が正常に動作すること</strong>
+          <span>最も多くの箇所が変更された2つの Notifier（account_settings / household_settings）の各操作を一通り確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル / 種別</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>shopping_list_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>6メソッドを _runCatching() に置換、ヘルパーを末尾に追加</td>
+      </tr>
+      <tr>
+        <td><code>my_tasks_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>3メソッドを _runCatching() に置換</td>
+      </tr>
+      <tr>
+        <td><code>account_settings_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>7メソッドを _runCatching() に置換（onError カスタマイズ対応）</td>
+      </tr>
+      <tr>
+        <td><code>household_settings_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>9メソッドを _runCatching() に置換</td>
+      </tr>
+      <tr>
+        <td><code>shopping_item_detail_notifier.dart</code> / <code>shopping_item_new_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>各6箇所・3箇所を置換（一部メソッドは戻り値があり個別維持）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_create/list/detail_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>各1〜4箇所を置換</td>
+      </tr>
+      <tr>
+        <td><code>notification_center_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>rethrowUnexpected フラグ付きで置換</td>
+      </tr>
+      <tr>
+        <td><code>login_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>onError コールバック対応の _runCatching() を追加</td>
+      </tr>
+      <tr>
+        <td>UI層（Page / Widget）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>エラーハンドリングの内部実装変更のみ。画面の見た目・動作に変更なし</td>
+      </tr>
+      <tr>
+        <td>Repository / State クラス</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>Notifier 内部の変更のみ。依存ファイルへの影響なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

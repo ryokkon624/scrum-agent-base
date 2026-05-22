@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 60 Review — #175 テストフォルダの構成が lib フォルダの構成と対応していない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-refactor { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 32px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  .tree-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .tree-box { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #1e1e2e; color: #cdd6f4; padding: 14px; border-radius: 8px; line-height: 1.7; }
+  .tree-box .tree-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .tree-del { color: #f38ba8; }
+  .tree-add { color: #a6e3a1; }
+  .tree-ctx { color: #cdd6f4; }
+  .tree-warn { color: #f9e2af; }
+
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  .move-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 12px 0; }
+  .move-table th { text-align: left; padding: 6px 10px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .move-table td { padding: 8px 10px; border: 1px solid #e5e5e5; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: #374151; vertical-align: middle; }
+  .move-table tr:hover td { background: #f9fafb; }
+  .arrow-cell { text-align: center; color: #888; }
+
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-moved { font-size: 11px; font-weight: 600; background: #fdf4ff; color: #7e22ce; padding: 2px 6px; border-radius: 3px; }
+  .tag-updated { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 60 Review</div>
+  <h1>#175 — テストフォルダの構成が lib フォルダの構成と対応していない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 60</span>
+    <span class="badge badge-issue">#175</span>
+    <span class="badge badge-refactor">refactor</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p><code>test/</code> 配下のフォルダ・ファイル構成が <code>lib/</code> 配下と対応していない箇所があった。特に shopping feature で顕著で、<code>shopping_list_notifier_test.dart</code> が <code>shopping_item_list/</code> サブフォルダなしで直置きされていた。また <code>purchased_tab_test.dart</code> 等が <code>widgets/</code> 配下ではなく <code>presentation/</code> 直下に存在していた。テストの追加・修正時にファイルを探す手間が生じていた。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前（lib 構成と非対応）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>shopping/presentation/ 直下に shopping_list_notifier_test.dart（shopping_item_list/ なし）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>shopping/presentation/ 直下に purchased_tab_test.dart（widgets/ なし）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>settings/presentation/settings_top/ に settings_top_page_test.dart（#174 移動前のパス）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>pull_refresh_test.dart がどの実装ファイルに対応するか不明瞭</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後（lib 構成と一対一対応）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>shopping/presentation/shopping_item_list/ にテストを移動</div>
+        <div class="flow-item"><span class="dot dot-green"></span>shopping/presentation/widgets/ にウィジェットテストを移動</div>
+        <div class="flow-item"><span class="dot dot-green"></span>settings/presentation/ 直下に settings_top_page_test.dart（#174 対応）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>pull_refresh_test.dart は shopping_list_page に対応 → shopping_item_list/ に移動</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">shopping_list_notifier_test.dart が shopping_item_list/ サブフォルダ配下に移動する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>shopping_list_notifier_test.dart</code> を <code>shopping_item_list/</code> サブフォルダに移動し、<code>shopping_mocks.mocks.dart</code> と <code>widget_test_helpers.dart</code> への相対パスを更新した。</p>
+        <div class="move-table">
+          <tr><th>移動前</th><th></th><th>移動後</th></tr>
+          <tr>
+            <td>test/features/shopping/presentation/<strong>shopping_list_notifier_test.dart</strong></td>
+            <td class="arrow-cell">→</td>
+            <td>test/features/shopping/presentation/<strong>shopping_item_list/shopping_list_notifier_test.dart</strong></td>
+          </tr>
+        </div>
+        <div class="annotation">
+          <span class="annotation-icon">💡</span>
+          <span>移動に伴い import の相対パスを <code>../shopping_mocks.mocks.dart</code> → <code>../../shopping_mocks.mocks.dart</code> に更新した。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">purchased_tab_test.dart が widgets/ サブフォルダ配下に移動する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>purchased_tab_test.dart</code> / <code>shopping_tab_bar_test.dart</code> / <code>swipeable_shopping_card_test.dart</code> の3ファイルを <code>widgets/</code> サブフォルダに移動した（lib 側も <code>presentation/widgets/</code> 配下にウィジェットが存在するため対応）。</p>
+        <table class="move-table">
+          <tr><th>移動前</th><th></th><th>移動後</th></tr>
+          <tr>
+            <td>presentation/<strong>purchased_tab_test.dart</strong></td>
+            <td class="arrow-cell">→</td>
+            <td>presentation/<strong>widgets/purchased_tab_test.dart</strong></td>
+          </tr>
+          <tr>
+            <td>presentation/<strong>shopping_tab_bar_test.dart</strong></td>
+            <td class="arrow-cell">→</td>
+            <td>presentation/<strong>widgets/shopping_tab_bar_test.dart</strong></td>
+          </tr>
+          <tr>
+            <td>presentation/<strong>swipeable_shopping_card_test.dart</strong></td>
+            <td class="arrow-cell">→</td>
+            <td>presentation/<strong>widgets/swipeable_shopping_card_test.dart</strong></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">pull_refresh_test.dart の対応する実装ファイルが特定され、適切なサブフォルダに移動する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>pull_refresh_test.dart</code> の中身を調査したところ、<code>ShoppingListPage</code> の <code>RefreshIndicator</code> 動作テストであることが判明した。<code>shopping_item_list/</code> サブフォルダに移動し、import パスを更新した。</p>
+        <table class="move-table">
+          <tr><th>移動前</th><th></th><th>移動後</th></tr>
+          <tr>
+            <td>presentation/<strong>pull_refresh_test.dart</strong></td>
+            <td class="arrow-cell">→</td>
+            <td>presentation/<strong>shopping_item_list/pull_refresh_test.dart</strong></td>
+          </tr>
+        </table>
+        <div class="annotation">
+          <span class="annotation-icon">💡</span>
+          <span>移動後、<code>ShoppingListNotifier</code> と <code>ShoppingListState</code> の import が <code>shopping_list_notifier.dart</code> から <code>shopping_providers.dart</code>（#173 で集約済み）に変更されることで import が1行削減された。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">他 feature のテストフォルダも lib 構成と対応しているか確認し、乖離があれば修正する</div>
+      </div>
+      <div class="ac-body">
+        <p>他 feature を調査した結果、shopping 以外で明らかな乖離が2箇所見つかった。</p>
+        <p><strong>#174 の影響を受けた settings / household_settings のテストパス更新</strong>: #174 で lib 側のフォルダ構成が変わったため、test 側も合わせて更新した。</p>
+        <table class="move-table">
+          <tr><th>更新したテストファイル</th><th></th><th>更新内容</th></tr>
+          <tr>
+            <td>test/features/settings/presentation/settings_top/settings_top_page_test.dart</td>
+            <td class="arrow-cell">→</td>
+            <td>test/features/settings/presentation/settings_top_page_test.dart</td>
+          </tr>
+          <tr>
+            <td>household_settings の各テストファイル（8ファイル）</td>
+            <td class="arrow-cell">→</td>
+            <td>import パスを household_settings_providers.dart に統一</td>
+          </tr>
+        </table>
+        <p style="margin-top: 12px;">他の feature（tasks / auth / home / inquiry / notifications / housework_settings / housework_assign）は調査の結果、lib 構成との乖離なしと判断した。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>全テストが通ること</strong>
+          <span>テストファイルの移動と import パスの更新のみなので、テスト内容は変わらない。<code>flutter test</code> で全テストがパスすることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>buy_list 関連テスト（shopping_list_notifier_test / shopping_list_page_test / pull_refresh_test）が通ること</strong>
+          <span>最も多くのファイルが移動した shopping feature のテストが正常に動作することを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>テストファイル / フォルダ</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>shopping/presentation/shopping_list_notifier_test.dart</code></td>
+        <td><span class="tag-moved">移動</span></td>
+        <td><code>shopping_item_list/</code> サブフォルダへ移動 + import 相対パス更新</td>
+      </tr>
+      <tr>
+        <td><code>shopping/presentation/shopping_list_page_test.dart</code></td>
+        <td><span class="tag-moved">移動</span></td>
+        <td><code>shopping_item_list/</code> サブフォルダへ移動 + import 相対パス更新</td>
+      </tr>
+      <tr>
+        <td><code>shopping/presentation/pull_refresh_test.dart</code></td>
+        <td><span class="tag-moved">移動</span></td>
+        <td><code>shopping_item_list/</code> サブフォルダへ移動（ShoppingListPage の RefreshIndicator テストと判明）</td>
+      </tr>
+      <tr>
+        <td><code>shopping/presentation/purchased_tab_test.dart</code><br><code>shopping/presentation/shopping_tab_bar_test.dart</code><br><code>shopping/presentation/swipeable_shopping_card_test.dart</code></td>
+        <td><span class="tag-moved">移動</span></td>
+        <td><code>widgets/</code> サブフォルダへ移動</td>
+      </tr>
+      <tr>
+        <td><code>settings/presentation/settings_top/settings_top_page_test.dart</code></td>
+        <td><span class="tag-moved">移動</span></td>
+        <td>#174 に合わせ <code>presentation/</code> 直下へ移動 + import パス更新</td>
+      </tr>
+      <tr>
+        <td>household_settings 配下のテストファイル（8ファイル）</td>
+        <td><span class="tag-updated">import 更新</span></td>
+        <td>#173/#174 で変更された import パスを <code>household_settings_providers.dart</code> 経由に更新</td>
+      </tr>
+      <tr>
+        <td>テスト内容（アサーション等）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>ファイル移動と import パス更新のみ。テストロジックに変更なし</td>
+      </tr>
+      <tr>
+        <td>lib/ 配下のソースコード</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>test/ フォルダの整理のみ。ソースコードへの影響なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>
