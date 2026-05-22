@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-22（Sprint 57 Retro）
+**最終更新**: 2026-05-22（Sprint 58 Retro）
 
 ---
 
@@ -44,6 +44,7 @@
 | 月と日を個別入力するフォームで存在しない日付（例: 2月30日）の入力を許可してしまう | 47 | 月と日を組み合わせた日付の整合性バリデーションを実装すること。`DateTime(year, month, day).month == month` で存在チェックできる（Dartの`DateTime`は28日がない月に31日を指定すると自動繰り越しするため、チェック後の月が入力した月と一致しない場合は無効） |
 | 操作ロジックを持つウィジェット（SegmentedButton 等）のウィジェットテスト漏れ | 52 | 「見た目の変更のみ」はテスト不要だが、「ユーザー操作 → Notifier 呼び出し」のロジックを持つウィジェットはウィジェットテスト必須。テスト対象の判断基準: コールバック（`onThemeModeChanged` 等）が Notifier への呼び出しを含む場合はテストを書く |
 | `ref.listen` コールバック内で `_controller.text` を直接更新しても UI が再描画されない（`setState()` 呼び出し漏れ） | 55 | `StatefulWidget` 内の `ref.listen` コールバックで `TextEditingController.text` 等を更新する場合は必ず `setState(() { _controller.text = newValue; })` でラップすること。`setState()` なしでは `controller.text` は更新されるが Flutter のフレームが再描画されず画面に反映されない |
+| `_dio.get<dynamic>()` 等 Dio の型パラメータに `<dynamic>` を使用（具体型指定漏れ） | 46, 58 | `_dio.get<List<dynamic>>()` / `_dio.get<Map<String, dynamic>>()` のように具体型を指定する。`<dynamic>` のままにすると 2 段階キャストが必要になり、テストのモックスタブも型パラメータを合わせないとスタブが効かなくなる |
 
 ### hw-hub-backend
 
@@ -169,6 +170,8 @@
 - `AsyncValue.data` が空リストの場合は空状態ウィジェット（EmptyState）を表示する。カテゴリフィルタ等の絞り込み状態に応じて「データなし（未登録）」と「絞り込み結果なし」を出し分けることで UX が改善される。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースを必ず区別すること（Sprint 54 #145）
 - fl_chart のウィジェット内でツールチップ生成ロジックが複雑な場合（メンバーごとの件数構築・未割当の扱い等）は、`_buildTooltipText(members, dailyOverview, l10n)` のような純粋関数として別ファイル（`overview_tooltip_builder.dart` 等）に切り出すとウィジェットテストで直接検証できる。flutter_test では `BarChart` のツールチップ実動作はテスト困難なため、ロジックを純粋関数に分離してユニットテストするのがベストプラクティス（Sprint 57 #161）
 - シェル外独立ルートからシェル内ルートへ遷移する場合は必ず先に `context.pop()` してから `context.push(遷移先)` を呼ぶこと。両 Navigator に Hero が同時に乗ると `HeroController` のアサーション失敗でクラッシュする。`GoRouterState.of(context).matchedLocation` でシェル外ルートかどうか判定できる（Sprint 57 #157）
+- `ref.invalidate(householdNotifierProvider)` を `logout()` 内でトークンクリア後に呼ぶと、トークンなしでビルドが走り 401 → `AuthInterceptor` が再び `logout()` を呼ぶ無限ループが発生する。解決策は2点セット: (1) `state = AuthUnauthenticated()` を `ref.invalidate` より前に移動して「既に未認証」フラグを立てる、(2) `AuthInterceptor._logoutIfAuthenticated()` を追加して現在の state が既に `AuthUnauthenticated` ならログアウト処理をスキップする再入防止ガード。`invalidate` のタイミングは「state がセットされてから」が原則（Sprint 58 #158/#172）
+- グローバル `AsyncNotifier`（AutoDispose なし）Provider は `logout()` 時に invalidate すると直後のビルドでトークンなし → エラー状態になる。再ログイン後に別ユーザーのデータを正常取得するには、`saveTokens()`（ログイン成功後）のタイミングで `ref.invalidate` する方が安全。`logout()` 側では State を未認証にするだけで十分（Sprint 58 #158）
 
 ### hw-hub-backend
 
@@ -211,3 +214,4 @@
 | Sprint 54 | mobile-conventions | StatefulWidget + didUpdateWidget による TextEditingController 更新パターン追記・YYYY-MM-DD 形式テキスト入力の日付有効性チェック（DateTime.tryParse + ISO8601 ラウンドトリップ）追記 | Sprint 54 #146（HouseworkForm StatefulWidget 化）・#147（日付バリデーション）の実装で確立したパターン |
 | Sprint 55 | mobile-conventions | `ref.listen` コールバック内での `setState()` 必須ルールを追記 | Sprint 55 #131 レビュー指摘（`NicknameSection` の `ref.listen` コールバックで `setState()` 漏れ）|
 | Sprint 57 | mobile-conventions | シェル外ルートからシェル内ルートへ push するときの HeroController 衝突対処法を追記 | Sprint 57 #157 バグ修正（通知センターからタスク画面遷移でアプリクラッシュ）で確立したパターン |
+| Sprint 58 | mobile-conventions | ログアウト時の `ref.invalidate` タイミングと AuthInterceptor 再入防止パターンを追記 | Sprint 58 #158/#172 バグ修正（logout 時の無限ループ・別ユーザーログイン後のデータ取得不可）で確立したパターン |

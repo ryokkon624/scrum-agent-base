@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 58 Review — #158 ログアウト後、別ユーザでログインするとデータが取得できない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  .mock-screen { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+  .mock-topbar { background: #2d4a2d; padding: 8px 12px; font-size: 10px; color: #a0d4a0; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .mock-topbar-avatar { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; }
+  .avatar-user-a { background: #f59e0b; color: white; }
+  .avatar-user-b { background: #3b82f6; color: white; }
+  .mock-content { padding: 10px 12px; }
+  .mock-error { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 8px 10px; font-size: 11px; color: #991b1b; margin-bottom: 6px; }
+  .mock-ok-item { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 6px 10px; font-size: 11px; color: #166534; margin-bottom: 4px; }
+  .mock-ok-item:last-child { margin-bottom: 0; }
+  .mock-user-info { font-size: 10px; color: #6b7280; margin-bottom: 6px; }
+  .mock-user-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
+  .badge-user-a { background: #fef3c7; color: #92400e; }
+  .badge-user-b { background: #dbeafe; color: #1e40af; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .flow-box { background: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; font-size: 12px; }
+  .flow-step { display: flex; gap: 10px; padding: 4px 0; align-items: flex-start; }
+  .flow-num { background: #fca5a5; color: #991b1b; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .flow-text { color: #374151; line-height: 1.5; }
+  .flow-bad { color: #b91c1c; font-weight: 600; }
+  .flow-good { color: #166534; font-weight: 600; }
+
+  .state-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .state-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+  .state-table td { padding: 8px 12px; border: 1px solid #e5e5e5; font-size: 12px; }
+  .state-table .code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .state-table .bad { background: #fef2f2; color: #b91c1c; }
+  .state-table .good { background: #f0fdf4; color: #166534; }
+  .tag-bad { background: #fef2f2; color: #b91c1c; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+  .tag-ok { background: #f0fdf4; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* Impl notes */
+  .impl-note-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .impl-note-item { padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: #4b5563; }
+  .impl-note-item:last-child { border-bottom: none; }
+  .impl-note-item strong { color: #1a1a1a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 58 Review · Bug Fix</div>
+  <h1>#158 — ログアウト後、別ユーザでログインすると<br>データが取得できない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 58</span>
+    <span class="badge badge-issue">#158</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-topbar">
+            <div class="mock-topbar-avatar avatar-user-b">B</div>
+            ユーザーBでログイン中
+          </div>
+          <div class="mock-content">
+            <div class="mock-user-info">
+              世帯ID: <span class="mock-user-badge badge-user-a">ユーザーAの世帯ID が残存</span>
+            </div>
+            <div class="mock-error">You are not allowed to access this resource</div>
+            <div class="mock-error">ホーム画面: データ取得失敗</div>
+            <div class="mock-error">家事一覧: データ取得失敗</div>
+          </div>
+        </div>
+        <p style="font-size:11px;color:#9ca3af;margin-top:8px;">前ユーザーAの世帯IDでAPIを呼んでしまい、ユーザーBはその世帯のメンバーでないため 403 エラー</p>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-topbar">
+            <div class="mock-topbar-avatar avatar-user-b">B</div>
+            ユーザーBでログイン中
+          </div>
+          <div class="mock-content">
+            <div class="mock-user-info">
+              世帯ID: <span class="mock-user-badge badge-user-b">ユーザーBの世帯ID</span>
+            </div>
+            <div class="mock-ok-item">ホーム画面: ユーザーBのデータを表示</div>
+            <div class="mock-ok-item">家事一覧: ユーザーBのデータを表示</div>
+            <div class="mock-ok-item">家事割り当て: ユーザーBのデータを表示</div>
+          </div>
+        </div>
+        <p style="font-size:11px;color:#9ca3af;margin-top:8px;">ログアウト時に世帯IDと各Providerをクリアし、ユーザーBの世帯IDで正しくAPIを呼べる</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">logout() が HouseholdNotifier と選択世帯ID をリセットしていなかった</span>
+      </div>
+      <div class="cause-body">
+        <p>
+          <code>HouseholdNotifier</code> は <code>AsyncNotifier</code>（AutoDispose なし）のグローバル Provider であるため、<code>logout()</code> を呼んでもキャッシュが自動破棄されない。
+          <code>logout()</code> は <code>tokenStorage.clearTokens()</code> と <code>state = AuthUnauthenticated()</code> のみ実行しており、<code>HouseholdNotifier</code> の invalidate も <code>SharedPreferences.selectedHouseholdId</code> のクリアも行っていなかった。
+        </p>
+        <div class="flow-box">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-text">ユーザーAでログイン → <code>HouseholdNotifier.build()</code> が世帯リストを取得、<code>SharedPreferences.selectedHouseholdId</code> にユーザーAの世帯IDを保存</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-text"><span class="flow-bad">logout() は clearTokens() と state = AuthUnauthenticated() のみ。HouseholdNotifier invalidate なし・selectedHouseholdId クリアなし</span></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-text">ユーザーBでログイン → <code>HouseholdNotifier</code> はキャッシュされたまま build() が再実行されない → <span class="flow-bad">前ユーザーAの世帯リストと selectedHousehold.id が state に残り続ける</span></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-text"><code>homeNotifierProvider</code> / <code>houseworkAssignNotifierProvider</code> 等が <code>householdNotifierProvider.future</code> を watch → <span class="flow-bad">前ユーザーAの世帯IDでAPIを呼ぶ → ユーザーBはそのメンバーでないため 403</span></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">5</div>
+            <div class="flow-text">アカウント設定・おうち設定・通知・問い合わせは <code>/api/users/me/...</code> 経由で自身のデータを参照するため正常（発生事象の観察と一致）</div>
+          </div>
+        </div>
+        <table class="state-table">
+          <tr>
+            <th>Providerの種類</th>
+            <th>AutoDispose</th>
+            <th>logout() 前の状態</th>
+            <th>修正前: logout() 後</th>
+          </tr>
+          <tr>
+            <td><code>householdNotifierProvider</code></td>
+            <td>なし（グローバル）</td>
+            <td>ユーザーAの世帯リスト</td>
+            <td class="bad"><span class="tag-bad">そのまま残る</span></td>
+          </tr>
+          <tr>
+            <td><code>homeNotifierProvider</code></td>
+            <td>なし</td>
+            <td>ユーザーAの世帯IDでキャッシュ</td>
+            <td class="bad"><span class="tag-bad">そのまま残る</span></td>
+          </tr>
+          <tr>
+            <td><code>houseworkAssignNotifierProvider</code></td>
+            <td>なし</td>
+            <td>ユーザーAの世帯IDでキャッシュ</td>
+            <td class="bad"><span class="tag-bad">そのまま残る</span></td>
+          </tr>
+          <tr>
+            <td><code>accountSettingsNotifierProvider</code></td>
+            <td>あり</td>
+            <td>—</td>
+            <td class="good"><span class="tag-ok">画面離脱時に自動破棄</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/core/auth/auth_notifier.dart</span>
+        <span class="diff-stat">+11 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">40</span><span class="line-prefix"> </span><span>  Future&lt;void&gt; logout() async {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">41</span><span class="line-prefix"> </span><span>    await ref.read(tokenStorageProvider).clearTokens();</span></div>
+        <div class="code-line line-ctx"><span class="line-num">42</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>    // 選択世帯IDをクリアして次のユーザーが前のユーザーの世帯IDを引き継がないようにする</span></div>
+        <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>    final prefs = await SharedPreferences.getInstance();</span></div>
+        <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>    await prefs.remove(StorageKeys.selectedHouseholdId);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">46</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>    // 世帯・各一覧 Provider をリセットして別ユーザーでのログイン後に前ユーザーのデータが残らないようにする</span></div>
+        <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>    ref.invalidate(householdNotifierProvider);</span></div>
+        <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>    ref.invalidate(homeNotifierProvider);</span></div>
+        <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>    ref.invalidate(houseworkAssignNotifierProvider);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">51</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">52</span><span class="line-prefix"> </span><span>    state = const AsyncData(AuthUnauthenticated());</span></div>
+        <div class="code-line line-ctx"><span class="line-num">53</span><span class="line-prefix"> </span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>
+          3つの操作を追加: (1) <code>selectedHouseholdId</code> を SharedPreferences から削除して世帯IDのキャッシュをクリア、(2) グローバルの <code>householdNotifierProvider</code> を invalidate して世帯リストをリセット、(3) IndexedStack に保持される <code>homeNotifierProvider</code>・<code>houseworkAssignNotifierProvider</code> を invalidate して各画面のキャッシュをクリア。
+          <code>shoppingListNotifierProvider</code> 等は AutoDispose のため画面離脱時に自動破棄されるため含めていない。
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note-box">
+      <div class="impl-note-item">
+        <strong>invalidate 対象の選択</strong>: <code>logout()</code> で invalidate する Provider として <code>homeNotifierProvider</code>・<code>houseworkAssignNotifierProvider</code>（IndexedStack でキャッシュが残りやすい autoDispose なし Provider）と <code>householdNotifierProvider</code>（グローバル非 autoDispose Provider）を選択した。<code>shoppingListNotifierProvider</code> なども候補だが AutoDispose のため画面離脱時に自動破棄されるため含めなかった。
+      </div>
+      <div class="impl-note-item">
+        <strong>auth_notifier_test.dart への StorageKeys import 追加</strong>: <code>logout()</code> の <code>selectedHouseholdId</code> 削除テストに <code>SharedPreferences</code> の初期値設定と値確認が必要なため、<code>storage_keys.dart</code> を import した。
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">ログアウト後に別ユーザーでログインした際、すべての画面で「You are not allowed to access this resource」が表示されない</div>
+      </div>
+      <div class="ac-body">
+        <code>logout()</code> で <code>householdNotifierProvider</code>・<code>homeNotifierProvider</code>・<code>houseworkAssignNotifierProvider</code> を invalidate するため、次のユーザーでログインしたときに各 Notifier が新しいユーザーの世帯IDで再ビルドされ、403 が発生しなくなる。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">ログアウト後に別ユーザーでログインした際、前ユーザーのデータが残らず新しいユーザーのデータが表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>SharedPreferences.remove(StorageKeys.selectedHouseholdId)</code> で世帯IDのキャッシュを削除。次のユーザーのログイン後に <code>HouseholdNotifier.build()</code> が再実行され、新しいユーザーの世帯リストと世帯IDを取得することで前ユーザーのデータが残らない。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認ポイント -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>ユーザーAでログイン後、ログアウトしてユーザーBでログインする</strong>
+          <span>ホーム画面・家事一覧・家事割り当て画面でユーザーBのデータが表示されることを確認する（「You are not allowed to access this resource」が出ないこと）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>上記操作後、世帯切り替えが正常に機能すること</strong>
+          <span>ユーザーBが複数の世帯に属している場合、世帯切り替えで正しく切り替わることを確認する（前ユーザーの世帯が残っていないこと）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>同じユーザーで再ログインしても正常動作すること</strong>
+          <span>ユーザーAでログイン → ログアウト → ユーザーAで再ログインした場合も自分のデータが表示されることを確認する（デグレ確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>ログアウト後のログイン画面が正常に表示されること</strong>
+          <span>ログアウト操作でログイン画面に遷移し、アプリがクラッシュしないことを確認する（デグレ確認）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>logout() の副作用（selectedHouseholdId のクリアと各 Provider の invalidate）を確認するテストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/core/auth/auth_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;"><code>logout()</code> を呼んだ後に <code>SharedPreferences.selectedHouseholdId</code> が削除されていることを確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/core/auth/auth_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;"><code>logout()</code> を呼んだ後に状態が <code>AuthUnauthenticated</code> になることを確認するテスト（既存）が引き続き通ることを確認</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

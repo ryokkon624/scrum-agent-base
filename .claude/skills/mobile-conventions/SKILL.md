@@ -736,6 +736,52 @@ ref.invalidate(shoppingListNotifierProvider);
 
 > **背景（Sprint 35）**: 追加後・お気に入り操作後の反映漏れを Sprint 35 で修正したが、ステータス変更後の invalidate が漏れており Sprint Review で指摘された（#107）。削除後の反映も同様（#108）。
 
+### ログアウト時の `ref.invalidate` タイミング（重要）
+
+`logout()` 内でグローバル Provider（`householdNotifierProvider` 等）を `ref.invalidate` する場合、必ず **`state = AuthUnauthenticated()` を先にセットしてから** invalidate すること。順序が逆になると以下の無限ループが発生する。
+
+**問題フロー（順序が逆の場合）:**
+1. `ref.invalidate(householdNotifierProvider)` → ビルドが走る
+2. トークンがまだ有効扱いのまま → API を呼ぶ
+3. 401 → `AuthInterceptor` が `logout()` を呼ぶ
+4. → 無限ループ
+
+**正しい順序:**
+
+```dart
+// OK: state を先に未認証にしてから invalidate
+Future<void> logout() async {
+  await _tokenStorage.clearTokens();
+  state = const AuthUnauthenticated();  // 先に state を更新
+  ref.invalidate(householdNotifierProvider);  // その後 invalidate
+}
+```
+
+**`AuthInterceptor` の再入防止も必須:**
+
+```dart
+// AuthInterceptor 側に再入防止ガードを追加
+Future<void> _logoutIfAuthenticated() async {
+  final current = ref.read(authNotifierProvider);
+  if (current is AuthUnauthenticated) return;  // 既に未認証なら何もしない
+  await ref.read(authNotifierProvider.notifier).logout();
+}
+```
+
+**ログイン後（`saveTokens()`）の invalidate パターン:**
+
+`householdNotifierProvider` のような非 AutoDispose グローバル Provider は `logout()` 時に invalidate するとトークンなしでビルドが走りエラー状態になる。別ユーザーでログイン後に正常データを取得するには、`saveTokens()`（ログイン成功後）のタイミングで invalidate するのが安全。
+
+```dart
+Future<void> saveTokens({required AuthUser user}) async {
+  await _tokenStorage.saveTokens(...);
+  state = AuthAuthenticated(user: user);
+  ref.invalidate(householdNotifierProvider);  // ログイン成功後に invalidate
+}
+```
+
+> **背景（Sprint 58 #158/#172）**: `logout()` 内で `state = AuthUnauthenticated()` より先に `ref.invalidate(householdNotifierProvider)` を呼んでいたため、トークンクリア後も AuthInterceptor が有効扱いで 401 → 再ログアウト → 無限ループが発生していた（#172）。また別ユーザーでログイン後も householdNotifier がエラー状態のままデータ取得できなかった（#158）。
+
 ---
 
 ## 5. ナビゲーション（go_router）

@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-22（Sprint 57 Retro）
+**最終更新**: 2026-05-22（Sprint 58 Retro）
 
 ---
 
@@ -74,6 +74,8 @@
 - **視覚的AC（幅・配置）の目視未確認**: シミュレーターまたはウィジェットテストで確認しないとSprint Reviewで指摘される（Sprint 31）
 - **DEVのスコープクリープ**: ACに明記されていない動作を自己判断で含めることがある。計画フェーズでACが曖昧な箇所を事前確認する
 - **ShellレベルUIの実機未確認**: GoRouterのShellRoute外にpushした画面でのBottomNavBar/HouseholdIndicatorBar表示状態は実機でないと分からない。route判定実装前に「そもそも表示されているか」をりょこさんに確認する（Sprint 37 #98でAC未達成が発覚）
+- **logout()でのProvider invalidateによるエラー状態継続**: トークンクリア後に `ref.invalidate(householdNotifierProvider)` を呼ぶと、HouseholdNotifier.build()がトークンなしでAPIを叩いてエラー状態になる。その後loginしても再buildされずデータ取得不可が続く。解決策: `saveTokens()` でlogin成功後にinvalidateする（Sprint 58 #158）
+- **logout()のinvalidate前にstateを先行設定しないと無限ループ**: invalidate先にstateがまだAuthenticatedのままだとAuthInterceptorが401をトークンリフレッシュとして再処理し、logout()再呼び出しループが発生。「state=AuthUnauthenticated() → ref.invalidate()」の順序を厳守（Sprint 58 #172）
 - **複合画面でAPIの副作用とUI反映の連動確認漏れ**: 複数APIを組み合わせる複合画面（アカウント設定等）で、「アップロード後の再フェッチ」「ON/OFFの副作用がDBにどう反映されるか」「連携後のDB状態とUI表示の同期」がACに明記されないまま実装され、Sprint Reviewで3件のbugが発覚（Sprint 45: #127/#128/#129）。計画フェーズでACに「APIの副作用とUI反映の連動」を明示する
 - **空状態（0件）ハンドリング漏れ**: 一覧画面でデータが0件の場合に「読み込み中」が表示され続ける（Sprint 47: #145）。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースをACに明記し、実装チェックリストで確認する
 - **フォームのState更新とUI（TextEditingController）反映の切り離し**: テンプレート選択・既存データ読み込みでStateは更新されているが`TextEditingController.text`への反映が漏れ、画面に表示されない（Sprint 47: #146）。複数フィールドがある場合は全フィールドの横展開確認が必要
@@ -126,3 +128,4 @@
 | Sprint 56 | なし | Skills更新なし（レビュー指摘なし・シンプルな修正スプリント） | 全レビュアー指摘なし・Sprint Review指摘なし。1ブランチ方針・bugラベルフロー・2フェーズモデルがすべてスムーズに機能 |
 | Sprint 57 | sm/long_term.md | モバイルEmptyState文言のWeb版i18n参照方針・同一ファイル複数Issue改修時の順序明示を追記（SM） | #163でWeb版文言参照フローが有効と確認。#161/#163が同一ファイルを変更し順序設計が必要になった |
 | Sprint 57 | agents/developer.md | DEVのtoolsに `mcp__discord__discord_send` を追加（SM） | DEVが #skills-changelog（Textチャンネル）に投稿できない問題が毎回発生していた。`discord_reply_to_forum` しか持っておらず、Textチャンネル投稿には `discord_send` が必要 |
+| Sprint 58 | mobile-conventions | ログアウト時の `ref.invalidate` タイミングルール追加（DEV実施） | logout()でinvalidate前にstateを未認証設定しないと401ループ（#172）。saveTokens()でinvalidateしないとエラー状態継続（#158） |
