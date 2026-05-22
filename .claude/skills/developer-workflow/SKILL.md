@@ -151,6 +151,8 @@ ACや仕様書に書かれていなかった判断・変更・妥協点が発生
      - [ ] `catch (_) {}` の握りつぶしがないか（`rethrow` または `AppException` に変換）
      - [ ] i18nハードコードがないか（ARBファイルに定義）
      - [ ] 一覧 Provider の invalidate 漏れがないか（IndexedStack 配下の詳細・作成画面）
+     - [ ] `ListView.builder` / `ListView` で生成するウィジェットに `ValueKey(item.id)` を付与したか（Sprint 38, 59 で繰り返し指摘）
+     - [ ] テストで `find.text('日本語テキスト')` を直接使っていないか（l10nキー経由 `find.text(l10n.keyName)` またはKeyベース検証を使うこと。Sprint 45, 50, 53, 59 で繰り返し指摘）
 2. **`backlog/sprint_XX/sprint_backlog.md` のACをすべて `[x]` に更新する**
 3. コミットする（`git` ルール参照）
 4. **`git push -u origin {ブランチ名}` でリモートにプッシュする**（SMのPR作成に必要）

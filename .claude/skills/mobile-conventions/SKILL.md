@@ -332,7 +332,7 @@ Row(
 
 ### リスト生成時の key 付与（必須）
 
-`items.map((item) => ...)` でウィジェットを生成する際は、最外ウィジェットに必ず `key: ValueKey(item.uniqueId)` を付与すること。
+`items.map((item) => ...)` や `ListView.builder` の `itemBuilder` でウィジェットを生成する際は、最外ウィジェットに必ず `key: ValueKey(item.uniqueId)` を付与すること。
 
 ```dart
 // NG: key なし → スワイプ後のリスト更新でウィジェット状態が混乱する
@@ -341,18 +341,32 @@ items.map((item) => Padding(
   child: SwipeableCard(item: item),
 )).toList()
 
-// OK: 最外ウィジェットに ValueKey を付与
+// OK: 最外ウィジェットに ValueKey を付与（items.map パターン）
 items.map((item) => Padding(
   key: ValueKey(item.shoppingItemId),
   padding: const EdgeInsets.symmetric(vertical: 4),
   child: SwipeableCard(item: item),
 )).toList()
+
+// OK: ListView.builder の itemBuilder でも同様に付与する
+ListView.builder(
+  itemCount: items.length,
+  itemBuilder: (context, index) {
+    final item = items[index];
+    return Padding(
+      key: ValueKey(item.shoppingItemId),  // itemBuilder 内の最外ウィジェットにも必須
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: SwipeableCard(item: item),
+    );
+  },
+)
 ```
 
-`Dismissible` は `key` が必須だが、その外側の `Padding` 等にも同じ key を付与しないと `setState` や `invalidate` 後にウィジェット状態が意図しない要素に紐づいたままになる。
+`Dismissible` は `key` が必須だが、その外側の `Padding` 等にも同じ key を付与しないと `setState` や `invalidate` 後にウィジェット状態が意図しない要素に紐づいたままになる。`ListView.builder` の `itemBuilder` 内でも同じルールが適用される。
 
 > **背景（Sprint 38 Review）**: `purchased_tab.dart` の `items.map()` で `Padding` に key を付与しておらず、スワイプ後のリスト更新時にウィジェット状態が混乱する可能性を指摘された。
 > **Sprint 39**: `member_picker_bottom_sheet` / `member_summary_strip` でも同様の指摘。`members.map()` のような別モデルのリスト生成でも同様に適用すること。
+> **Sprint 59**: `unpurchased_tab.dart` / `basket_tab.dart` の `ListView.builder` `itemBuilder` 内 `Padding` に `ValueKey` が未付与だった。`items.map()` だけでなく `ListView.builder` の `itemBuilder` にも同じルールを適用すること。
 
 ### 空状態（0件）とローディング中を必ず区別する（必須）
 

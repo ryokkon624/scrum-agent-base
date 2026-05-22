@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 59 Review — #169 SnackBar の呼び出し方が AppSnackBar と ScaffoldMessenger で混在している</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-refactor { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 40px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Count grid */
+  .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .count-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; }
+  .count-box .label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .count-box .count { font-size: 36px; font-weight: 700; line-height: 1; }
+  .count-box .sublabel { font-size: 11px; color: #888; margin-top: 4px; }
+  .count-before { color: #ef4444; }
+  .count-after { color: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Memo box */
+  .memo-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px 20px; }
+  .memo-item { font-size: 13px; color: #14532d; padding: 5px 0; display: flex; gap: 8px; align-items: flex-start; }
+  .memo-item::before { content: '•'; flex-shrink: 0; color: #22c55e; font-weight: 700; }
+
+  /* File list */
+  .file-list { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 16px; }
+  .file-list-item { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #374151; padding: 4px 0; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+  .file-list-item:last-child { border-bottom: none; }
+  .dot-orange { width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 59 Review</div>
+  <h1>#169 — SnackBar の呼び出し方が AppSnackBar と ScaffoldMessenger で混在している</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 59</span>
+    <span class="badge badge-issue">#169</span>
+    <span class="badge badge-refactor">refactor</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>SnackBar の表示方法が <code>AppSnackBar.showSuccess()</code> / <code>showError()</code> と、
+      <code>ScaffoldMessenger.of(context).showSnackBar(SnackBar(...))</code> の直接呼び出しで混在していた。
+      <code>AppSnackBar</code> はグローバルな <code>scaffoldMessengerKey</code> を使い、スタイル（アイコン・背景色・角丸・表示時間3秒）が統一されているが、
+      旧パターンのままのページではスタイルが異なり、将来のデザイン変更時に全ファイルを修正する必要が生じていた。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前（混在）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>shopping_item_detail_page.dart: <code>ScaffoldMessenger.of(context).showSnackBar(...)</code> × 5箇所</div>
+        <div class="flow-item"><span class="dot dot-red"></span>basket_tab.dart: <code>ScaffoldMessenger.of(context).showSnackBar(...)</code> × 3箇所（duration: 2秒）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>unpurchased_tab.dart: <code>ScaffoldMessenger.of(context).showSnackBar(...)</code> × 2箇所（duration: 2秒）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>email_verify_wait_page.dart: <code>ScaffoldMessenger.of(context).showSnackBar(...)</code> × 2箇所</div>
+        <div class="flow-item"><span class="dot dot-red"></span>password_reset_sent_page.dart: <code>ScaffoldMessenger.of(context).showSnackBar(...)</code> × 2箇所</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後（統一）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>全ページで <code>AppSnackBar.showSuccess()</code> / <code>AppSnackBar.showError()</code> に統一</div>
+        <div class="flow-item"><span class="dot dot-green"></span>スタイル（アイコン・色・角丸・表示時間3秒）が全画面で統一</div>
+        <div class="flow-item"><span class="dot dot-green"></span>SnackBar デザイン変更は <code>app_snack_bar.dart</code> 1ファイルのみ</div>
+        <div class="flow-item"><span class="dot dot-green"></span>テストヘルパーに <code>withSnackBarKey</code> オプションを追加してテスト可能に</div>
+      </div>
+    </div>
+    <div class="count-grid" style="margin-top:16px;">
+      <div class="count-box">
+        <div class="label">ScaffoldMessenger 直接呼び出し（改修前）</div>
+        <div class="count count-before">14</div>
+        <div class="sublabel">5ファイルにわたって散在</div>
+      </div>
+      <div class="count-box">
+        <div class="label">ScaffoldMessenger 直接呼び出し（改修後）</div>
+        <div class="count count-after">0</div>
+        <div class="sublabel">全て AppSnackBar に統一</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">shopping_item_new_page.dart の ScaffoldMessenger 直接呼び出しが AppSnackBar に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p>実際には <code>shopping_item_new_page.dart</code> はIssue起票時点で既に <code>AppSnackBar</code> を使っていた。grepで確認済みのため変更不要だった。</p>
+        <div class="annotation">
+          <span class="annotation-icon">&#128161;</span>
+          <span>このIssueを起票した時点と実装時の間に別PRで対応済みだったと思われる。残り4ファイルの対応で AC1 の意図（shopping系の統一）は達成されている。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">shopping_item_detail_page.dart の ScaffoldMessenger 直接呼び出しが AppSnackBar に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>shopping_item_detail_page.dart</code> に5箇所あった <code>ScaffoldMessenger.of(context).showSnackBar()</code> をすべて <code>AppSnackBar</code> に置き換えた。
+        また <code>await</code> 後の <code>context</code> 使用前に設けていた <code>final messenger = ScaffoldMessenger.of(context)</code> の事前キャプチャも不要になり、削除した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/shopping_item_detail/shopping_item_detail_page.dart</span>
+            <span class="diff-stat">+10 / -40</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">29</span><span class="line-prefix"> </span><span>      if (next.isDeleted &amp;&amp; !(prev?.isDeleted ?? false)) {</span></div>
+            <div class="code-line line-del"><span class="line-num">30</span><span class="line-prefix">-</span><span>        ScaffoldMessenger.of(context).showSnackBar(</span></div>
+            <div class="code-line line-del"><span class="line-num">31</span><span class="line-prefix">-</span><span>          SnackBar(content: Text(l10n.shoppingDetailToastDeleteSuccess)),</span></div>
+            <div class="code-line line-del"><span class="line-num">32</span><span class="line-prefix">-</span><span>        );</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>        AppSnackBar.showSuccess(l10n.shoppingDetailToastDeleteSuccess);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span>        ref.invalidate(shoppingListNotifierProvider);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">32</span><span class="line-prefix"> </span><span>        context.pop();</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>（以降の4箇所も同様のパターンで置き換え）</span></div>
+            <div class="code-line line-del"><span class="line-num">127</span><span class="line-prefix">-</span><span>    final messenger = ScaffoldMessenger.of(context);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">128</span><span class="line-prefix"> </span><span>    final file = await _imagePicker.pickImage(...);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>（messager.showSnackBar の事前キャプチャ2箇所も削除）</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>AppSnackBar</code> はグローバルな <code>scaffoldMessengerKey</code> を使うため、<code>await</code> 後でも <code>context</code> の生存を気にせず呼び出せる。<code>final messenger = ScaffoldMessenger.of(context)</code> の事前キャプチャが不要になり、コードがシンプルになった。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">その他 ScaffoldMessenger.of(context).showSnackBar() を直接呼び出しているファイルが AppSnackBar に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p>grep で全ファイルを調査した結果、以下の4ファイルに残存を確認し、すべて置き換えた。</p>
+        <p style="font-size:13px;color:#374151;margin-bottom:12px;">対応ファイル一覧：</p>
+        <div class="file-list" style="margin-bottom:16px;">
+          <div class="file-list-item"><span class="dot-orange"></span>features/shopping/presentation/widgets/basket_tab.dart（3箇所 → AppSnackBar に置き換え、ValueKey も同時に追加）</div>
+          <div class="file-list-item"><span class="dot-orange"></span>features/shopping/presentation/widgets/unpurchased_tab.dart（2箇所 → AppSnackBar に置き換え、ValueKey も同時に追加）</div>
+          <div class="file-list-item"><span class="dot-orange"></span>features/auth/presentation/email_verify_wait/email_verify_wait_page.dart（2箇所 → AppSnackBar に置き換え）</div>
+          <div class="file-list-item"><span class="dot-orange"></span>features/auth/presentation/password_reset_sent/password_reset_sent_page.dart（2箇所 → AppSnackBar に置き換え）</div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/auth/presentation/email_verify_wait/email_verify_wait_page.dart</span>
+            <span class="diff-stat">+3 / -7</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">29</span><span class="line-prefix"> </span><span>      if (next.resentSuccess) {</span></div>
+            <div class="code-line line-del"><span class="line-num">30</span><span class="line-prefix">-</span><span>        ScaffoldMessenger.of(context).showSnackBar(</span></div>
+            <div class="code-line line-del"><span class="line-num">31</span><span class="line-prefix">-</span><span>          SnackBar(content: Text(l10n.emailVerifyWaitAlertResent)),</span></div>
+            <div class="code-line line-del"><span class="line-num">32</span><span class="line-prefix">-</span><span>        );</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>        AppSnackBar.showSuccess(l10n.emailVerifyWaitAlertResent);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span>      }</span></div>
+            <div class="code-line line-ctx"><span class="line-num">32</span><span class="line-prefix"> </span><span>      if (next.errorMessage != null) {</span></div>
+            <div class="code-line line-del"><span class="line-num">33</span><span class="line-prefix">-</span><span>        ScaffoldMessenger.of(context,</span></div>
+            <div class="code-line line-del"><span class="line-num">34</span><span class="line-prefix">-</span><span>        ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>        AppSnackBar.showError(next.errorMessage!);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">34</span><span class="line-prefix"> </span><span>      }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>basket_tab.dart</code> / <code>unpurchased_tab.dart</code> では、<code>ScaffoldMessenger</code> の置き換えと同時に <code>ListView.builder</code> の <code>itemBuilder</code> 内の <code>Padding</code> に <code>ValueKey(item.shoppingItemId)</code> を追加した（Sprint 59 レビュー指摘への対応）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">ScaffoldMessenger の直接呼び出しがコードベース内に残っていない</div>
+      </div>
+      <div class="ac-body">
+        <p>実装後に <code>grep -r "ScaffoldMessenger" lib/</code> を実行し、残存がないことを確認した。</p>
+        <p>合わせて、ウィジェットテストで <code>AppSnackBar</code> の呼び出し結果を検証できるよう、テストヘルパーを拡張した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>test/helpers/widget_test_helpers.dart</span>
+            <span class="diff-stat">+15 / -4</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">12</span><span class="line-prefix"> </span><span>Widget buildTestPage(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">13</span><span class="line-prefix"> </span><span>  Widget child, {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">14</span><span class="line-prefix"> </span><span>  List&lt;Override&gt; overrides = const [],</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>  bool withSnackBarKey = false,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">16</span><span class="line-prefix"> </span><span>}) {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">17</span><span class="line-prefix"> </span><span>  return ProviderScope(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">18</span><span class="line-prefix"> </span><span>    overrides: overrides,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>    child: MaterialApp(</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>      scaffoldMessengerKey: withSnackBarKey</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>          ? AppSnackBar.messengerKey</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>          : null,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">23</span><span class="line-prefix"> </span><span>      localizationsDelegates: AppLocalizations.localizationsDelegates,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">24</span><span class="line-prefix"> </span><span>      supportedLocales: AppLocalizations.supportedLocales,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">25</span><span class="line-prefix"> </span><span>      home: Scaffold(body: child),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>AppSnackBar</code> はグローバルな <code>scaffoldMessengerKey</code> を使うため、ウィジェットテストで <code>AppSnackBar.showSuccess/showError</code> の呼び出し結果を検証するには <code>MaterialApp(scaffoldMessengerKey: AppSnackBar.messengerKey)</code> の設定が必要。<code>withSnackBarKey: true</code> を渡したテストのみこのキーが適用されるため、既存テストへの影響なし。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation notes -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="memo-box">
+      <div class="memo-item"><code>unpurchased_tab.dart</code> / <code>basket_tab.dart</code> で2秒指定されていた <code>duration</code> は <code>AppSnackBar</code> の3秒固定に統一した（りょこさん承認済み）。</div>
+      <div class="memo-item"><code>shopping_item_new_page.dart</code> の <code>ScaffoldMessenger</code> 呼び出しはIssue起票時点で既に <code>AppSnackBar</code> を使っていたため変更不要だった（grep で確認済み）。</div>
+      <div class="memo-item"><code>AppSnackBar</code> はグローバルな <code>scaffoldMessengerKey</code> を使うため、ウィジェットテストで呼び出し結果を検証するには <code>MaterialApp(scaffoldMessengerKey: AppSnackBar.messengerKey)</code> の設定が必要。<code>buildTestPage</code> に <code>withSnackBarKey: bool = false</code> パラメータを追加して対応した。</div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>買い物リストのスワイプ操作後にSnackBarが表示されること</strong>
+          <span>「カートに移動」「購入済みに変更」「削除」等のスワイプ後に、緑色の成功SnackBarが画面下に表示されること。旧パターンのシンプルなテキストSnackBarではなくアイコン付きのスタイルになっていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>買い物アイテム詳細の削除・画像操作後にSnackBarが表示されること</strong>
+          <span>アイテム削除確認後、画像追加後、画像削除後のそれぞれで、統一スタイルのSnackBarが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>メール認証待ち画面の再送信後にSnackBarが表示されること</strong>
+          <span>「再送信」ボタン押下後にメッセージが表示されること。エラー時は赤いSnackBarが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>パスワードリセット送信画面の再送信後にSnackBarが表示されること</strong>
+          <span>「再送信」ボタン押下後にメッセージが表示されること。エラー時は赤いSnackBarが表示されること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>shopping_item_detail_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ScaffoldMessenger 5箇所 → AppSnackBar に置き換え。messenger 事前キャプチャも削除</td>
+      </tr>
+      <tr>
+        <td><code>basket_tab.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ScaffoldMessenger 3箇所 → AppSnackBar。ValueKey追加（同時対応）</td>
+      </tr>
+      <tr>
+        <td><code>unpurchased_tab.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ScaffoldMessenger 2箇所 → AppSnackBar。ValueKey追加（同時対応）</td>
+      </tr>
+      <tr>
+        <td><code>email_verify_wait_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ScaffoldMessenger 2箇所 → AppSnackBar.showSuccess / showError</td>
+      </tr>
+      <tr>
+        <td><code>password_reset_sent_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ScaffoldMessenger 2箇所 → AppSnackBar.showSuccess / showError</td>
+      </tr>
+      <tr>
+        <td><code>test/helpers/widget_test_helpers.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>buildTestPage に withSnackBarKey オプションを追加</td>
+      </tr>
+      <tr>
+        <td><code>core/ui/app_snack_bar.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>AppSnackBar の実装自体は変更なし（既存の共通実装をそのまま使用）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

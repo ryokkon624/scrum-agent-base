@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 59 Review — #167 日時フォーマット処理が複数ファイルに重複している</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-refactor { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Duplication count */
+  .dup-count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .dup-count-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; }
+  .dup-count-box .label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .dup-count-box .count { font-size: 36px; font-weight: 700; line-height: 1; }
+  .dup-count-box .sublabel { font-size: 11px; color: #888; margin-top: 4px; }
+  .count-before { color: #ef4444; }
+  .count-after { color: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1d4ed8; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Memo box */
+  .memo-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px 20px; }
+  .memo-item { font-size: 13px; color: #14532d; padding: 5px 0; display: flex; gap: 8px; align-items: flex-start; }
+  .memo-item::before { content: '•'; flex-shrink: 0; color: #22c55e; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 59 Review</div>
+  <h1>#167 — 日時フォーマット処理が複数ファイルに重複している</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 59</span>
+    <span class="badge badge-issue">#167</span>
+    <span class="badge badge-refactor">refactor</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>ISO 8601形式の日時文字列を <code>yyyy/MM/dd HH:mm</code> に変換する処理が、
+      <code>inquiry_list_page.dart</code> と <code>message_bubble.dart</code> に完全に同一のコードとして重複していた。
+      さらに <code>notification_list_item.dart</code> にも秒を含む別フォーマット版が独自実装されていた。
+      共通ユーティリティが存在しないため、フォーマット変更時に3ファイルを同時に修正する必要があり、修正漏れのリスクがあった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>inquiry_list_page.dart に <code>_formatDateTime()</code> を定義</div>
+        <div class="flow-item"><span class="dot dot-red"></span>message_bubble.dart にも完全に同一の <code>_formatDateTime()</code> を定義</div>
+        <div class="flow-item"><span class="dot dot-red"></span>notification_list_item.dart にも独自の <code>_formatDate()</code> を定義</div>
+        <div class="flow-item"><span class="dot dot-red"></span>フォーマット変更時は3ファイルを同時修正が必要</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後</div>
+        <div class="flow-item"><span class="dot dot-green"></span><code>core/utils/date_format_utils.dart</code> に2つの共通関数を定義</div>
+        <div class="flow-item"><span class="dot dot-green"></span>3ファイルのプライベート実装を全て削除し共通関数を呼び出し</div>
+        <div class="flow-item"><span class="dot dot-green"></span>フォーマット変更は <code>date_format_utils.dart</code> 1ファイルのみ</div>
+        <div class="flow-item"><span class="dot dot-green"></span>ユニットテストで共通関数の動作を保証</div>
+      </div>
+    </div>
+    <div class="dup-count-grid" style="margin-top:16px;">
+      <div class="dup-count-box">
+        <div class="label">日時フォーマット実装箇所（改修前）</div>
+        <div class="count count-before">3</div>
+        <div class="sublabel">各ファイルにバラバラに定義</div>
+      </div>
+      <div class="dup-count-box">
+        <div class="label">日時フォーマット実装箇所（改修後）</div>
+        <div class="count count-after">1</div>
+        <div class="sublabel">core/utils/date_format_utils.dart に集約</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">lib/core/utils/date_format_utils.dart に共通の日時フォーマット関数が定義される</div>
+      </div>
+      <div class="ac-body">
+        <p>新規ファイル <code>lib/core/utils/date_format_utils.dart</code> を作成し、<code>formatDateTime()</code>（秒なし）と <code>formatDateTimeWithSeconds()</code>（秒あり）の2関数を定義した。パース失敗時は入力文字列をそのまま返すフォールバック処理も実装。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/utils/date_format_utils.dart</span>
+            <span class="diff-stat">+33 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">1</span><span class="line-prefix">+</span><span>// ISO 8601 形式の日時文字列を表示用にフォーマットするユーティリティ。</span></div>
+            <div class="code-line line-add"><span class="line-num">2</span><span class="line-prefix">+</span><span>// パース失敗時は入力文字列をそのまま返す。</span></div>
+            <div class="code-line line-add"><span class="line-num">3</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">4</span><span class="line-prefix">+</span><span>/// `yyyy/MM/dd HH:mm` 形式に変換する。</span></div>
+            <div class="code-line line-add"><span class="line-num">5</span><span class="line-prefix">+</span><span>String formatDateTime(String isoString) {</span></div>
+            <div class="code-line line-add"><span class="line-num">6</span><span class="line-prefix">+</span><span>  try {</span></div>
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>    final dt = DateTime.parse(isoString);</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>    final y = dt.year;</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>    final mo = dt.month.toString().padLeft(2, '0');</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    final d = dt.day.toString().padLeft(2, '0');</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    final h = dt.hour.toString().padLeft(2, '0');</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>    final mi = dt.minute.toString().padLeft(2, '0');</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>    return '$y/$mo/$d $h:$mi';</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>  } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>    return isoString;</span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>}</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>/// `yyyy/MM/dd HH:mm:ss` 形式に変換する（秒を含む）。</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>String formatDateTimeWithSeconds(String isoString) {</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>  try {</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>    final dt = DateTime.parse(isoString);</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>    // ... （formatDateTime と同様）</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>    return '$y/$mo/$d $h:$mi:$s';</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>  } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>    return isoString;</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>ファイルレベルのコメントは <code>///</code> ではなく <code>//</code> で記述。<code>///</code> はドキュメントコメントとして直後の宣言に紐づくため、ファイルトップに使うと <code>dangling_library_doc_comments</code> 警告が発生するため。</span>
+          </div>
+        </div>
+        <p>テストファイルも合わせて新規作成。正常系・ゼロパディング・パース失敗・空文字列の各ケースを網羅。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>test/core/utils/date_format_utils_test.dart</span>
+            <span class="diff-stat">+52 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">6</span><span class="line-prefix">+</span><span>  group('formatDateTime', () {</span></div>
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>    test('ISO文字列をyyyy/MM/dd HH:mm形式に変換する', () {</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>      expect(formatDateTime('2024-03-15T10:30:00Z'), '2024/03/15 10:30');</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>    });</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    test('月・日・時・分が1桁の場合は0埋めする', () { ... });</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>    test('秒・ミリ秒は無視してHH:mmまで表示する', () { ... });</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>    test('パース不可能な文字列はそのまま返す', () { ... });</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>    test('空文字列はそのまま返す', () { ... });</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>  });</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>  group('formatDateTimeWithSeconds', () { ... 同様のテストケース ... });</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">inquiry_list_page.dart のプライベート _formatDateTime() が共通関数に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p>プライベートメソッド <code>_formatDateTime()</code>（14行）を削除し、<code>date_format_utils.dart</code> の <code>formatDateTime()</code> をインポートして呼び出すよう変更。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_list/inquiry_list_page.dart</span>
+            <span class="diff-stat">+2 / -15</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>import '../../../../core/utils/date_format_utils.dart';</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-del"><span class="line-num">156</span><span class="line-prefix">-</span><span>                    _formatDateTime(inquiry.createdAt),</span></div>
+            <div class="code-line line-add"><span class="line-num">156</span><span class="line-prefix">+</span><span>                    formatDateTime(inquiry.createdAt),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-del"><span class="line-num">169</span><span class="line-prefix">-</span><span>  String _formatDateTime(String isoString) {</span></div>
+            <div class="code-line line-del"><span class="line-num">170</span><span class="line-prefix">-</span><span>    try {</span></div>
+            <div class="code-line line-del"><span class="line-num">171</span><span class="line-prefix">-</span><span>      final dt = DateTime.parse(isoString);</span></div>
+            <div class="code-line line-del"><span class="line-num">172</span><span class="line-prefix">-</span><span>      // ... （14行を削除）</span></div>
+            <div class="code-line line-del"><span class="line-num">182</span><span class="line-prefix">-</span><span>    }</span></div>
+            <div class="code-line line-del"><span class="line-num">183</span><span class="line-prefix">-</span><span>  }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">message_bubble.dart のプライベート _formatDateTime() が共通関数に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p>AC2 と同じパターン。<code>message_bubble.dart</code> のプライベートメソッド <code>_formatDateTime()</code>（14行）を削除し、共通関数に差し替えた。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/widgets/message_bubble.dart</span>
+            <span class="diff-stat">+2 / -15</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">4</span><span class="line-prefix">+</span><span>import '../../../../../core/utils/date_format_utils.dart';</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-del"><span class="line-num">83</span><span class="line-prefix">-</span><span>            _formatDateTime(message.createdAt),</span></div>
+            <div class="code-line line-add"><span class="line-num">83</span><span class="line-prefix">+</span><span>            formatDateTime(message.createdAt),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-del"><span class="line-num">93</span><span class="line-prefix">-</span><span>  String _formatDateTime(String isoString) { ... 14行削除 ... }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>inquiry_list_page.dart と message_bubble.dart の2ファイルに全く同じ14行のコードが重複していた。共通関数に集約することで、将来フォーマット変更が必要になった際の修正コストが1/3になる。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">notification_list_item.dart のプライベート _formatDate() が共通関数に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>notification_list_item.dart</code> の <code>_formatDate()</code> は秒を含む別フォーマット（<code>HH:mm:ss</code>）だった。
+        共通関数 <code>formatDateTimeWithSeconds()</code> に差し替えた。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/presentation/widgets/notification_list_item.dart</span>
+            <span class="diff-stat">+2 / -11</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">4</span><span class="line-prefix">+</span><span>import '../../../../core/utils/date_format_utils.dart';</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-del"><span class="line-num">88</span><span class="line-prefix">-</span><span>                    _formatDate(notification.occurredAt),</span></div>
+            <div class="code-line line-add"><span class="line-num">88</span><span class="line-prefix">+</span><span>                    formatDateTimeWithSeconds(notification.occurredAt),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-del"><span class="line-num">111</span><span class="line-prefix">-</span><span>  String _formatDate(String occurredAt) { ... 11行削除 ... }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>元の実装は <code>$y/$mo/$d $h:$mi:$s</code> を文字列結合で構築していたため、共通関数版と出力フォーマットは完全に同一（動作変更なし）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation notes -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="memo-box">
+      <div class="memo-item"><code>date_format_utils.dart</code> のファイルレベルコメントは <code>///</code> ではなく <code>//</code> で記述した。<code>///</code> はドキュメントコメントとして直後の宣言に紐づく必要があるため、ファイルトップの説明コメントに使うと <code>dangling_library_doc_comments</code> 警告が発生する。</div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>お問い合わせ一覧画面で日時が正しく表示されること</strong>
+          <span>各お問い合わせカードの「作成日時」が <code>yyyy/MM/dd HH:mm</code> 形式で表示されていること（例: 2024/03/15 10:30）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>お問い合わせ詳細画面のメッセージバブルで日時が正しく表示されること</strong>
+          <span>各メッセージの送信日時が <code>yyyy/MM/dd HH:mm</code> 形式で表示されていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>通知一覧で日時が秒まで正しく表示されること</strong>
+          <span>各通知の発生日時が <code>yyyy/MM/dd HH:mm:ss</code> 形式（秒あり）で表示されていること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>core/utils/date_format_utils.dart</code></td>
+        <td><span class="tag-new">新規作成</span></td>
+        <td>formatDateTime / formatDateTimeWithSeconds 共通関数を定義</td>
+      </tr>
+      <tr>
+        <td><code>test/core/utils/date_format_utils_test.dart</code></td>
+        <td><span class="tag-new">新規作成</span></td>
+        <td>formatDateTime / formatDateTimeWithSeconds のユニットテスト（9ケース）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_list_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>プライベート _formatDateTime() 削除 → 共通関数 formatDateTime() を呼び出し</td>
+      </tr>
+      <tr>
+        <td><code>message_bubble.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>プライベート _formatDateTime() 削除 → 共通関数 formatDateTime() を呼び出し</td>
+      </tr>
+      <tr>
+        <td><code>notification_list_item.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>プライベート _formatDate() 削除 → 共通関数 formatDateTimeWithSeconds() を呼び出し</td>
+      </tr>
+      <tr>
+        <td>UI層（表示画面）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>画面の見た目・表示フォーマットに変更なし（ロジックの置き換えのみ）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

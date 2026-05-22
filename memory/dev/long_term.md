@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-22（Sprint 58 Retro）
+**最終更新**: 2026-05-22（Sprint 59 Retro）
 
 ---
 
@@ -29,13 +29,13 @@
 | マジックストリング（status/flag値を `'0'`/`'1'` で直接比較）    | 34, 35         | `core/models/` の生成済み enum（`ShoppingItemStatus.xxx.code`）を使う         |
 | `catch (_) {}` でエラーを握りつぶし                             | 34, 35, 43, 45 | `rethrow` または `AppException` に変換。Notifier層は `on AppException catch (e)` で state に格納。StatefulWidget の event handler 内は AppSnackBar で汎用通知。`catch (e)` で `e.toString()` をそのまま state に格納するのも同様に NG |
 | i18n ハードコード（日本語・英語文字列をウィジェット内に直書き） | 33, 34, 37, 38 | ARB ファイルに定義して `AppLocalizations.of(context).key` を使う（`features/shell` の BottomNavigationBar ラベルも例外なく適用）|
-| `items.map()` で生成するウィジェットに `key` 未設定 | 38, 39 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。スワイプ後のリスト更新でウィジェット状態が混乱する |
+| `items.map()` / `ListView.builder` の `itemBuilder` で生成するウィジェットに `key` 未設定 | 38, 39, 59 | `ValueKey(item.id)` を最外ウィジェット（`Padding` / `Dismissible` 等）に付与する。`items.map()` だけでなく `ListView.builder` の `itemBuilder` 内 `Padding` にも同様に適用すること。スワイプ後のリスト更新でウィジェット状態が混乱する |
 | `build()` 内で重いループ・重複計算を毎フレーム実行 | 39, 44, 46 | O(n×m) のような集計・`where().toList()` の複数回呼び出しは Notifier 側で事前計算し state に持たせ、ウィジェットは参照のみ（ex: `Map<int,int> memberTaskCounts`、`isCurrentUserOwner: bool` フラグ等も State に移す） |
 | IndexedStack 配下で一覧 Provider の invalidate 漏れ             | 35             | 詳細・作成画面での追加/削除/ステータス変更後に `ref.invalidate(一覧Provider)` |
 | `Dismissible` の `background`/`secondaryBackground` の中身と `confirmDismiss` の `direction` 判定が不一致（スワイプ方向逆） | 40, 41, 42 | 3箇所をセットで確認する。`background` → startToEnd（右スワイプ）、`secondaryBackground` → endToStart（左スワイプ）に対応 |
 | `Text` ウィジェットで長い文字列が画面外にはみ出す（Overdue ラベル・タイトル等） | 41, 44 | `overflow: TextOverflow.ellipsis`（または `softWrap: true`）を設定する。特にカード内の固定幅コンテナ内のテキストは必須 |
 | ユーザーアイコン表示に `UserAvatar` 共通ウィジェットを使わずにテキストラベルで実装 | 40, 41, 45 | `lib/core/ui/user_avatar.dart` の `UserAvatar` を使う。新機能でアイコン表示が必要なときに再実装しない。`iconUrl: null` のハードコードは「未割当表示」専用であり、ラベル（`displayName`）も親から渡すこと。ハードコード文字列（`'U'` 等）は禁止 |
-| ウィジェットテストで日本語テキストを直接検証（`find.text('日本語')` 等） | 45, 50, 53 | `find.byKey(const Key('xxx'))` を使い Key ベースで検証する。ARB 変更に強く、多言語対応のテストになる。`(tester.widget(...) as Text).data == '日本語'` 形式も同様に禁止 |
+| ウィジェットテストで日本語テキストを直接検証（`find.text('日本語')` 等） | 45, 50, 53, 59 | `find.byKey(const Key('xxx'))` を使い Key ベースで検証する。ARB 変更に強く、多言語対応のテストになる。`(tester.widget(...) as Text).data == '日本語'` 形式も同様に禁止 |
 | `debugPrint` でエラーオブジェクト（`$e`）全体を出力 | 45 | スタックトレース・内部状態がログに露出するためセキュリティリスク。固定の警告文字列のみ出力する（例: `debugPrint('Google sign-in failed')`）|
 | `AsyncNotifierProvider` / `NotifierProvider` の AutoDispose 未設定（画面離脱後もメモリに残る） | 45, 48, 51 | 画面固有の Provider は `AsyncNotifierProvider.autoDispose` / `NotifierProvider.autoDispose` にする。一覧画面の `Notifier` も対象（`InquiryListNotifier` 実績）。グローバル共有 Provider（未読数等）は AutoDispose なしで実装 |
 | メソッドシグネチャのパラメータ型に `dynamic` を使用（型明示漏れ） | 48 | `Widget _buildBody(dynamic state)` のように `dynamic` でパラメータ型を書かず、`InquiryDetailState` 等の具体的な型を明示する。`dynamic` / `var` の乱用は全箇所で禁止 |
@@ -215,3 +215,4 @@
 | Sprint 55 | mobile-conventions | `ref.listen` コールバック内での `setState()` 必須ルールを追記 | Sprint 55 #131 レビュー指摘（`NicknameSection` の `ref.listen` コールバックで `setState()` 漏れ）|
 | Sprint 57 | mobile-conventions | シェル外ルートからシェル内ルートへ push するときの HeroController 衝突対処法を追記 | Sprint 57 #157 バグ修正（通知センターからタスク画面遷移でアプリクラッシュ）で確立したパターン |
 | Sprint 58 | mobile-conventions | ログアウト時の `ref.invalidate` タイミングと AuthInterceptor 再入防止パターンを追記 | Sprint 58 #158/#172 バグ修正（logout 時の無限ループ・別ユーザーログイン後のデータ取得不可）で確立したパターン |
+| Sprint 59 | mobile-conventions | `ListView.builder` の `itemBuilder` 内ウィジェットへの `ValueKey` 付与ルールを既存 `items.map()` ルールに明記追加 | Sprint 59 レビュー指摘（`unpurchased_tab` / `basket_tab` の itemBuilder 内 Padding に ValueKey 未付与）。既存ルールは `items.map()` のみ記載で `ListView.builder` が明示されていなかった |

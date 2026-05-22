@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-22（Sprint 58 Retro）
+**最終更新**: 2026-05-22（Sprint 59 Retro）
 
 ---
 
@@ -59,7 +59,7 @@
 |---|---|---|
 | マジックストリング（enum未使用） | Sprint 34, 35 | status/flag値を `'0'`/`'1'` で直接比較。`core/models/` の生成済みenum を使う |
 | i18n ハードコード | Sprint 33, 34, 37 | 日本語・英語文字列をウィジェットに直書き。Sprint 37 は main_shell.dartのナビゲーションラベルで発生（既存コードだがファイルを触ったタイミングで指摘） |
-| テストで日本語テキスト直接検証 | Sprint 45, 50, 53 | `find.text('パスワード変更')` 等の日本語直接検索 → `find.byKey(const Key('...'))` に変更。Key付与を実装時の標準チェック項目にする。新規テスト追加時・既存ファイルのメンテナンス時に繰り返し発生。ウィジェットテスト新規追加時は必ずKeyベース検証を使うよう developer-workflow に追記を検討 |
+| テストで日本語テキスト直接検証 | Sprint 45, 50, 53, 59 | `find.text('パスワード変更')` 等の日本語直接検索 → `find.byKey(const Key('...'))` またはl10nキー経由に変更。新規テスト追加時・既存ファイルのメンテナンス時に繰り返し発生。Sprint 59 Retroで developer-workflow のセルフチェックリストに追記済み |
 | `catch (_) {}` 握りつぶし | Sprint 34（規約化）, 35（再発） | rethrow または AppException 変換が必要。ただし Notifier 層は catch → errorMessage 格納が正解（Sprint 36 で規約を層別化） |
 | `dynamic` 型の乱用（`as dynamic`） | Sprint 45 | Future.wait の結果を `as dynamic` でキャスト → `as UserProfileDto` 等の明示型キャストに変更。型推論が効かない場面で発生しやすい |
 | `AutoDispose` 未設定 | Sprint 45, 48, 51 | 画面固有の Provider に `AutoDispose` が未設定。画面遷移後もメモリに残り古い state が引き継がれる（Sprint 51 #125: ログアウト後に `loginNotifierProvider` の `isLoading: true` が残りスピナー表示が続いた）。個人情報を持つ Provider・認証系 Provider・一覧画面 Notifier は必ず `autoDispose` にする |
@@ -129,3 +129,5 @@
 | Sprint 57 | sm/long_term.md | モバイルEmptyState文言のWeb版i18n参照方針・同一ファイル複数Issue改修時の順序明示を追記（SM） | #163でWeb版文言参照フローが有効と確認。#161/#163が同一ファイルを変更し順序設計が必要になった |
 | Sprint 57 | agents/developer.md | DEVのtoolsに `mcp__discord__discord_send` を追加（SM） | DEVが #skills-changelog（Textチャンネル）に投稿できない問題が毎回発生していた。`discord_reply_to_forum` しか持っておらず、Textチャンネル投稿には `discord_send` が必要 |
 | Sprint 58 | mobile-conventions | ログアウト時の `ref.invalidate` タイミングルール追加（DEV実施） | logout()でinvalidate前にstateを未認証設定しないと401ループ（#172）。saveTokens()でinvalidateしないとエラー状態継続（#158） |
+| Sprint 59 | developer-workflow | モバイルセルフチェックリストに「ListViewのValueKey付与」「テストの日本語テキスト直接検証禁止」を追記（SM実施） | Sprint 38, 59 でValueKey漏れ・Sprint 45, 50, 53, 59 でテスト日本語直接検証が繰り返し発生。規約には存在するがDEVチェックで見落とされるため、developer-workflowのチェックリストに明示 |
+| Sprint 59 | mobile-conventions | 「リスト生成時のkey付与」セクションに `ListView.builder` itemBuilder パターンを追記（DEV実施） | Sprint 38 で items.map() パターンを規約化済みだったが Sprint 59 で ListView.builder でも同様の指摘が発生 |
