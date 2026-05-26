@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 63 Review — #178 問い合わせ起票時のUIクライアント・バージョン情報をt_inquiryに保存する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #fdf4ff; color: #7e22ce; }
+  .badge-db { background: #fff7ed; color: #c2410c; }
+  .badge-backend { background: #f0f9ff; color: #0369a1; }
+  .badge-frontend { background: #f0fdf4; color: #15803d; }
+  .badge-mobile { background: #fef3c7; color: #b45309; }
+
+  /* Sections */
+  section { margin-bottom: 44px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+  h3 { font-size: 13px; font-weight: 700; color: #374151; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
+  .layer-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px; }
+  .layer-db { background: #fff7ed; color: #c2410c; }
+  .layer-backend { background: #f0f9ff; color: #0369a1; }
+  .layer-frontend { background: #f0fdf4; color: #15803d; }
+  .layer-mobile { background: #fef3c7; color: #b45309; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 3px; }
+
+  /* Flow diagram */
+  .flow-diagram { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px 20px; }
+  .flow-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; }
+  .flow-layer { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 3px; min-width: 80px; text-align: center; }
+  .flow-arrow { color: #9ca3af; font-size: 16px; }
+  .flow-desc { color: #374151; }
+
+  /* Info box */
+  .info-box { background: #f0f9ff; border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 12px; font-size: 13px; color: #0c4a6e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 63 Review</div>
+  <h1>#178 — 問い合わせ起票時のUIクライアント・バージョン情報を<br>t_inquiryに保存する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 63</span>
+    <span class="badge badge-issue">#178</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-db">DB</span>
+    <span class="badge badge-backend">Backend</span>
+    <span class="badge badge-frontend">Frontend</span>
+    <span class="badge badge-mobile">Mobile</span>
+  </div>
+
+  <!-- Why -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">課題</div>
+      <p>問い合わせがWebブラウザとモバイルアプリのどちらから届いたか、またどのバージョンを使っていたかを把握できず、バージョン固有の不具合の早期特定が困難だった。問い合わせ対応時に「Webですか？アプリですか？」と利用者に追加確認する手間が発生していた。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>t_inquiry にクライアント情報カラムなし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>問い合わせ詳細に利用環境の情報が表示されない</div>
+        <div class="flow-item"><span class="dot dot-red"></span>バージョン固有の不具合か確認するには利用者への追加質問が必要</div>
+        <div class="flow-item"><span class="dot dot-red"></span>Web/Mobileどちらからの問い合わせか判別不可</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>起票時のクライアント種別（web/mobile）を自動記録</div>
+        <div class="flow-item"><span class="dot dot-green"></span>UIバージョン・APIバージョンも同時に保存</div>
+        <div class="flow-item"><span class="dot dot-green"></span>問い合わせ詳細画面でクライアント情報を即座に確認できる</div>
+        <div class="flow-item"><span class="dot dot-green"></span>利用者の入力フォームへの追加負担はゼロ（自動付与）</div>
+      </div>
+    </div>
+    <div class="flow-diagram" style="margin-top: 16px;">
+      <div class="flow-row">
+        <span class="flow-layer layer-frontend">Web/Mobile</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-desc">問い合わせ送信時に <code>uiClient / uiVersion / apiVersion</code> を自動付与してAPIコール</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-layer layer-backend">Backend</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-desc">リクエストを検証し、InquiryModel 経由で t_inquiry に保存</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-layer layer-db">DB</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-desc">ui_client / ui_version / api_version を NOT NULL で保持</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-layer layer-backend">Backend</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-desc">詳細取得APIのレスポンスに3フィールドを追加</span>
+      </div>
+      <div class="flow-row">
+        <span class="flow-layer layer-frontend">Web/Mobile</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-desc">問い合わせ詳細画面のカテゴリバッジ上部にクライアント情報を表示</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- DB AC1 -->
+    <h3><span class="layer-badge layer-db">DB</span> AC1 &amp; AC2 — m_code 追加・t_inquiry カラム追加</h3>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">m_codeにcode_type 0029「UIクライアント」として "mobile" / "web" の2レコードが追加されている</div>
+      </div>
+      <div class="ac-body">
+        <p>Flyway マイグレーションファイル <code>V00_001_018</code> で m_code に code_type='0029' の2レコードを追加。この code_type が <code>./gradlew generateEnums</code> で Backend の <code>UiClient</code> enum・Mobile の <code>UiClient</code> enum の自動生成に使われる。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>flyway/sql/V00_001_018__add_inquiry_client_version.sql（抜粋: m_code INSERT）</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>INSERT INTO m_code (code_type, code_type_name, code_type_name_en, code_value, name,</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    display_name_ja, display_name_en, display_name_es, ...) VALUES</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    ('0029', 'UIクライアント', 'UiClient', 'web',    'Web',    'Web',    'Web',    'Web',    ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>    ('0029', 'UIクライアント', 'UiClient', 'mobile', 'Mobile', 'モバイル', 'Mobile', 'Móvil', ...);</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">t_inquiryテーブルに ui_client / ui_version / api_version カラムが追加されている</div>
+      </div>
+      <div class="ac-body">
+        <p>既存レコードへの後付けのため、NULL 許容追加 → デフォルト値 UPDATE → NOT NULL 制約付与の3ステップで安全にマイグレーション。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>flyway/sql/V00_001_018__add_inquiry_client_version.sql（抜粋: カラム追加）</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>-- Step 1: NULL 許容で追加</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>ALTER TABLE t_inquiry</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>  ADD COLUMN ui_client  VARCHAR(10)  NULL COMMENT 'UIクライアント:m_code:0029',</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>  ADD COLUMN ui_version VARCHAR(20)  NULL COMMENT 'UIバージョン（問い合わせ起票時）',</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>  ADD COLUMN api_version VARCHAR(20) NULL COMMENT 'APIバージョン（問い合わせ起票時）';</span></div>
+            <div class="code-line line-ctx"><span class="line-num">30</span><span class="line-prefix"> </span><span>&nbsp;</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>-- Step 2: 既存レコードにデフォルト値を UPDATE</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>UPDATE t_inquiry SET ui_client = 'web', ui_version = '1.0.0', api_version = '1.0.0'</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>WHERE ui_client IS NULL;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">34</span><span class="line-prefix"> </span><span>&nbsp;</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>-- Step 3: NOT NULL 制約を付与</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>ALTER TABLE t_inquiry</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>  MODIFY COLUMN ui_client  VARCHAR(10)  NOT NULL COMMENT 'UIクライアント:m_code:0029',</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>  MODIFY COLUMN ui_version VARCHAR(20)  NOT NULL COMMENT 'UIバージョン（問い合わせ起票時）',</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>  MODIFY COLUMN api_version VARCHAR(20) NOT NULL COMMENT 'APIバージョン（問い合わせ起票時）';</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#x1F4A1;</span>
+            <span>既存レコードのデフォルト値は web/1.0.0/1.0.0。本番DB には起動当初からWebのみ対応だったため、既存問い合わせはすべて web クライアントとして記録される。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backend AC3 AC4 AC5 -->
+    <h3><span class="layer-badge layer-backend">Backend</span> AC3 〜 AC5 — API受付・保存・レスポンス</h3>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">問い合わせ作成APIが uiClient / uiVersion / apiVersion を受け付ける</div>
+      </div>
+      <div class="ac-body">
+        <p>リクエスト DTO に3フィールドを追加。<code>uiClient</code> は <code>@NotNull</code> + <code>@EnumValue(enumClass = UiClient.class)</code> で "web" または "mobile" 以外を400エラーで拒否。<code>uiVersion</code> / <code>apiVersion</code> は <code>@NotBlank</code> のみ。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>src/main/java/com/hwhub/backend/presentation/rest/inquiry/dto/InquiryCreateRequest.java</span>
+            <span class="diff-stat">+3 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">7</span><span class="line-prefix"> </span><span>public record InquiryCreateRequest(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">8</span><span class="line-prefix"> </span><span>    @NotBlank String category,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">9</span><span class="line-prefix"> </span><span>    @NotBlank String title,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">10</span><span class="line-prefix"> </span><span>    @NotBlank String body,</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    @NotNull @EnumValue(enumClass = UiClient.class) String uiClient,</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>    @NotBlank String uiVersion,</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>    @NotBlank String apiVersion) &#123;&#125;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#x1F4A1;</span>
+            <span><code>@EnumValue</code> は既存の共通バリデーションアノテーション。enum の code_value 一覧（"web"/"mobile"）に含まれない値を送信すると 400 で弾く。null チェック（@NotNull）と enum 存在チェック（@EnumValue）を両方つけることで、null と不正文字列の両方を防御する。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">受け取った値を t_inquiry テーブルに保存する</div>
+      </div>
+      <div class="ac-body">
+        <p>Controller → Service → InquiryModel → InquiryConverter → TInquiry entity の流れでドメイン規約に沿って実装。各層を通じて3フィールドが伝播する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>src/main/java/com/hwhub/backend/domain/model/inquiry/InquiryModel.java（抜粋: フィールド追加・newInquiry）</span>
+            <span class="diff-stat">+20 / -4</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">18</span><span class="line-prefix"> </span><span>  private final String title;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>  private final List&lt;InquiryMessageModel&gt; messages;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">20</span><span class="line-prefix"> </span><span>  private final LocalDateTime createdAt;</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>  private final UiClient uiClient;</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>  private final String uiVersion;</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>  private final String apiVersion;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">24</span><span class="line-prefix"> </span><span>&nbsp;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">48</span><span class="line-prefix"> </span><span>  public static InquiryModel newInquiry(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">49</span><span class="line-prefix"> </span><span>      long userId, InquiryCategory category, String title, String firstMessageBody,</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>      UiClient uiClient, String uiVersion, String apiVersion) &#123;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">51</span><span class="line-prefix"> </span><span>    List&lt;InquiryMessageModel&gt; messages = new ArrayList&lt;&gt;();</span></div>
+            <div class="code-line line-ctx"><span class="line-num">52</span><span class="line-prefix"> </span><span>    messages.add(InquiryMessageModel.newMessage(null, 1, SenderType.YOU, firstMessageBody));</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>    return new InquiryModel(null, userId, category, InquiryStatus.OPEN, title, messages, null,</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>        uiClient, uiVersion, apiVersion);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">55</span><span class="line-prefix"> </span><span>  &#125;</span></div>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>src/main/resources/mapper/custom/InquiryCustomMapper.xml（抜粋: resultMap + SELECT）</span>
+            <span class="diff-stat">+6 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">13</span><span class="line-prefix"> </span><span>    &lt;result property="title"       column="title"/&gt;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">14</span><span class="line-prefix"> </span><span>    &lt;result property="createdAt"   column="created_at"/&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>    &lt;result property="uiClient"    column="ui_client"/&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>    &lt;result property="uiVersion"   column="ui_version"/&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>    &lt;result property="apiVersion"  column="api_version"/&gt;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">18</span><span class="line-prefix"> </span><span>    &lt;collection property="messages" ...&gt;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">37</span><span class="line-prefix"> </span><span>        , i.title</span></div>
+            <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>        , i.created_at</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>        , i.ui_client</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>        , i.ui_version</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>        , i.api_version</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">問い合わせ取得APIのレスポンスに uiClient / uiVersion / apiVersion が含まれる</div>
+      </div>
+      <div class="ac-body">
+        <p>ユーザー向け詳細API（<code>GET /api/inquiries/{id}</code>）のレスポンス DTO に3フィールドを追加。<code>uiClient</code> は <code>UiClient</code> enum の <code>.getCode()</code> で文字列（"web"/"mobile"）に変換して返す。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>src/main/java/com/hwhub/backend/presentation/rest/inquiry/dto/InquiryDetailResponse.java</span>
+            <span class="diff-stat">+5 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">8</span><span class="line-prefix"> </span><span>public record InquiryDetailResponse(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">9</span><span class="line-prefix"> </span><span>    long inquiryId, String category, String status, String title,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">10</span><span class="line-prefix"> </span><span>    LocalDateTime createdAt, List&lt;InquiryMessageDto&gt; messages,</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    String uiClient, String uiVersion, String apiVersion) &#123;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">12</span><span class="line-prefix"> </span><span>&nbsp;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">13</span><span class="line-prefix"> </span><span>  public static InquiryDetailResponse from(InquiryModel inquiry) &#123;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">14</span><span class="line-prefix"> </span><span>    return new InquiryDetailResponse(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">15</span><span class="line-prefix"> </span><span>        inquiry.getInquiryId().value(), inquiry.getCategory().getCode(),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">16</span><span class="line-prefix"> </span><span>        inquiry.getStatus().getCode(), inquiry.getTitle(), inquiry.getCreatedAt(),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">17</span><span class="line-prefix"> </span><span>        inquiry.getMessages().stream().map(InquiryMessageDto::from).toList(),</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>        inquiry.getUiClient().getCode(), inquiry.getUiVersion(), inquiry.getApiVersion());</span></div>
+            <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>  &#125;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">20</span><span class="line-prefix"> </span><span>&#125;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Frontend AC6 AC7 AC8 -->
+    <h3><span class="layer-badge layer-frontend">Frontend (Web)</span> AC6 〜 AC8 — バージョン自動付与・詳細表示</h3>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">問い合わせ作成時、UIバージョン・APIバージョンを自動付与して送信する（ui_client="web"）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>inquiryStore.create()</code> 内でバージョン情報を自動取得・付与する。ユーザーの入力フォームには一切表示しない。UIバージョンは <code>appInfoStore.frontVersion</code>（Vite 静的ビルド値）、APIバージョンは <code>appInfoStore.fetchApiVersion()</code>（取得済みなら再フェッチ不要）。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>src/stores/inquiryStore.ts（create アクション抜粋）</span>
+            <span class="diff-stat">+13 / -2</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">49</span><span class="line-prefix">-</span><span>    async create(input: InquiryCreateInput): Promise&lt;number&gt; &#123;</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>    async create(</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>      input: Omit&lt;InquiryCreateInput, 'uiClient' | 'uiVersion' | 'apiVersion'&gt;,</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>    ): Promise&lt;number&gt; &#123;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">52</span><span class="line-prefix"> </span><span>      if (this.isSubmitting) return Promise.reject(new Error('送信中です'))</span></div>
+            <div class="code-line line-ctx"><span class="line-num">53</span><span class="line-prefix"> </span><span>      this.isSubmitting = true</span></div>
+            <div class="code-line line-ctx"><span class="line-num">54</span><span class="line-prefix"> </span><span>      try &#123;</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>        const appInfoStore = useAppInfoStore()</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>        if (!appInfoStore.apiVersion) &#123;</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>          await appInfoStore.fetchApiVersion()</span></div>
+            <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>        &#125;</span></div>
+            <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>        const createInput: InquiryCreateInput = &#123;</span></div>
+            <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>          ...input,</span></div>
+            <div class="code-line line-add"><span class="line-num">61</span><span class="line-prefix">+</span><span>          uiClient: 'web',</span></div>
+            <div class="code-line line-add"><span class="line-num">62</span><span class="line-prefix">+</span><span>          uiVersion: appInfoStore.frontVersion,</span></div>
+            <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>          apiVersion: appInfoStore.apiVersion ?? 'unknown',</span></div>
+            <div class="code-line line-add"><span class="line-num">64</span><span class="line-prefix">+</span><span>        &#125;</span></div>
+            <div class="code-line line-del"><span class="line-num">65</span><span class="line-prefix">-</span><span>        const &#123; inquiryId &#125; = await inquiryApi.createInquiry(input)</span></div>
+            <div class="code-line line-add"><span class="line-num">65</span><span class="line-prefix">+</span><span>        const &#123; inquiryId &#125; = await inquiryApi.createInquiry(createInput)</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#x1F4A1;</span>
+            <span>TypeScript の <code>Omit&lt;InquiryCreateInput, ...&gt;</code> で呼び出し元が uiClient/uiVersion/apiVersion を指定できない型にしている。Store 側で必ず自動付与されることを型レベルで保証。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>src/api/inquiryApi.ts（DTO・マッパー抜粋）</span>
+            <span class="diff-stat">+9 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">86</span><span class="line-prefix">+</span><span>interface InquiryDetailDto &#123;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">87</span><span class="line-prefix"> </span><span>  inquiryId: number; category: string; status: string; title: string;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">88</span><span class="line-prefix"> </span><span>  createdAt: string; messages: InquiryMessageDto[];</span></div>
+            <div class="code-line line-add"><span class="line-num">89</span><span class="line-prefix">+</span><span>  uiClient: string; uiVersion: string; apiVersion: string;</span></div>
+            <div class="code-line line-add"><span class="line-num">90</span><span class="line-prefix">+</span><span>&#125;</span></div>
+            <div class="code-line line-add"><span class="line-num">110</span><span class="line-prefix">+</span><span>interface InquiryCreateRequestDto &#123;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">111</span><span class="line-prefix"> </span><span>  category: string; title: string; body: string;</span></div>
+            <div class="code-line line-add"><span class="line-num">112</span><span class="line-prefix">+</span><span>  uiClient: string; uiVersion: string; apiVersion: string;</span></div>
+            <div class="code-line line-add"><span class="line-num">113</span><span class="line-prefix">+</span><span>&#125;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">140</span><span class="line-prefix"> </span><span>export const toInquiryDetail = (dto: InquiryDetailDto): InquiryDetail =&gt; (&#123;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">141</span><span class="line-prefix"> </span><span>  ... /* 既存フィールド */</span></div>
+            <div class="code-line line-add"><span class="line-num">142</span><span class="line-prefix">+</span><span>  uiClient: dto.uiClient, uiVersion: dto.uiVersion, apiVersion: dto.apiVersion,</span></div>
+            <div class="code-line line-add"><span class="line-num">143</span><span class="line-prefix">+</span><span>&#125;)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC7</div>
+        <div class="ac-text">問い合わせ詳細（管理）画面のカテゴリバッジ上部にクライアント情報を表示する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>AdminInquiryDetailPage.vue</code> のカテゴリバッジの直上に、薄いサーフェス背景のメタ情報ブロックを追加。<code>uiClient</code> の生値（"web"/"mobile"）は <code>uiClientLabel()</code> 関数で翻訳キー経由のラベルに変換して表示。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>src/views/admin/AdminInquiryDetailPage.vue（クライアント情報ブロック追加）</span>
+            <span class="diff-stat">+22 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>&lt;!-- クライアント情報 --&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>&lt;div class="rounded-lg bg-hwhub-surface-subtle px-3 py-2 text-xs text-hwhub-muted space-y-0.5"&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>  &lt;p&gt;&#123;&#123; t('inquiry.detail.clientInfo.ui') &#125;&#125;: &#123;&#123; uiClientLabel(detail.uiClient) &#125;&#125;&lt;/p&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>  &lt;p&gt;&#123;&#123; t('inquiry.detail.clientInfo.uiVersion') &#125;&#125;: &#123;&#123; detail.uiVersion &#125;&#125;&lt;/p&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>  &lt;p&gt;&#123;&#123; t('inquiry.detail.clientInfo.apiVersion') &#125;&#125;: &#123;&#123; detail.apiVersion &#125;&#125;&lt;/p&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>&lt;/div&gt;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">36</span><span class="line-prefix"> </span><span>&lt;div class="flex items-center justify-between"&gt;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">37</span><span class="line-prefix"> </span><span>  &lt;span class="inline-flex items-center rounded-full ..."&gt; &lt;!-- カテゴリバッジ --&gt;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>&lt;/div&gt;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC8</div>
+        <div class="ac-text">ユーザー向け問い合わせ詳細画面のカテゴリバッジ上部にクライアント情報を表示する</div>
+      </div>
+      <div class="ac-body">
+        <p>AC7と同じパターンで <code>InquiryDetailPage.vue</code> にも追加。管理画面との表示内容・スタイルを統一。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>src/views/settings/inquiry/InquiryDetailPage.vue（クライアント情報ブロック＋翻訳関数）</span>
+            <span class="diff-stat">+22 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>&lt;div class="rounded-lg bg-hwhub-surface-subtle px-3 py-2 text-xs text-hwhub-muted space-y-0.5"&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>  &lt;p&gt;&#123;&#123; t('inquiry.detail.clientInfo.ui') &#125;&#125;: &#123;&#123; uiClientLabel(detail.uiClient) &#125;&#125;&lt;/p&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>  &lt;p&gt;&#123;&#123; t('inquiry.detail.clientInfo.uiVersion') &#125;&#125;: &#123;&#123; detail.uiVersion &#125;&#125;&lt;/p&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>  &lt;p&gt;&#123;&#123; t('inquiry.detail.clientInfo.apiVersion') &#125;&#125;: &#123;&#123; detail.apiVersion &#125;&#125;&lt;/p&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>&lt;/div&gt;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">22</span><span class="line-prefix"> </span><span>/* ... カテゴリバッジへ続く ... */</span></div>
+            <div class="code-line line-ctx"><span class="line-num">250</span><span class="line-prefix"> </span><span>const uiClientLabel = (uiClient: string): string =&gt; &#123;</span></div>
+            <div class="code-line line-add"><span class="line-num">251</span><span class="line-prefix">+</span><span>  switch (uiClient) &#123;</span></div>
+            <div class="code-line line-add"><span class="line-num">252</span><span class="line-prefix">+</span><span>    case 'web':    return t('inquiry.detail.clientInfo.uiWeb')</span></div>
+            <div class="code-line line-add"><span class="line-num">253</span><span class="line-prefix">+</span><span>    case 'mobile': return t('inquiry.detail.clientInfo.uiMobile')</span></div>
+            <div class="code-line line-add"><span class="line-num">254</span><span class="line-prefix">+</span><span>    default:       return uiClient</span></div>
+            <div class="code-line line-add"><span class="line-num">255</span><span class="line-prefix">+</span><span>  &#125;</span></div>
+            <div class="code-line line-add"><span class="line-num">256</span><span class="line-prefix">+</span><span>&#125;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#x1F4A1;</span>
+            <span>"web"/"mobile" を直接表示せず翻訳キー経由でラベル変換する。i18n キー: <code>inquiry.detail.clientInfo.uiWeb</code> / <code>inquiry.detail.clientInfo.uiMobile</code>。レビュー指摘対応で追加（生値表示だったものを翻訳済みラベルに修正）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile AC9 AC10 -->
+    <h3><span class="layer-badge layer-mobile">Mobile</span> AC9 〜 AC10 — バージョン自動付与・詳細表示</h3>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC9</div>
+        <div class="ac-text">問い合わせ作成時、UIバージョン・APIバージョンを自動付与して送信する（ui_client="mobile"）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>InquiryCreateNotifier.submit()</code> 内で <code>package_info_plus</code> の <code>PackageInfo.fromPlatform()</code> と <code>AppInfoRepository.fetchApiVersion()</code> を <code>Future.wait</code> で並行取得。<code>UiClient.mobile.code</code>（生成済み enum 経由）で "mobile" を渡す。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_create/inquiry_create_notifier.dart（submit 抜粋）</span>
+            <span class="diff-stat">+14 / -2</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">42</span><span class="line-prefix"> </span><span>    state = state.copyWith(isSubmitting: true, errorMessage: null);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">43</span><span class="line-prefix"> </span><span>    await _runCatching(() async &#123;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">44</span><span class="line-prefix"> </span><span>      final repo = ref.read(inquiryRepositoryProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>      final appInfoRepo = ref.read(appInfoRepositoryProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>      // バージョン情報を並行取得</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>      final results = await Future.wait([</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>        PackageInfo.fromPlatform(),</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>        appInfoRepo.fetchApiVersion(),</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>      ]);</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>      final packageInfo = results[0] as PackageInfo;</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>      final apiVersion = (results[1] as String?) ?? 'unknown';</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>&nbsp;</span></div>
+            <div class="code-line line-del"><span class="line-num">54</span><span class="line-prefix">-</span><span>      final inquiryId = await repo.createInquiry(</span></div>
+            <div class="code-line line-del"><span class="line-num">55</span><span class="line-prefix">-</span><span>        category: state.selectedCategory!, title: state.title.trim(), body: state.body.trim(),</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>      final inquiryId = await repo.createInquiry(</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>        category: state.selectedCategory!, title: state.title.trim(), body: state.body.trim(),</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>        uiClient: UiClient.mobile.code,</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>        uiVersion: packageInfo.version,</span></div>
+            <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>        apiVersion: apiVersion,</span></div>
+            <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>      );</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#x1F4A1;</span>
+            <span><code>UiClient.mobile.code</code> は <code>./gradlew generateEnums</code> で生成した enum 経由。マジックストリング "mobile" を直接書かずに enum を使うことでコード規約に従っている。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC10</div>
+        <div class="ac-text">ユーザー向け問い合わせ詳細画面のカテゴリバッジ上部にクライアント情報を表示する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>inquiry_detail_page.dart</code> にサーフェス背景のコンテナを追加。<code>_uiClientLabel()</code> 関数で "web"/"mobile" を l10n キー経由のラベルに変換。Key(<code>'clientInfoSection'</code>) でウィジェットテストから検証可能にしている。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_page.dart（クライアント情報 Container）</span>
+            <span class="diff-stat">+47 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">127</span><span class="line-prefix">+</span><span>// クライアント情報</span></div>
+            <div class="code-line line-add"><span class="line-num">128</span><span class="line-prefix">+</span><span>Container(</span></div>
+            <div class="code-line line-add"><span class="line-num">129</span><span class="line-prefix">+</span><span>  key: const Key('clientInfoSection'),</span></div>
+            <div class="code-line line-add"><span class="line-num">130</span><span class="line-prefix">+</span><span>  width: double.infinity,</span></div>
+            <div class="code-line line-add"><span class="line-num">131</span><span class="line-prefix">+</span><span>  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),</span></div>
+            <div class="code-line line-add"><span class="line-num">132</span><span class="line-prefix">+</span><span>  decoration: BoxDecoration(</span></div>
+            <div class="code-line line-add"><span class="line-num">133</span><span class="line-prefix">+</span><span>    color: colors.surfaceSubtle, borderRadius: BorderRadius.circular(6),</span></div>
+            <div class="code-line line-add"><span class="line-num">134</span><span class="line-prefix">+</span><span>  ),</span></div>
+            <div class="code-line line-add"><span class="line-num">135</span><span class="line-prefix">+</span><span>  child: DefaultTextStyle(</span></div>
+            <div class="code-line line-add"><span class="line-num">136</span><span class="line-prefix">+</span><span>    style: Theme.of(context).textTheme.bodySmall!.copyWith(color: colors.textMuted),</span></div>
+            <div class="code-line line-add"><span class="line-num">137</span><span class="line-prefix">+</span><span>    child: Column(</span></div>
+            <div class="code-line line-add"><span class="line-num">138</span><span class="line-prefix">+</span><span>      crossAxisAlignment: CrossAxisAlignment.start,</span></div>
+            <div class="code-line line-add"><span class="line-num">139</span><span class="line-prefix">+</span><span>      children: [</span></div>
+            <div class="code-line line-add"><span class="line-num">140</span><span class="line-prefix">+</span><span>        Text('$&#123;l10n.inquiryDetailClientInfoUi&#125;: $&#123;_uiClientLabel(detail.uiClient, l10n)&#125;'),</span></div>
+            <div class="code-line line-add"><span class="line-num">141</span><span class="line-prefix">+</span><span>        Text('$&#123;l10n.inquiryDetailClientInfoUiVersion&#125;: $&#123;detail.uiVersion&#125;'),</span></div>
+            <div class="code-line line-add"><span class="line-num">142</span><span class="line-prefix">+</span><span>        Text('$&#123;l10n.inquiryDetailClientInfoApiVersion&#125;: $&#123;detail.apiVersion&#125;'),</span></div>
+            <div class="code-line line-add"><span class="line-num">143</span><span class="line-prefix">+</span><span>      ],</span></div>
+            <div class="code-line line-add"><span class="line-num">144</span><span class="line-prefix">+</span><span>    ),</span></div>
+            <div class="code-line line-add"><span class="line-num">145</span><span class="line-prefix">+</span><span>  ),</span></div>
+            <div class="code-line line-add"><span class="line-num">146</span><span class="line-prefix">+</span><span>),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">147</span><span class="line-prefix"> </span><span>const SizedBox(height: 8),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">148</span><span class="line-prefix"> </span><span>Row(children: [InquiryCategoryBadge(categoryCode: detail.category), ...]),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>Webから問い合わせを送信し、管理画面で「クライアント: Web」「UIバージョン」「APIバージョン」が表示されること</strong>
+          <span>管理画面（AdminInquiryDetailPage）の詳細ページを開き、カテゴリバッジの上に3行のクライアント情報が表示されているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>Webから問い合わせを送信し、ユーザー詳細画面でもクライアント情報が表示されること</strong>
+          <span>設定 > 問い合わせ一覧から該当の問い合わせを開いて確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>問い合わせ作成フォームにバージョン入力欄が表示されていないこと</strong>
+          <span>フォームには カテゴリ・件名・本文 の3項目のみ。バージョン情報は一切表示されないこと</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>モバイルアプリから問い合わせを送信し、管理画面で「クライアント: モバイル」が表示されること</strong>
+          <span>WebとMobileを区別して記録できているか確認。バージョン番号がアプリ情報画面の表示と一致しているか</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>モバイルのユーザー向け問い合わせ詳細画面でクライアント情報が表示されること</strong>
+          <span>モバイルアプリ内の問い合わせ詳細画面を開き、カテゴリバッジの上部にクライアント情報の3行が表示されているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>既存の問い合わせを開いたとき、「クライアント: Web」「1.0.0」が表示されること</strong>
+          <span>マイグレーションで既存レコードに web/1.0.0/1.0.0 をデフォルト値として設定済み。エラーや空表示にならないか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>リポジトリ</th>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td>DB</td>
+        <td><code>V00_001_018__add_inquiry_client_version.sql</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>m_code 0029追加・t_inquiry 3カラム追加（3ステップ安全移行）</td>
+      </tr>
+      <tr>
+        <td>DB</td>
+        <td><code>R__test_inquiry.sql</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>テストデータに ui_client / ui_version / api_version 追加</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>UiClient.java</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>generateEnums 自動生成 enum（"web"/"mobile" の code_value）</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>InquiryCreateRequest.java</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>uiClient(@NotNull+@EnumValue) / uiVersion(@NotBlank) / apiVersion(@NotBlank) 追加</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>InquiryModel.java</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>フィールド追加・newInquiry/reconstruct 引数追加</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>InquiryDetailResponse.java</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>3フィールドをレスポンスに追加</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>InquiryService.java</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>createInquiry 引数追加・InquiryModel.newInquiry に渡す</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>InquiryConverter.java</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>InquiryWithMessagesEntity から3カラムを reconstruct に渡す</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>InquiryCustomMapper.xml</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>resultMap + SELECT 句に3カラム追加</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>InquiryController.java</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>リクエストから3フィールドをServiceに渡す</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>InquiryWithMessagesEntity.java</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>カスタムエンティティに3カラムフィールド追加</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td><code>TInquiry.java / TInquiryExample.java / TInquiryMapper.xml</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>mybatisGenerator 再実行による自動生成更新</td>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td><code>inquiryApi.ts</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>DTO・リクエスト型・マッパーに3フィールド追加</td>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td><code>inquiry.model.ts</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>InquiryCreateInput / InquiryDetail ドメインモデルに3フィールド追加</td>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td><code>inquiryStore.ts</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>create() でバージョン自動取得・付与ロジック追加</td>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td><code>InquiryDetailPage.vue / AdminInquiryDetailPage.vue</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>クライアント情報表示ブロック追加・uiClientLabel() 翻訳関数追加</td>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td><code>i18n/ja.json / en.json / es.json</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>inquiry.detail.clientInfo.* キー追加（ja/en/es 3言語対応）</td>
+      </tr>
+      <tr>
+        <td>Mobile</td>
+        <td><code>lib/core/models/ui_client.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>generateEnums 自動生成 enum（"web"/"mobile"）</td>
+      </tr>
+      <tr>
+        <td>Mobile</td>
+        <td><code>inquiry_repository.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>createInquiry の引数に3フィールド追加（interface + impl 両方）</td>
+      </tr>
+      <tr>
+        <td>Mobile</td>
+        <td><code>inquiry_detail_dto.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>3フィールド追加・fromJson 更新</td>
+      </tr>
+      <tr>
+        <td>Mobile</td>
+        <td><code>inquiry_create_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>submit() で PackageInfo + AppInfoRepo を並行取得し createInquiry に渡す</td>
+      </tr>
+      <tr>
+        <td>Mobile</td>
+        <td><code>inquiry_detail_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>クライアント情報 Container 追加・_uiClientLabel() 翻訳関数追加</td>
+      </tr>
+      <tr>
+        <td>Mobile</td>
+        <td><code>app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>inquiryDetailClientInfoUi / UiWeb / UiMobile / UiVersion / ApiVersion キー追加</td>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td><code>InquiryCreatePage.vue</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>フォーム UI に変更なし（バージョン情報はストア側で自動付与）</td>
+      </tr>
+      <tr>
+        <td>Mobile</td>
+        <td>問い合わせ作成 UI（InquiryCreatePage）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>フォーム UI に変更なし（バージョン情報はノティファイア側で自動付与）</td>
+      </tr>
+      <tr>
+        <td>Mobile</td>
+        <td>管理系画面</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>管理画面はモバイル未対応のためスコープ外（AC10 はユーザー向けのみ）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

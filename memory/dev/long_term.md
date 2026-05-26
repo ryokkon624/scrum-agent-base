@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-22（Sprint 61 Retro）
+**最終更新**: 2026-05-26（Sprint 63 Retro）
 
 ---
 
@@ -21,6 +21,7 @@
 | パターン                                                  | 発生スプリント | 対応                                                           |
 | --------------------------------------------------------- | -------------- | -------------------------------------------------------------- |
 | i18n ハードコード（文字列リテラルをテンプレートに直書き） | 33, 34         | `t('キー')` 形式。yup エラーメッセージも i18n キー文字列で渡す |
+| バックエンドから返されるコード値（'web'/'mobile' 等）をそのまま表示（i18n変換漏れ） | 63 | コード値を直接表示せず、翻訳関数（マッピング関数 or i18nキー）で表示名に変換する。特に m_code 管理の区分値は必ず翻訳する |
 
 ### hw-hub-mobile
 
@@ -97,6 +98,7 @@
 
 ### hw-hub-backend
 
+- `ALTER TABLE ... ADD COLUMN` で `AFTER カラム名` を省略するとカラムが末尾に追加される。テーブル設計書・既存カラム定義上で順序が重要な場合は必ず `AFTER` 句を指定すること（Sprint 63 Sprint Review: t_inquiry の ui_client/ui_version/api_version が末尾追加になっており、後から AFTER 句付きで追加し直した）
 - AWS SDK v2 を使う。`spring-cloud-aws` は Spring Boot 4.x と非互換なので使わない
 - STG環境はEphemeral構成。使うときだけ `terraform apply`、終わったら `terraform destroy`
 - `mybatisGenerator` は既存XMLに追記する動作のため、実行前に `rm -rf src/main/resources/mapper/generated` を必ず実行する。省略すると全Mapper XMLに定義が二重になってSpring Boot起動不可
@@ -216,3 +218,5 @@
 | Sprint 57 | mobile-conventions | シェル外ルートからシェル内ルートへ push するときの HeroController 衝突対処法を追記 | Sprint 57 #157 バグ修正（通知センターからタスク画面遷移でアプリクラッシュ）で確立したパターン |
 | Sprint 58 | mobile-conventions | ログアウト時の `ref.invalidate` タイミングと AuthInterceptor 再入防止パターンを追記 | Sprint 58 #158/#172 バグ修正（logout 時の無限ループ・別ユーザーログイン後のデータ取得不可）で確立したパターン |
 | Sprint 59 | mobile-conventions | `ListView.builder` の `itemBuilder` 内ウィジェットへの `ValueKey` 付与ルールを既存 `items.map()` ルールに明記追加 | Sprint 59 レビュー指摘（`unpurchased_tab` / `basket_tab` の itemBuilder 内 Padding に ValueKey 未付与）。既存ルールは `items.map()` のみ記載で `ListView.builder` が明示されていなかった |
+| Sprint 63 | frontend-conventions | バックエンドから返されるコード値をi18n変換せずそのまま表示することを禁止するルールを追記 | Sprint 63 convention-reviewer 指摘（InquiryDetailPage・AdminInquiryDetailPage で uiClient の値 'web'/'mobile' をそのまま表示していた）|
+| Sprint 63 | rules/database.md | `ALTER TABLE ADD COLUMN` 時のカラム位置指定（`AFTER`句）ルールを追記 | Sprint 63 Sprint Review 指摘（t_inquiry カラム配置順誤り: `AFTER`句未指定で末尾に追加された）|

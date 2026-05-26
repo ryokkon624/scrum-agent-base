@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-26（Sprint 62 Retro）
+**最終更新**: 2026-05-26（Sprint 63 Retro）
 
 ---
 
@@ -30,6 +30,8 @@
 - **mobile の EmptyState 文言はWeb版 i18n（en.json/ja.json の対応キー）を参照基準にする（Sprint 57確立）**: 計画フェーズで Web版 `home.household.empty` を確認し、モバイルの文言を合わせた
 - **同一ファイルへの複数Issue改修は計画フェーズで順序を明示する（Sprint 57）**: #161と#163が同一ファイルを変更。コミット順序の設計が必要なため、計画フェーズでDEVに改修順序を明示する
 - **バックログ記述と現状の乖離を計画フェーズで検出できる（Sprint 61）**: #176でバックログ「data/直下に散乱」と現状「既にmodels/配下に整理済み」の乖離をDEV調査で発見。No-op判断を早期確定し不要実装を回避。Planningの現状調査ステップが有効に機能した
+- **DBカラム追加位置はACまたは備考に明示する（Sprint 63）**: #178でt_inquiryに3カラムを末尾追加したところ、Sprint ReviewでりょこさんからBETWEEN配置の指摘が発生。複数カラムを新規追加する場合は計画フェーズで「どの位置に追加するか（AFTER xxx）」をACまたは備考に明記してDEVに伝える
+- **4リポジトリ横断実装でも1ブランチ方針が有効（Sprint 63）**: DB→Backend→Frontend/Mobile の依存順で実装し、全リポジトリで `feature/178-inquiry-client-version` ブランチにまとめた。PR作成・レビューが整理できて効率的。計画フェーズで依存順序を明示することが重要
 
 ### レビュー
 
@@ -78,6 +80,7 @@
 - **logout()でのProvider invalidateによるエラー状態継続**: トークンクリア後に `ref.invalidate(householdNotifierProvider)` を呼ぶと、HouseholdNotifier.build()がトークンなしでAPIを叩いてエラー状態になる。その後loginしても再buildされずデータ取得不可が続く。解決策: `saveTokens()` でlogin成功後にinvalidateする（Sprint 58 #158）
 - **logout()のinvalidate前にstateを先行設定しないと無限ループ**: invalidate先にstateがまだAuthenticatedのままだとAuthInterceptorが401をトークンリフレッシュとして再処理し、logout()再呼び出しループが発生。「state=AuthUnauthenticated() → ref.invalidate()」の順序を厳守（Sprint 58 #172）
 - **複合画面でAPIの副作用とUI反映の連動確認漏れ**: 複数APIを組み合わせる複合画面（アカウント設定等）で、「アップロード後の再フェッチ」「ON/OFFの副作用がDBにどう反映されるか」「連携後のDB状態とUI表示の同期」がACに明記されないまま実装され、Sprint Reviewで3件のbugが発覚（Sprint 45: #127/#128/#129）。計画フェーズでACに「APIの副作用とUI反映の連動」を明示する
+- **DBカラム追加位置がACに未指定だと末尾追加になりSprint Reviewで指摘される**: #178でt_inquiryに3カラムを末尾追加 → Sprint ReviewでBETWEEN配置の指摘（Sprint 63）。複数カラムを追加するスプリントでは計画フェーズで「user_idとcategoryの間」等の配置位置をACに明示する
 - **空状態（0件）ハンドリング漏れ**: 一覧画面でデータが0件の場合に「読み込み中」が表示され続ける（Sprint 47: #145）。`loading` / `error` / `data（0件）` / `data（1件以上）` の4ケースをACに明記し、実装チェックリストで確認する
 - **フォームのState更新とUI（TextEditingController）反映の切り離し**: テンプレート選択・既存データ読み込みでStateは更新されているが`TextEditingController.text`への反映が漏れ、画面に表示されない（Sprint 47: #146）。複数フィールドがある場合は全フィールドの横展開確認が必要
 - **日付の月・日組み合わせ整合性バリデーション漏れ**: 月次繰り返し設定で存在しない日付（2月30日等）を入力して保存できる（Sprint 47: #147）。`DateTime(year, month, day).month == month`チェックを必須化
@@ -134,3 +137,4 @@
 | Sprint 59 | mobile-conventions | 「リスト生成時のkey付与」セクションに `ListView.builder` itemBuilder パターンを追記（DEV実施） | Sprint 38 で items.map() パターンを規約化済みだったが Sprint 59 で ListView.builder でも同様の指摘が発生 |
 | Sprint 61 | なし | Skills更新なし（全レビュー指摘なし・Sprint Review指摘なし） | リファクタリング＋バグ修正スプリント。安定稼働 |
 | Sprint 62 | なし | Skills更新なし（全レビュー指摘なし・Sprint Review指摘なし） | bug×2＋feature×1。AppErrorView共通Widget化でエラー表示統一。安定稼働 |
+| Sprint 63 | sm/long_term.md・frontend-conventions・rules/database.md | SM: DBカラム追加位置明示ルール追記。DEV: バックエンドコード値の表示変換ルール追記（frontend-conventions）・ALTER TABLE AFTER句指定ルール追記（rules/database.md） | 4リポジトリ横断feature。uiClient i18n漏れ指摘→対応。Sprint ReviewでDBカラム順指摘→今スプリント内対応 |
