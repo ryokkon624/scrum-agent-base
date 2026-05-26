@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-22（Sprint 61 Retro）
+**最終更新**: 2026-05-26（Sprint 62 Retro）
 
 ---
 
@@ -133,3 +133,4 @@
 | Sprint 59 | developer-workflow | モバイルセルフチェックリストに「ListViewのValueKey付与」「テストの日本語テキスト直接検証禁止」を追記（SM実施） | Sprint 38, 59 でValueKey漏れ・Sprint 45, 50, 53, 59 でテスト日本語直接検証が繰り返し発生。規約には存在するがDEVチェックで見落とされるため、developer-workflowのチェックリストに明示 |
 | Sprint 59 | mobile-conventions | 「リスト生成時のkey付与」セクションに `ListView.builder` itemBuilder パターンを追記（DEV実施） | Sprint 38 で items.map() パターンを規約化済みだったが Sprint 59 で ListView.builder でも同様の指摘が発生 |
 | Sprint 61 | なし | Skills更新なし（全レビュー指摘なし・Sprint Review指摘なし） | リファクタリング＋バグ修正スプリント。安定稼働 |
+| Sprint 62 | なし | Skills更新なし（全レビュー指摘なし・Sprint Review指摘なし） | bug×2＋feature×1。AppErrorView共通Widget化でエラー表示統一。安定稼働 |

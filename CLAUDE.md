@@ -15,6 +15,7 @@ SM・DEV・PO・各レビュアーが協調してスプリントを回す。
 | バッチ           | `C:\work\hw-hub\hw-hub-batch`     |
 | データベース     | `C:\work\hw-hub\hw-hub-database`  |
 | モバイル         | `C:\work\hw-hub\hw-hub-mobile`    |
+| ナレッジ         | `C:\work\hw-hub\hw-hub-knowledge` |
 
 ---
 

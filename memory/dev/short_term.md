@@ -1,1 +1,1 @@
-（Sprint 61 完了。Retroで振り返り済み）
+（Sprint 62 完了。Retro で振り返り済み）
