@@ -850,6 +850,89 @@ context.push(AppRoutes.tasks);
 
 - 認証トークンの付与・リフレッシュは `AuthInterceptor` で一元管理する
 
+### AuthInterceptor のトークンリフレッシュ実装パターン（Completer による並行制御）
+
+複数リクエストが同時に 401 を受けた場合、リフレッシュ API を 1 回だけ呼んで全待機リクエストを再送するには `Completer<void>` を使う。
+
+```dart
+class AuthInterceptor extends Interceptor {
+  bool _isRefreshing = false;
+  Completer<void>? _completer;
+
+  @override
+  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+    if (err.response?.statusCode == 401) {
+      try {
+        await _doRefresh();
+        // リフレッシュ成功 → 元のリクエストをリトライ
+        final retryResponse = await _dio.fetch(err.requestOptions);
+        return handler.resolve(retryResponse);
+      } catch (_) {
+        await _logoutIfAuthenticated();
+        return handler.next(err);
+      }
+    }
+    handler.next(err);
+  }
+
+  Future<void> _doRefresh() async {
+    if (_isRefreshing) {
+      // 他のリクエストがリフレッシュ中 → 完了を待つ
+      return _completer!.future;
+    }
+    _isRefreshing = true;
+    _completer = Completer<void>();
+    try {
+      final refreshToken = await _tokenStorage.getRefreshToken();
+      if (refreshToken == null) throw Exception('No refresh token');
+      // リフレッシュ API を直接呼ぶ（AuthInterceptor を通さない Dio インスタンスを使う）
+      final response = await _rawDio.post('/api/auth/refresh', data: {'refreshToken': refreshToken});
+      final newAccessToken = response.data['accessToken'] as String;
+      final newRefreshToken = response.data['refreshToken'] as String;
+      // AuthNotifier 経由でトークンを保存（state + TokenStorage を一元更新）
+      await ref.read(authNotifierProvider.notifier).updateTokens(
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      );
+      _completer!.complete();
+    } catch (e) {
+      _completer!.completeError(e);
+      rethrow;
+    } finally {
+      _isRefreshing = false;
+      _completer = null;
+    }
+  }
+}
+```
+
+**設計上のポイント**:
+- `_isRefreshing` フラグで「リフレッシュ処理が走っているか」を管理する
+- 2 つ目以降の 401 は `_completer!.future` を await して最初のリフレッシュ完了を待つ
+- `_completer!.completeError(e)` で待機中のリクエスト全てにエラーを伝播できる
+- リフレッシュ用の `_rawDio` は AuthInterceptor をアタッチしていない別インスタンスを使う（無限ループ防止）
+- `updateTokens()` は `AuthNotifier` に追加するメソッド。`TokenStorage.saveTokens()` + `state = AuthAuthenticated(user.copyWith(...))` を1メソッドに集約する
+
+**`AuthNotifier.updateTokens()` の実装パターン**:
+
+```dart
+// auth_notifier.dart
+Future<void> updateTokens({
+  required String accessToken,
+  required String refreshToken,
+}) async {
+  final current = state;
+  if (current is! AuthAuthenticated) return;
+  await _tokenStorage.saveTokens(
+    accessToken: accessToken,
+    refreshToken: refreshToken,
+  );
+  state = AuthAuthenticated(user: current.user);
+}
+```
+
+> **背景（Sprint 64 #179）**: AuthInterceptor の `_doRefresh()` 実装。複数リクエストが同時に 401 を受ける場合の二重リフレッシュ防止と、トークン更新の一元管理（AuthNotifier）を設計した。
+
 ### Dio の型パラメータは必ず具体型を指定する
 
 `_dio.get<T>()` / `_dio.post<T>()` 等の型パラメータには `<dynamic>` ではなく具体的な型を指定すること。`<dynamic>` のままにすると 2 段階キャストが必要になりコードが汚くなる。テストでモックのスタブを書く際も型パラメータを合わせないとスタブが効かない。

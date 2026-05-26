@@ -32,6 +32,7 @@
 - **バックログ記述と現状の乖離を計画フェーズで検出できる（Sprint 61）**: #176でバックログ「data/直下に散乱」と現状「既にmodels/配下に整理済み」の乖離をDEV調査で発見。No-op判断を早期確定し不要実装を回避。Planningの現状調査ステップが有効に機能した
 - **DBカラム追加位置はACまたは備考に明示する（Sprint 63）**: #178でt_inquiryに3カラムを末尾追加したところ、Sprint ReviewでりょこさんからBETWEEN配置の指摘が発生。複数カラムを新規追加する場合は計画フェーズで「どの位置に追加するか（AFTER xxx）」をACまたは備考に明記してDEVに伝える
 - **4リポジトリ横断実装でも1ブランチ方針が有効（Sprint 63）**: DB→Backend→Frontend/Mobile の依存順で実装し、全リポジトリで `feature/178-inquiry-client-version` ブランチにまとめた。PR作成・レビューが整理できて効率的。計画フェーズで依存順序を明示することが重要
+- **ドキュメント系Issueで「全リポジトリ共通」の前提は計画フェーズで対象ファイル・リポジトリを明示する（Sprint 64）**: #180で「全リポジトリ共通」と記載があったにもかかわらず、DEVが対象リポジトリ（hw-hub-mobile）独自のREADME.mdを新規作成してしまった。計画フェーズで「どのリポジトリのどのファイルを更新するか」（例: hw-hub-backendのREADME.mdを基準に全7リポジトリへ反映）を具体的に確認・合意し、backlogに明記してからDEVに渡すこと
 
 ### レビュー
 
@@ -75,6 +76,7 @@
 - **APIレスポンスデシリアライズバグ**: テストがモックで通過していても、実APIのレスポンス形状が異なるとランタイムでクラッシュ（Sprint 33）。mobile-conventions にモック構造確認ルールを追記済み
 - **詳細画面からの操作後の一覧反映漏れ**: 削除/ステータス変更/追加後に一覧が更新されない（#82, #107, #108）。`ref.invalidate(shoppingListNotifierProvider)` 追加が標準修正パターン。モバイル詳細画面実装時は必ずACに「一覧の反映」を含める
 - **視覚的AC（幅・配置）の目視未確認**: シミュレーターまたはウィジェットテストで確認しないとSprint Reviewで指摘される（Sprint 31）
+- **ドキュメント系Issueで対象ファイル・リポジトリの認識齟齬**: IssueBodyに「全リポジトリ共通」と書かれていても、DEVが特定リポジトリ内で独自ファイルを作成してしまう（Sprint 64 #180）。計画フェーズで対象ファイルとリポジトリ一覧をbacklogに明記することで防止できる
 - **DEVのスコープクリープ**: ACに明記されていない動作を自己判断で含めることがある。計画フェーズでACが曖昧な箇所を事前確認する
 - **ShellレベルUIの実機未確認**: GoRouterのShellRoute外にpushした画面でのBottomNavBar/HouseholdIndicatorBar表示状態は実機でないと分からない。route判定実装前に「そもそも表示されているか」をりょこさんに確認する（Sprint 37 #98でAC未達成が発覚）
 - **logout()でのProvider invalidateによるエラー状態継続**: トークンクリア後に `ref.invalidate(householdNotifierProvider)` を呼ぶと、HouseholdNotifier.build()がトークンなしでAPIを叩いてエラー状態になる。その後loginしても再buildされずデータ取得不可が続く。解決策: `saveTokens()` でlogin成功後にinvalidateする（Sprint 58 #158）
@@ -138,3 +140,4 @@
 | Sprint 61 | なし | Skills更新なし（全レビュー指摘なし・Sprint Review指摘なし） | リファクタリング＋バグ修正スプリント。安定稼働 |
 | Sprint 62 | なし | Skills更新なし（全レビュー指摘なし・Sprint Review指摘なし） | bug×2＋feature×1。AppErrorView共通Widget化でエラー表示統一。安定稼働 |
 | Sprint 63 | sm/long_term.md・frontend-conventions・rules/database.md | SM: DBカラム追加位置明示ルール追記。DEV: バックエンドコード値の表示変換ルール追記（frontend-conventions）・ALTER TABLE AFTER句指定ルール追記（rules/database.md） | 4リポジトリ横断feature。uiClient i18n漏れ指摘→対応。Sprint ReviewでDBカラム順指摘→今スプリント内対応 |
+| Sprint 64 | sm/long_term.md | SM: ドキュメント系Issueで「全リポジトリ共通」前提の計画フェーズ確認ルール追記（Planning・Sprint Review発覚パターン両セクション） | #180でREADME.md認識齟齬が発生。計画フェーズで対象ファイル・リポジトリを明示することで防止できると判断 |

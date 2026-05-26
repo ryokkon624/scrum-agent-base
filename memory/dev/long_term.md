@@ -1,6 +1,6 @@
 # Dev 長期記憶
 
-**最終更新**: 2026-05-26（Sprint 63 Retro）
+**最終更新**: 2026-05-26（Sprint 64 Retro）
 
 ---
 
@@ -53,6 +53,12 @@
 | -------- | -------------- | ---- |
 | 例外メッセージに内部ユーザーID（userId 等）を含める | 45 | エラーメッセージには内部IDを含めない。固定のメッセージ文字列を使う（例: `"他のユーザーに連携済みです"` → `"このGoogleアカウントはすでに別のアカウントに連携されています"`）|
 | ループ内でリポジトリ呼び出し（N+1問題） | 45 | `deleteAccount()` の OWNER 判定チェックなど、複数IDをループで検索する場合は `findByIds()` / `countByIds()` のような一括クエリに変更する |
+
+### 共通（テスト）
+
+| パターン | 発生スプリント | 対応 |
+| -------- | -------------- | ---- |
+| テストコメントの誤字（ステータスコード等の数値誤り） | 64 | テストコメントで例外/エラーの種別を数値で記述する場合は実際のHTTPステータスコードを正確に書く。例: 「501 エラー」のコメントが正しくは「500 エラー」（convention-reviewer 指摘）|
 
 ### hw-hub-batch
 
@@ -174,6 +180,7 @@
 - シェル外独立ルートからシェル内ルートへ遷移する場合は必ず先に `context.pop()` してから `context.push(遷移先)` を呼ぶこと。両 Navigator に Hero が同時に乗ると `HeroController` のアサーション失敗でクラッシュする。`GoRouterState.of(context).matchedLocation` でシェル外ルートかどうか判定できる（Sprint 57 #157）
 - `ref.invalidate(householdNotifierProvider)` を `logout()` 内でトークンクリア後に呼ぶと、トークンなしでビルドが走り 401 → `AuthInterceptor` が再び `logout()` を呼ぶ無限ループが発生する。解決策は2点セット: (1) `state = AuthUnauthenticated()` を `ref.invalidate` より前に移動して「既に未認証」フラグを立てる、(2) `AuthInterceptor._logoutIfAuthenticated()` を追加して現在の state が既に `AuthUnauthenticated` ならログアウト処理をスキップする再入防止ガード。`invalidate` のタイミングは「state がセットされてから」が原則（Sprint 58 #158/#172）
 - グローバル `AsyncNotifier`（AutoDispose なし）Provider は `logout()` 時に invalidate すると直後のビルドでトークンなし → エラー状態になる。再ログイン後に別ユーザーのデータを正常取得するには、`saveTokens()`（ログイン成功後）のタイミングで `ref.invalidate` する方が安全。`logout()` 側では State を未認証にするだけで十分（Sprint 58 #158）
+- `AuthInterceptor._doRefresh()` の実装では `Completer<void>` による並行制御が重要。複数リクエストが同時に 401 を受けた場合、最初の 1 回だけリフレッシュ API を呼び（`_isRefreshing` フラグ）、他のリクエストは `_completer.future` を await させることで「1リフレッシュ → 全待機リクエストを再送」が実現できる。リフレッシュ成功後は `authNotifier.updateTokens(accessToken, refreshToken)` で AuthNotifier の state（と TokenStorage）を一元更新する設計。`updateTokens()` は AuthNotifier に追加したメソッドで、LoginPage の `saveTokens()` と同様にトークン保存 + state 更新を担う（Sprint 64 #179）
 
 ### hw-hub-backend
 
@@ -220,3 +227,4 @@
 | Sprint 59 | mobile-conventions | `ListView.builder` の `itemBuilder` 内ウィジェットへの `ValueKey` 付与ルールを既存 `items.map()` ルールに明記追加 | Sprint 59 レビュー指摘（`unpurchased_tab` / `basket_tab` の itemBuilder 内 Padding に ValueKey 未付与）。既存ルールは `items.map()` のみ記載で `ListView.builder` が明示されていなかった |
 | Sprint 63 | frontend-conventions | バックエンドから返されるコード値をi18n変換せずそのまま表示することを禁止するルールを追記 | Sprint 63 convention-reviewer 指摘（InquiryDetailPage・AdminInquiryDetailPage で uiClient の値 'web'/'mobile' をそのまま表示していた）|
 | Sprint 63 | rules/database.md | `ALTER TABLE ADD COLUMN` 時のカラム位置指定（`AFTER`句）ルールを追記 | Sprint 63 Sprint Review 指摘（t_inquiry カラム配置順誤り: `AFTER`句未指定で末尾に追加された）|
+| Sprint 64 | mobile-conventions | `AuthInterceptor._doRefresh()` の実装パターン（Completerによる並行制御・`updateTokens()` 連携）を追記 | Sprint 64 #179 実装（AuthInterceptorのトークンリフレッシュ処理）で確立したパターン |
