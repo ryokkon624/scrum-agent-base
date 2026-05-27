@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 65 Review — #182 hw-hub-knowledgeのHOWTOを拡充する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #f0fdf4; color: #166534; }
+  .badge-docs { background: #f0f9ff; color: #075985; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Section coverage grid */
+  .coverage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .coverage-chip { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px 14px; font-size: 12px; }
+  .coverage-chip .chapter { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .coverage-chip .title { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+  .coverage-chip.added { border-color: #86efac; background: #f0fdf4; }
+  .coverage-chip.added .chapter { color: #166534; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Count stat */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .stat-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; }
+  .stat-box .label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .stat-box .count { font-size: 36px; font-weight: 700; line-height: 1; }
+  .stat-box .sublabel { font-size: 11px; color: #888; margin-top: 4px; }
+  .count-before { color: #ef4444; }
+  .count-after { color: #22c55e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 65 Review</div>
+  <h1>#182 — hw-hub-knowledgeのHOWTOを拡充する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 65</span>
+    <span class="badge badge-issue">#182</span>
+    <span class="badge badge-docs">documentation</span>
+    <span class="badge badge-feature">feature</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>既存の <code>howto.md</code> は3セクション（おうちの作成・参加、家事の登録、買い物リストの使い方）のみで非常に簡素な内容だった。AI一次回答機能がユーザーの操作方法に関する問い合わせ（「〇〇はどうやるの？」「〇〇画面に行くには？」等）に回答する際、参照できる知識が不足しており回答精度が低い状態だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>howto.md: 3セクションのみ（約17行）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>カバー機能: おうち作成・家事登録・買い物の3つだけ</div>
+        <div class="flow-item"><span class="dot dot-red"></span>WEB版/Mobile版の違いの記載なし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>アカウント・通知・問い合わせ・管理機能の記載なし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>操作手順が曖昧（パンくず形式でない）</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>howto.md: 9章・29節（約307行）に拡充</div>
+        <div class="flow-item"><span class="dot dot-green"></span>カバー機能: 全画面（アカウント〜管理機能）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>[WEB] / [Mobile] ラベルで UIの違いを明記</div>
+        <div class="flow-item"><span class="dot dot-green"></span>通知・問い合わせ・設定・管理機能を新規追加</div>
+        <div class="flow-item"><span class="dot dot-green"></span>パンくず形式（設定 → おうち設定 → 招待リンク発行）で操作手順を統一</div>
+      </div>
+    </div>
+    <div class="stat-grid" style="margin-top:16px;">
+      <div class="stat-box">
+        <div class="label">howto.md の行数（改修前）</div>
+        <div class="count count-before">17</div>
+        <div class="sublabel">3セクション</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">howto.md の行数（改修後）</div>
+        <div class="count count-after">307</div>
+        <div class="sublabel">9章 29節</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">hw-hub-frontend / hw-hub-mobile / hw-hub-backendの既存処理を参考に、各画面の使い方がHOWTO形式でhowto.mdにまとめられている</div>
+      </div>
+      <div class="ac-body">
+        <p>hw-hub-frontend（Vue）・hw-hub-mobile（Flutter）・hw-hub-backend（Spring Boot）の実装コードを参照し、全画面の操作手順を HOWTO 形式でまとめた。既存の3セクションは新しい章立てに統合・書き換えた。</p>
+        <p>追加したセクションは以下の通り（章単位で整理）:</p>
+
+        <div class="coverage-grid">
+          <div class="coverage-chip added">
+            <div class="chapter">1章（拡充）</div>
+            <div class="title">アカウント</div>
+          </div>
+          <div class="coverage-chip added">
+            <div class="chapter">2章（拡充）</div>
+            <div class="title">おうち</div>
+          </div>
+          <div class="coverage-chip added">
+            <div class="chapter">3章（拡充）</div>
+            <div class="title">家事</div>
+          </div>
+          <div class="coverage-chip added">
+            <div class="chapter">4章（拡充）</div>
+            <div class="title">買い物</div>
+          </div>
+          <div class="coverage-chip added">
+            <div class="chapter">5章（新規）</div>
+            <div class="title">ホーム画面</div>
+          </div>
+          <div class="coverage-chip added">
+            <div class="chapter">6章（新規）</div>
+            <div class="title">通知</div>
+          </div>
+          <div class="coverage-chip added">
+            <div class="chapter">7章（新規）</div>
+            <div class="title">問い合わせ</div>
+          </div>
+          <div class="coverage-chip added">
+            <div class="chapter">8章（新規）</div>
+            <div class="title">設定・その他</div>
+          </div>
+          <div class="coverage-chip added">
+            <div class="chapter">9章（新規）</div>
+            <div class="title">管理機能（ADMIN/SUPPORT）</div>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>howto.md</span>
+            <span class="diff-stat">+300 / -10</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">1</span><span class="line-prefix">-</span><span> ## おうちの作成・参加</span></div>
+            <div class="code-line line-del"><span class="line-num">2</span><span class="line-prefix">-</span><span> 1. 設定 → おうち設定 から新しいおうちを作成できます。</span></div>
+            <div class="code-line line-del"><span class="line-num">3</span><span class="line-prefix">-</span><span> 2. 既存のおうちに参加するには、オーナーから招待リンクを受け取ってください。</span></div>
+            <div class="code-line line-del"><span class="line-num">4</span><span class="line-prefix">-</span><span> ## 家事の登録</span></div>
+            <div class="code-line line-del"><span class="line-num">5</span><span class="line-prefix">-</span><span> 1. 設定 → 家事設定 → 新規追加 から家事を登録できます。</span></div>
+            <div class="code-line line-del"><span class="line-num">6</span><span class="line-prefix">-</span><span> 2. 定期タイプ（毎週・毎月・第n曜日）を選択して繰り返し設定ができます。</span></div>
+            <div class="code-line line-del"><span class="line-num">7</span><span class="line-prefix">-</span><span> ## 買い物リストの使い方</span></div>
+            <div class="code-line line-del"><span class="line-num">8</span><span class="line-prefix">-</span><span> 1. 買い物リストから「+ 追加」でアイテムを登録します。</span></div>
+            <div class="code-line line-del"><span class="line-num">9</span><span class="line-prefix">-</span><span> 2. 購入したアイテムは「かごへ」→「購入済み」の流れで管理できます。</span></div>
+            <div class="code-line line-del"><span class="line-num">10</span><span class="line-prefix">-</span><span> 3. お気に入り登録したアイテムはワンタップで再追加できます。</span></div>
+            <div class="code-line line-add"><span class="line-num">1</span><span class="line-prefix">+</span><span> # HwHub 使い方ガイド</span></div>
+            <div class="code-line line-add"><span class="line-num">2</span><span class="line-prefix">+</span><span> このガイドでは、HwHub の各機能の操作方法をまとめています。</span></div>
+            <div class="code-line line-add"><span class="line-num">3</span><span class="line-prefix">+</span><span> ---</span></div>
+            <div class="code-line line-add"><span class="line-num">4</span><span class="line-prefix">+</span><span> ## 1. アカウント</span></div>
+            <div class="code-line line-add"><span class="line-num">5</span><span class="line-prefix">+</span><span> ### 1-1. 新規登録</span></div>
+            <div class="code-line line-add"><span class="line-num">6</span><span class="line-prefix">+</span><span> 操作手順: トップ → 新規登録</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> </span><span class="line-prefix"> </span><span>  （以降 2章〜9章が続く ... 合計307行）</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>既存の3セクション（おうちの作成・参加 / 家事の登録 / 買い物リストの使い方）は、2章・3章・4章に統合・拡充した。従来の情報は失わずに全面書き換えしている。</span>
+          </div>
+        </div>
+
+        <p><strong>章立て（全29節）:</strong></p>
+        <ul style="margin-left: 20px; font-size: 13px; color: #4b5563; line-height: 2;">
+          <li>1章 アカウント: 新規登録・ログイン・パスワード再設定・アカウント設定</li>
+          <li>2章 おうち: 作成・招待リンク発行・切り替え・おうち設定（名前/メンバー管理/オーナー変更）</li>
+          <li>3章 家事: 家事設定・タスク手動登録・家事設定編集・割り当て（スワイプモード含む）・マイタスク</li>
+          <li>4章 買い物: 買い物リスト・アイテム追加・ステータス変更（スワイプ操作含む）・お気に入り</li>
+          <li>5章 ホーム画面: 概要・今日のタスク・グラフ（世帯の様子）</li>
+          <li>6章 通知: 通知センター・通知の内容・未読バッジ</li>
+          <li>7章 問い合わせ: 作成・AI一次回答・エスカレーション・クローズ</li>
+          <li>8章 設定・その他: 言語切替・外観設定・アプリ情報・利用規約/プライバシーポリシー</li>
+          <li>9章 管理機能: 管理画面アクセス・問い合わせ対応・ユーザー管理・ロール管理・家事テンプレート管理・お知らせ管理</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">WEB版とMobile版でUIが異なる箇所は、どちらのUIかが明記されている</div>
+      </div>
+      <div class="ac-body">
+        <p>WEB版（Vue）と Mobile版（Flutter）で操作方法が異なる箇所には、すべて <code>[WEB]</code> / <code>[Mobile]</code> ラベルを付与した。</p>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>howto.md — [WEB] / [Mobile] ラベル付与箇所（抜粋）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">61</span><span class="line-prefix">+</span><span> - **[WEB]** 画面左のサイドバー上部、または設定 → おうち設定 → 対象おうちの「切り替え」ボタンを押します。</span></div>
+            <div class="code-line line-add"><span class="line-num">62</span><span class="line-prefix">+</span><span> - **[Mobile]** 画面上部のおうち名をタップして、切り替えるおうちを選択します。</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> </span><span class="line-prefix"> </span><span> （3章 家事割り当てのスワイプモード）</span></div>
+            <div class="code-line line-add"><span class="line-num">110</span><span class="line-prefix">+</span><span> - **[WEB / Mobile]** 未割り当てのタスク一覧が表示されます。各タスクにメンバーをドラッグ＆ドロップ（[WEB]）またはタップして割り当てます（[Mobile]）。</span></div>
+            <div class="code-line line-add"><span class="line-num">113</span><span class="line-prefix">+</span><span> - **[Mobile] スワイプモード**: 未割り当てタスクをカード形式で1件ずつ表示し、左右スワイプで割り当て・スキップ操作ができます。</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> </span><span class="line-prefix"> </span><span> （4章 買い物スワイプ操作）</span></div>
+            <div class="code-line line-add"><span class="line-num">149</span><span class="line-prefix">+</span><span> - **[WEB]** カード上の「かごへ」ボタンまたは「購入済み」ボタンを押します。</span></div>
+            <div class="code-line line-add"><span class="line-num">150</span><span class="line-prefix">+</span><span> - **[Mobile] スワイプ操作**: 右スワイプ: かごへ移動 / 左スワイプ: 削除確認ダイアログを表示</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> </span><span class="line-prefix"> </span><span> （6章 通知センター）</span></div>
+            <div class="code-line line-add"><span class="line-num">190</span><span class="line-prefix">+</span><span> - **[WEB]** 画面上部のベルアイコンをクリックします。</span></div>
+            <div class="code-line line-add"><span class="line-num">191</span><span class="line-prefix">+</span><span> - **[Mobile]** 設定 → 通知、またはナビゲーションのベルアイコンをタップします。</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> </span><span class="line-prefix"> </span><span> （9章 管理機能の注記）</span></div>
+            <div class="code-line line-add"><span class="line-num">264</span><span class="line-prefix">+</span><span> 管理画面は **WEB版のみ** です。</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>両方で同じ操作の場合は <code>[WEB / Mobile]</code> と表記し、片方にしかない機能（Mobile スワイプモード・WEB ドラッグ＆ドロップ・WEB 管理画面など）は都度個別にラベルを付与した。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>howto.mdの全9章が読めること</strong>
+          <span>ブランチ <code>docs/182-howto-expand</code> で howto.md を開いて、1章（アカウント）から9章（管理機能）まで内容が記載されていることを確認してください。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>WEB版とMobile版の違いが明記されていること</strong>
+          <span>おうち切り替え・家事割り当て・買い物スワイプ・通知センターなど、WEB/Mobileで操作が異なる箇所に [WEB] / [Mobile] ラベルが付いているか確認してください。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>操作手順がパンくず形式で記述されていること</strong>
+          <span>「設定 → おうち設定 → 招待リンク発行」のように、ナビゲーションの経路が明示されているか確認してください。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>管理機能（9章）の内容が適切か</strong>
+          <span>ADMINまたはSUPPORTロール保持者のみ利用できること、WEB版のみであることが明記されているか確認してください。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>技術用語（Controller名・テーブル名）が含まれていないこと</strong>
+          <span>ユーザー目線の言葉で書かれているか確認してください。Spring Boot のクラス名や DB テーブル名などは含まれていないはずです。</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル / リポジトリ</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>hw-hub-knowledge/howto.md</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>3セクション（17行）から9章29節（307行）に全面書き換え。既存3セクションの内容は2章・3章・4章に統合・拡充した</td>
+      </tr>
+      <tr>
+        <td><code>hw-hub-knowledge/faq.md</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>既存FAQと内容が矛盾しないことを確認のみ。変更は行っていない</td>
+      </tr>
+      <tr>
+        <td>hw-hub-frontend（src/views/ 配下）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>操作手順の確認のために参照のみ。コード変更なし</td>
+      </tr>
+      <tr>
+        <td>hw-hub-mobile（lib/features/ 配下）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>Mobile版UIの確認のために参照のみ。コード変更なし</td>
+      </tr>
+      <tr>
+        <td>hw-hub-backend（Controller 配下）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>エンドポイント確認のために参照のみ。コード変更なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

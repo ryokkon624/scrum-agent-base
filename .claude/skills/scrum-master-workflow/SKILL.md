@@ -311,6 +311,16 @@ EOF
 文字化け対策のため、PR本文は Write ツールで JSON ファイルに書き出してから curl で送る。
 
 ```bash
+# Step 0: 実際のGitHubリポジトリ名を確認する（必須）
+# git remote -v でローカルのリポジトリ名とGitHub上のリポジトリ名が一致しているか確認する
+# hw-hub-knowledge など命名規則が異なるリポジトリが存在するため、APIのURLに使うリポジトリ名は必ずここで確認する
+cd C:/work/hw-hub/hw-hub-[対象リポジトリ]
+git remote -v
+# → 例: origin  https://github.com/ryokkon624/hw-hub-knowledge.git (fetch)
+# → この場合のAPIリポジトリ名は "hw-hub-knowledge"
+```
+
+```bash
 # Step 1: ブランチをリモートにプッシュ（まだしていない場合）
 cd C:/work/hw-hub/hw-hub-[対象リポジトリ]
 git push -u origin [ブランチ名]
