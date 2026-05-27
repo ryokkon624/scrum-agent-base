@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 66 Review — #181 hw-hub-knowledgeのFAQを拡充する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-docs { background: #fdf4ff; color: #7e22ce; }
+  .badge-knowledge { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Before/After comparison */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Count boxes */
+  .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .count-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; }
+  .count-box .count-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .count-box .count { font-size: 36px; font-weight: 700; line-height: 1; }
+  .count-box .count-sub { font-size: 11px; color: #888; margin-top: 4px; }
+  .count-before { color: #ef4444; }
+  .count-after { color: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* Category list */
+  .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  .category-item { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 14px; }
+  .category-item .cat-name { font-size: 12px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+  .category-item .cat-count { font-size: 11px; color: #6b7280; }
+
+  /* Sample QA */
+  .qa-list { margin-top: 8px; }
+  .qa-item { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; }
+  .qa-q { font-size: 12px; font-weight: 700; color: #1a56db; margin-bottom: 4px; }
+  .qa-a { font-size: 12px; color: #374151; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Implementation notes */
+  .notes-list { list-style: none; }
+  .notes-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .notes-item:last-child { border-bottom: none; }
+  .notes-icon { width: 20px; height: 20px; background: #e0f2fe; color: #0369a1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .notes-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 2px; }
+  .notes-content span { font-size: 12px; color: #6b7280; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 66 Review</div>
+  <h1>#181 — hw-hub-knowledgeのFAQを拡充する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 66</span>
+    <span class="badge badge-issue">#181</span>
+    <span class="badge badge-docs">documentation</span>
+    <span class="badge badge-knowledge">hw-hub-knowledge</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>AI一次回答機能が参照する <code>faq.md</code> の内容が最小限（1問のみ：パスワードリセット・おうちの複数所属）だった。そのため、ユーザーの多様な問い合わせに対してAIが的確な一次回答を返せない状態だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">拡充前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>FAQ問数: 2問（最小限）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>カテゴリ: 1カテゴリ（アカウント・設定のみ）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>Google連携・世帯管理・家事・買い物などの情報なし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>AIが参照できる情報量が少なく一次回答の精度が低い</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">拡充後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>FAQ問数: 36問（18倍増）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>カテゴリ: 8カテゴリに拡充</div>
+        <div class="flow-item"><span class="dot dot-green"></span>コードを実調査した正確な情報を記載</div>
+        <div class="flow-item"><span class="dot dot-green"></span>AIが多様な問い合わせに対応できる情報量を確保</div>
+      </div>
+    </div>
+    <div class="count-grid">
+      <div class="count-box">
+        <div class="count-label">拡充前のFAQ問数</div>
+        <div class="count count-before">2</div>
+        <div class="count-sub">1カテゴリ・最小限の内容</div>
+      </div>
+      <div class="count-box">
+        <div class="count-label">拡充後のFAQ問数</div>
+        <div class="count count-after">36</div>
+        <div class="count-sub">8カテゴリ・実装ベースの正確な内容</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">hw-hub-frontend / hw-hub-mobile / hw-hub-backendの既存処理を参考に、ユーザーが問い合わせしやすい内容がFAQ形式でfaq.mdにまとめられている</div>
+      </div>
+      <div class="ac-body">
+        <p>hw-hub-frontend / hw-hub-mobile / hw-hub-backend の実際のコードを調査し、8カテゴリ・36問のFAQを追加した。</p>
+
+        <p>追加したカテゴリ:</p>
+        <div class="category-grid">
+          <div class="category-item">
+            <div class="cat-name">アカウント・ログイン</div>
+            <div class="cat-count">11問（新規登録・パスワード・Google連携・設定など）</div>
+          </div>
+          <div class="category-item">
+            <div class="cat-name">おうち（世帯）管理</div>
+            <div class="cat-count">9問（作成・招待・切り替え・脱退・削除など）</div>
+          </div>
+          <div class="category-item">
+            <div class="cat-name">家事管理</div>
+            <div class="cat-count">7問（繰り返し設定・タスク生成・割り当て・完了など）</div>
+          </div>
+          <div class="category-item">
+            <div class="cat-name">買い物リスト</div>
+            <div class="cat-count">7問（追加・かご・お気に入り・削除など）</div>
+          </div>
+          <div class="category-item">
+            <div class="cat-name">通知</div>
+            <div class="cat-count">4問（通知タイミング・センター・既読など）</div>
+          </div>
+          <div class="category-item">
+            <div class="cat-name">問い合わせ</div>
+            <div class="cat-count">5問（送信・AI回答・エスカレーション・クローズなど）</div>
+          </div>
+          <div class="category-item">
+            <div class="cat-name">設定・その他</div>
+            <div class="cat-count">3問（バージョン確認・利用規約・データ管理）</div>
+          </div>
+          <div class="category-item">
+            <div class="cat-name">ホーム画面</div>
+            <div class="cat-count">3問（カード内容・グラフ・おうち未所属時）</div>
+          </div>
+        </div>
+
+        <div class="annotation">
+          <span class="annotation-icon">💡</span>
+          <span>ACには問数の指定がなかったため、「網羅寄り」のりょこさん方針に沿い、hw-hub-frontend / mobile / backend のコードを実調査した上で36問を選定した。推測ではなく実装ベースの内容になっている。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">各FAQに質問（Q）と回答（A）が記載されている</div>
+      </div>
+      <div class="ac-body">
+        <p>全36問すべてに「Q.」と「A.」の形式で記載した。操作手順が複数ステップある場合は箇条書きで明示している。代表的なQAの例:</p>
+
+        <div class="qa-list">
+          <div class="qa-item">
+            <div class="qa-q">Q. Googleアカウントでログインできますか？</div>
+            <div class="qa-a">A. はい。ログイン画面の「Googleでログイン」ボタンからGoogleアカウントでログインできます。また、メールアドレスで登録済みのアカウントに後からGoogle連携を追加することもできます（設定 → アカウント → Google連携）。Google連携はGmailアドレス（@gmail.com）のアカウントに限り利用できます。</div>
+          </div>
+          <div class="qa-item">
+            <div class="qa-q">Q. 家事の割り当て方法を教えてください</div>
+            <div class="qa-a">A. 家事割り当て画面から操作します。WEB PC版はドラッグ＆ドロップまたはセレクトボックスで選択。WEB SP版は右スワイプで自分に割り当て、左スワイプでメンバー選択ピッカーが開きます。Mobileはタップまたはスワイプモードで操作します。</div>
+          </div>
+          <div class="qa-item">
+            <div class="qa-q">Q. タスクが自動生成されません</div>
+            <div class="qa-a">A. 有効期間が今日を含んでいるか、繰り返し設定の曜日・日付が正しいかご確認ください。バッチ処理は毎日自動実行されます。当日に設定した場合は翌日以降に生成されます。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation notes -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <ul class="notes-list">
+      <li class="notes-item">
+        <div class="notes-icon">判</div>
+        <div class="notes-content">
+          <strong>FAQの問数（36問）</strong>
+          <span>ACには件数指定がなかった。りょこさんの「網羅寄り」方針に従い、hw-hub-frontend / mobile / backend のコードを実調査して36問を選定した。</span>
+        </div>
+      </li>
+      <li class="notes-item">
+        <div class="notes-icon">判</div>
+        <div class="notes-content">
+          <strong>カテゴリ構成（8カテゴリ）</strong>
+          <span>アカウント・ログイン / おうち（世帯）管理 / 家事管理 / 買い物リスト / 通知 / 問い合わせ / 設定・その他 / ホーム画面 の8カテゴリ構成とした。howto.md の章立てと対応させることでAIが横断参照しやすい構造にした。</span>
+        </div>
+      </li>
+      <li class="notes-item">
+        <div class="notes-icon">判</div>
+        <div class="notes-content">
+          <strong>Google連携の条件（Gmailアドレス限定）</strong>
+          <span>コードを確認しGmailアドレス（@gmail.com）のみに表示されることが明確だったため明記した（推測ではなく実装ベース）。</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>faq.md を開いて8カテゴリ・36問が読めること</strong>
+          <span>hw-hub-knowledge/faq.md をブラウザやMarkdownビューアで開き、各カテゴリの見出しと内容が正しく表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「パスワードを忘れました」の回答内容が正確であること</strong>
+          <span>旧faqには「パスワードを忘れた方はこちら」と書かれていた。新しい内容では「パスワードをお忘れの方はこちら」（実際のUI文言）に修正されていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>家事割り当てのPC版・SP版・Mobile版がそれぞれ正しく記載されていること</strong>
+          <span>WEB PC版（ドラッグ＆ドロップ・セレクトボックス）、WEB SP版（スワイプ操作）、Mobile（タップ・スワイプモード）の3種類が区別して記載されていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>アカウント削除の条件が正確であること</strong>
+          <span>「オーナーで他のアクティブメンバーがいるおうちが存在する場合は削除できない」という条件がFAQに明記されていること（hw-hub-backendのコード確認済み）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>Google連携はGmailアドレス限定との記載があること</strong>
+          <span>「Google連携はGmailアドレス（@gmail.com）のアカウントに限り利用できます」という記述が「Googleアカウントでログインできますか？」の回答内にあること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>hw-hub-knowledge/faq.md</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>2問 → 36問に拡充。8カテゴリ構成に再編。既存の2問（パスワードリセット・おうち複数所属）は内容を精査・更新して統合</td>
+      </tr>
+      <tr>
+        <td><code>hw-hub-knowledge/howto.md</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>本Issueのスコープ外（#183で別途対応）</td>
+      </tr>
+      <tr>
+        <td>hw-hub-frontend / mobile / backend</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>コード調査のみ実施。アプリケーションコードへの変更なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

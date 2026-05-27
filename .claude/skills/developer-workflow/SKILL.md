@@ -145,6 +145,7 @@ ACや仕様書に書かれていなかった判断・変更・妥協点が発生
    - [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format` / `dart format .`）
    - [ ] 横断的リファクタリングの場合: `grep` で置き換え対象パターンの残存がないことを確認する（例: `grep -r "authentication.getName()" src/main/java`）
    - [ ] mybatisGenerator を使った場合: 実行前に `rm -rf src/main/resources/mapper/generated` を実行したことを確認する（省略すると全Mapper XMLに定義が重複してSpring Bootが起動不可になる）
+   - [ ] **ドキュメント（Markdown）編集の場合**: 凡例やラベル体系を定義したら、複数ファイルにまたがって同じ表記で統一されているか確認する（例: howto.mdで `[WEB PC]` を定義したらfaq.mdも `PC版` ではなく `WEB PC版` で統一。Sprint 66 で2回修正が必要になった）
    - [ ] **モバイルのUIに関する視覚的AC（幅・配置・レイアウト）がある場合**: シミュレーターまたはウィジェットテストで実際の見た目を確認してからコミットする（Sprint 31でカード全幅表示ACを目視未確認のまま達成と報告した）
    - [ ] **モバイルの場合 - 繰り返し指摘チェック**（`memory/dev/long_term.md` の「コミット前セルフチェック」を参照）:
      - [ ] マジックストリングがないか（区分値は `core/models/` の enum を使うこと）

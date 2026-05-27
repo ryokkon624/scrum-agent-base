@@ -1,6 +1,6 @@
 # SM 長期記憶
 
-**最終更新**: 2026-05-27（Sprint 65 Retro）
+**最終更新**: 2026-05-27（Sprint 66 Retro）
 
 ---
 
@@ -62,6 +62,7 @@
 
 | パターン | 発生スプリント | 備考 |
 |---|---|---|
+| ドキュメント表記の不統一 | Sprint 66 | 凡例で `[WEB PC]`/`[WEB SP]` を定義しても別ファイル（faq.md）で `PC版`/`Mobileアプリ` 等の別形式を混用。ドキュメント実装時は凡例定義後に全ファイルの表記統一を確認する |
 | マジックストリング（enum未使用） | Sprint 34, 35 | status/flag値を `'0'`/`'1'` で直接比較。`core/models/` の生成済みenum を使う |
 | i18n ハードコード | Sprint 33, 34, 37 | 日本語・英語文字列をウィジェットに直書き。Sprint 37 は main_shell.dartのナビゲーションラベルで発生（既存コードだがファイルを触ったタイミングで指摘） |
 | テストで日本語テキスト直接検証 | Sprint 45, 50, 53, 59 | `find.text('パスワード変更')` 等の日本語直接検索 → `find.byKey(const Key('...'))` またはl10nキー経由に変更。新規テスト追加時・既存ファイルのメンテナンス時に繰り返し発生。Sprint 59 Retroで developer-workflow のセルフチェックリストに追記済み |
@@ -143,3 +144,4 @@
 | Sprint 63 | sm/long_term.md・frontend-conventions・rules/database.md | SM: DBカラム追加位置明示ルール追記。DEV: バックエンドコード値の表示変換ルール追記（frontend-conventions）・ALTER TABLE AFTER句指定ルール追記（rules/database.md） | 4リポジトリ横断feature。uiClient i18n漏れ指摘→対応。Sprint ReviewでDBカラム順指摘→今スプリント内対応 |
 | Sprint 64 | sm/long_term.md | SM: ドキュメント系Issueで「全リポジトリ共通」前提の計画フェーズ確認ルール追記（Planning・Sprint Review発覚パターン両セクション） | #180でREADME.md認識齟齬が発生。計画フェーズで対象ファイル・リポジトリを明示することで防止できると判断 |
 | Sprint 65 | scrum-master-workflow・sm/long_term.md | SM: PR作成手順に `git remote -v` でリポジトリ名確認Step 0を追加・Planningルールに「PR作成前にgit remote -vでリポジトリ名を確認する」を追記 | hw-hub-knowledge が `hwhub-stg-knowledge` から `hw-hub-knowledge` にリネーム済みで、旧名APIコールが301リダイレクトになった実績 |
+| Sprint 66 | developer-workflow・sm/long_term.md | SM: コミット前チェックに「ドキュメント編集時の凡例・ラベル表記統一確認」を追記。DEVレビュー指摘傾向に「ドキュメント表記の不統一」を追加 | faq.md とhowto.mdでデバイス表記が混在（`PC版`/`[WEB PC]`等）し、2回修正が必要になった実績 |
