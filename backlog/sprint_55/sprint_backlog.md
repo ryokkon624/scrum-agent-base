@@ -36,7 +36,7 @@
 
 ### 備考
 
-- Sprint 48 Sprint Reviewで発覚（りょこさんの実機確認）
+- Sprint 48 Sprint Reviewで発覚（ユーザーの実機確認）
 - 対象ファイル: `lib/features/inquiry/presentation/inquiry_detail/widgets/message_bubble.dart`
 
 ---
@@ -72,7 +72,7 @@
 
 ### 備考
 
-- Sprint 48 Sprint Reviewで発覚（りょこさんの実機確認）
+- Sprint 48 Sprint Reviewで発覚（ユーザーの実機確認）
 - 対象ファイル: `lib/features/inquiry/presentation/inquiry_create/inquiry_create_page.dart`
 
 ---

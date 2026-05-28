@@ -46,7 +46,7 @@ Sprint 21（Issue #50）でバックエンドの `HouseworkController.deleteHous
 
 ### 備考
 
-- Sprint 21 Sprint Review（Issue #50）にてりょこさんが指摘
+- Sprint 21 Sprint Review（Issue #50）にてユーザーが指摘
 - 依存関係: #50（deleteHouseworkエンドポイント削除）完了済み
 
 ---

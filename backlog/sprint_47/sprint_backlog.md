@@ -119,7 +119,7 @@
 ## DEVへの注意事項
 
 - **specファイルを必ず参照**: `docs/mobile-spec/20_housework_settings.md`, `21_housework_create.md`, `22_housework_edit.md`
-- **フォーム共通化の方針を計画フェーズで決定**: #137/#138のフォームを共通化するかどうかを実装開始前にりょこさんに確認する
+- **フォーム共通化の方針を計画フェーズで決定**: #137/#138のフォームを共通化するかどうかを実装開始前にユーザーに確認する
 - **APIの副作用とUI反映の連動確認**: 作成/編集成功後の一覧画面へのProvider invalidate を必ず実施（過去Sprint Reviewで繰り返し発生）
 - **テストにKey属性を付与**: `find.text('...')` でなく `find.byKey(const Key('...'))` を標準とする（Sprint 45 指摘）
 - **AutoDispose設定**: 家事データを扱うProviderには `AutoDisposeAsyncNotifierProvider` を使う

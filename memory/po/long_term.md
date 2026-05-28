@@ -21,7 +21,7 @@
 | スプリント | 決定事項 | 理由 |
 |-----------|---------|------|
 | Sprint 05 Refinement | GitHub Issue更新はcurl経由で行う | デスクトップアプリ起動時はGitHub MCPでPrivate repoに未対応のため。ターミナル（CLI）起動時はMCP経由でも参照可能（2026-04-22確認）。起動方法によって挙動が異なる可能性あり |
-| Sprint 05 Refinement | GitHub ProjectsのReady・Sprint列の更新はりょこさんが手動で行う | カスタムフィールドはREST API経由で変更不可（GraphQL必要） |
+| Sprint 05 Refinement | GitHub ProjectsのReady・Sprint列の更新はユーザーが手動で行う | カスタムフィールドはREST API経由で変更不可（GraphQL必要） |
 | Sprint 05 Refinement | 家事テンプレートの「おすすめ」フラグのi18n表記：英語「Yes」、スペイン語「Sí」 | 「おすすめコメントが入力済みか」を示すフラグのため、シンプルな肯定表現を採用 |
 
 ---
@@ -58,15 +58,15 @@
 - **GraphQL経由での読み取りは可能**（2026-04-27確認済み）
   - エンドポイント: `https://api.github.com/graphql`
   - PATを `Authorization: bearer $TOKEN` で渡す
-  - Project ID: `PVT_kwHODoPAds4BIV4c`（Project番号1 = りょこさんのHousework Hub project）
+  - Project ID: `PVT_kwHODoPAds4BIV4c`（Project番号1 = ユーザーのHousework Hub project）
   - Ready フィールドID: `PVTSSF_lAHODoPAds4BIV4czhQksUs`（options: Ready/NotReady/Draft/Drop）
   - Sprint フィールドID: `PVTF_lAHODoPAds4BIV4czhQkvCg`
   - Status フィールドID: `PVTSSF_lAHODoPAds4BIV4czg41IJE`
 - **GraphQL mutationでの更新も可能**（2026-04-27確認済み）
   - mutation: `updateProjectV2ItemFieldValue`
   - singleSelectOptionId — Ready: `8af4afdd` / NotReady: `12a25b5b` / Draft: `832f7c5e` / Drop: `8fa84e1b`
-  - Refinement後の `Draft → Ready` 変更はPOが実施可能（りょこさんの手動更新不要）
+  - Refinement後の `Draft → Ready` 変更はPOが実施可能（ユーザーの手動更新不要）
 - Sprint列（Number型）の更新も可能（2026-04-27確認済み）
   - value: `{ number: N }` を指定する
-- りょこさんが引き続き手動で行う作業
+- ユーザーが引き続き手動で行う作業
   - Planning前：優先順位並び替え

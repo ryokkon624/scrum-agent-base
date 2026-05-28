@@ -301,7 +301,7 @@
   <section>
     <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
     <div class="memo-box">
-      <div class="memo-item"><code>unpurchased_tab.dart</code> / <code>basket_tab.dart</code> で2秒指定されていた <code>duration</code> は <code>AppSnackBar</code> の3秒固定に統一した（りょこさん承認済み）。</div>
+      <div class="memo-item"><code>unpurchased_tab.dart</code> / <code>basket_tab.dart</code> で2秒指定されていた <code>duration</code> は <code>AppSnackBar</code> の3秒固定に統一した（ユーザー承認済み）。</div>
       <div class="memo-item"><code>shopping_item_new_page.dart</code> の <code>ScaffoldMessenger</code> 呼び出しはIssue起票時点で既に <code>AppSnackBar</code> を使っていたため変更不要だった（grep で確認済み）。</div>
       <div class="memo-item"><code>AppSnackBar</code> はグローバルな <code>scaffoldMessengerKey</code> を使うため、ウィジェットテストで呼び出し結果を検証するには <code>MaterialApp(scaffoldMessengerKey: AppSnackBar.messengerKey)</code> の設定が必要。<code>buildTestPage</code> に <code>withSnackBarKey: bool = false</code> パラメータを追加して対応した。</div>
     </div>
@@ -309,7 +309,7 @@
 
   <!-- Verify -->
   <section>
-    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <h2>動作確認ポイント（ユーザー確認用）</h2>
     <ul class="verify-list">
       <li class="verify-item">
         <div class="verify-num">1</div>

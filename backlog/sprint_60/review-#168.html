@@ -292,7 +292,7 @@
     <div class="impl-note">
       <div class="note-label">判断1</div>
       <p><strong>_runCatching() のシグネチャは Notifier の種類ごとに個別定義した。</strong></p>
-      <p>共通基底クラスは不要とのりょこさん確認のため、各 Notifier に private メソッドとして追加した。Generic で共通化できるが、Dart の型システム上 <code>state.copyWith(errorMessage: msg)</code> のような呼び出しを Generic にするには <code>copyWith</code> の型を抽象化する必要があり過設計になるため見送り。</p>
+      <p>共通基底クラスは不要とのユーザー確認のため、各 Notifier に private メソッドとして追加した。Generic で共通化できるが、Dart の型システム上 <code>state.copyWith(errorMessage: msg)</code> のような呼び出しを Generic にするには <code>copyWith</code> の型を抽象化する必要があり過設計になるため見送り。</p>
     </div>
     <div class="impl-note">
       <div class="note-label">判断2</div>
@@ -308,7 +308,7 @@
 
   <!-- Verify -->
   <section>
-    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <h2>動作確認ポイント（ユーザー確認用）</h2>
     <ul class="verify-list">
       <li class="verify-item">
         <div class="verify-num">1</div>
