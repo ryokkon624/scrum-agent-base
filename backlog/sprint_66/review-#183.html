@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 66 Review — #183 hw-hub-knowledgeのHOWTOのWEBでPC版、SP版を明示的に分けたい</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-docs { background: #fdf4ff; color: #7e22ce; }
+  .badge-knowledge { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Before/After comparison */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Label legend */
+  .label-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .label-tag { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 4px; border: 1px solid; }
+  .label-web { background: #e8f0fe; color: #1a56db; border-color: #bfdbfe; }
+  .label-web-pc { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+  .label-web-sp { background: #fdf4ff; color: #7e22ce; border-color: #e9d5ff; }
+  .label-mobile { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change diff */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Separation summary table */
+  .sep-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  .sep-table th { text-align: left; padding: 8px 10px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .sep-table td { padding: 8px 10px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .sep-table tr:hover td { background: #f9fafb; }
+  .tag-separated { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unified { font-size: 11px; font-weight: 600; background: #e8f0fe; color: #1a56db; padding: 2px 6px; border-radius: 3px; }
+
+  /* Implementation notes */
+  .notes-list { list-style: none; }
+  .notes-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .notes-item:last-child { border-bottom: none; }
+  .notes-icon { width: 20px; height: 20px; background: #e0f2fe; color: #0369a1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .notes-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 2px; }
+  .notes-content span { font-size: 12px; color: #6b7280; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 66 Review</div>
+  <h1>#183 — HOWTOのWEBでPC版・SP版を明示的に分ける</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 66</span>
+    <span class="badge badge-issue">#183</span>
+    <span class="badge badge-docs">documentation</span>
+    <span class="badge badge-knowledge">hw-hub-knowledge</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>howto.md の WEB版記述がすべて <code>[WEB]</code> ラベルで統一されており、PC版（デスクトップブラウザ）とSP版（スマホブラウザ）の操作差異が区別されていなかった。
+      たとえば家事割り当てのドラッグ＆ドロップはPC版のみの機能だが、WEB全体の操作として記載されていた。AIがユーザーのデバイスに応じた正確な操作案内を返せない状態だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>ラベルは [WEB] / [Mobile] の2種類のみ</div>
+        <div class="flow-item"><span class="dot dot-red"></span>PC版固有操作（D&D・2カラム）が [WEB] として混在</div>
+        <div class="flow-item"><span class="dot dot-red"></span>SP版固有操作（スワイプ）が [WEB] として混在</div>
+        <div class="flow-item"><span class="dot dot-red"></span>ラベルの凡例なし</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>ラベルは [WEB] / [WEB PC] / [WEB SP] / [Mobile] の4種類</div>
+        <div class="flow-item"><span class="dot dot-green"></span>PC版固有操作は [WEB PC] で明示</div>
+        <div class="flow-item"><span class="dot dot-green"></span>SP版固有のスワイプ操作は [WEB SP] で明示</div>
+        <div class="flow-item"><span class="dot dot-green"></span>冒頭に4ラベルの凡例テーブルを追加</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">howto.md内のすべての [WEB] 記述について、PC版とSP版で操作・レイアウトが異なる箇所が [WEB PC] / [WEB SP] に分離されている</div>
+      </div>
+      <div class="ac-body">
+        <p>hw-hub-frontend のコードを実調査し、PC/SP で操作・レイアウトが異なる箇所を特定して分離した。主な分離箇所:</p>
+
+        <table class="sep-table">
+          <tr>
+            <th>セクション</th>
+            <th>PC版 [WEB PC]</th>
+            <th>SP版 [WEB SP]</th>
+          </tr>
+          <tr>
+            <td><strong>おうちを作成する</strong></td>
+            <td>右上の「新規おうちを作成」ボタン</td>
+            <td>点線の追加カード（「+ 新規おうちを作成」）</td>
+          </tr>
+          <tr>
+            <td><strong>おうちを切り替える</strong></td>
+            <td>画面左サイドバー上部のおうち名をクリック</td>
+            <td>画面上部のおうち名をタップして選択</td>
+          </tr>
+          <tr>
+            <td><strong>おうち設定メンバー一覧</strong></td>
+            <td>テーブル形式（表示名・ニックネーム・ステータス・権限・操作ボタン列）</td>
+            <td>カード形式（メンバーごとにカード表示）</td>
+          </tr>
+          <tr>
+            <td><strong>家事の割り当て</strong></td>
+            <td>ドラッグ＆ドロップ + セレクトボックス + 「自分にする」ボタン</td>
+            <td>右スワイプで自分に割り当て、左スワイプでピッカー表示</td>
+          </tr>
+          <tr>
+            <td><strong>マイタスクのステータス変更</strong></td>
+            <td>タスクカードの「完了」「スキップ」ボタン</td>
+            <td>右スワイプで完了、左スワイプでスキップ</td>
+          </tr>
+          <tr>
+            <td><strong>買い物リストのレイアウト</strong></td>
+            <td>左カラム：未購入、右カラム：かご・購入済み（2カラム常時表示）</td>
+            <td>タブバーで「未購入」「かご」「購入済み」を切り替え</td>
+          </tr>
+          <tr>
+            <td><strong>買い物アイテムの追加ボタン</strong></td>
+            <td>画面右上の「+ 追加」ボタン</td>
+            <td>画面上部の「アイテムを追加」ボタン（全幅）</td>
+          </tr>
+          <tr>
+            <td><strong>未購入→かご移動</strong></td>
+            <td>アイテムカードの「かごへ」ボタン</td>
+            <td>アイテムカードを右スワイプ</td>
+          </tr>
+          <tr>
+            <td><strong>アイテム削除</strong></td>
+            <td>アイテムの詳細画面から削除</td>
+            <td>アイテムカードを左スワイプで削除確認ダイアログ</td>
+          </tr>
+          <tr>
+            <td><strong>ホーム画面のカードレイアウト</strong></td>
+            <td>2カラムグリッドでカードが並んで表示</td>
+            <td>1カラムで縦に並んで表示</td>
+          </tr>
+        </table>
+
+        <p style="margin-top: 12px;">代表的な変更箇所（家事割り当て）:</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>hw-hub-knowledge/howto.md（3-4. 家事の割り当て）</span>
+            <span class="diff-stat">+9 / -4</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">110</span><span class="line-prefix">-</span><span>- **[WEB / Mobile]** 未割り当てのタスク一覧が表示されます。各タスクにメンバーをドラッグ＆ドロップ（[WEB]）またはタップして割り当てます（[Mobile]）。</span></div>
+            <div class="code-line line-del"><span class="line-num">111</span><span class="line-prefix">-</span><span>- フィルタ（カテゴリ・日付範囲）でタスクを絞り込めます。</span></div>
+            <div class="code-line line-del"><span class="line-num">112</span><span class="line-prefix">-</span><span>- 上部のメンバーサマリーで各メンバーの担当タスク数を確認できます。</span></div>
+            <div class="code-line line-del"><span class="line-num">113</span><span class="line-prefix">-</span><span>- **[Mobile] スワイプモード**: 未割り当てタスクをカード形式で1件ずつ表示し、左右スワイプで割り当て・スキップ操作ができます。</span></div>
+            <div class="code-line line-add"><span class="line-num">131</span><span class="line-prefix">+</span><span>未割り当てのタスク一覧が表示されます。上部のメンバーサマリーで各メンバーの担当タスク数を確認できます。</span></div>
+            <div class="code-line line-add"><span class="line-num">132</span><span class="line-prefix">+</span><span>フィルタ（全て・未割り当てのみ・自分と未割り当て）でタスクを絞り込めます。</span></div>
+            <div class="code-line line-add"><span class="line-num">134</span><span class="line-prefix">+</span><span>**タスクへの担当者割り当て方法:**</span></div>
+            <div class="code-line line-add"><span class="line-num">135</span><span class="line-prefix">+</span><span>- **[WEB PC]** タスクをドラッグ＆ドロップして上部のメンバーアイコンにドロップするか、タスクカード右側のセレクトボックスでメンバーを選択します。「自分にする」ボタンも利用できます。</span></div>
+            <div class="code-line line-add"><span class="line-num">136</span><span class="line-prefix">+</span><span>- **[WEB SP]** タスクカードを右スワイプで自分に割り当て、左スワイプでメンバー選択ピッカーが開きます。スワイプ操作のみです。</span></div>
+            <div class="code-line line-add"><span class="line-num">137</span><span class="line-prefix">+</span><span>- **[Mobile]** タスクカードをタップしてメンバー選択ピッカーから選択します。スワイプモードも利用できます。</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>改修前はドラッグ＆ドロップとタップ操作が [WEB / Mobile] として一文で混在していた。改修後は [WEB PC] / [WEB SP] / [Mobile] の3種類に分離し、それぞれの操作方法を明確に区別している。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">PC版・SP版で操作が同じ箇所は引き続き [WEB] で統一されている</div>
+      </div>
+      <div class="ac-body">
+        <p>以下のセクションはPC/SPで操作に差異がないため、引き続き <code>[WEB]</code> で統一した:</p>
+
+        <div style="background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 6px; padding: 12px 16px; font-size: 12px; color: #374151;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div>・ 通知センター（ベルアイコンをクリック）</div>
+            <div>・ 言語切替（設定 → アカウント → 言語）</div>
+            <div>・ かご内一括購入完了</div>
+            <div>・ マイタスクの表示フィルタ（今日・1週間・すべて）</div>
+            <div>・ 過去タスクの一括完了</div>
+            <div>・ 外観設定（ライト/ダーク/システム）</div>
+          </div>
+        </div>
+
+        <div class="annotation" style="margin-top: 12px;">
+          <span class="annotation-icon">💡</span>
+          <span>通知センターはPC/SPともにベルアイコンをクリック・タップするだけで操作が同一のため [WEB] で統一した。外観設定・言語切替なども同様。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">[WEB PC] / [WEB SP] / [WEB] / [Mobile] の4つのラベルが使われており、各ラベルの意味を説明する凡例が howto.md の冒頭に追加されている</div>
+      </div>
+      <div class="ac-body">
+        <p>howto.md の冒頭（「このガイドでは〜」の直後）に以下の凡例テーブルを追加した:</p>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>hw-hub-knowledge/howto.md（冒頭凡例）</span>
+            <span class="diff-stat">+9 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">5</span><span class="line-prefix">+</span><span>## ラベルの凡例</span></div>
+            <div class="code-line line-add"><span class="line-num">6</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>| ラベル | 対象 |</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>|--------|------|</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>| `[WEB]` | WEB版（PC・SPで操作が共通の場合） |</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>| `[WEB PC]` | WEB版 デスクトップブラウザ（PCブラウザ固有の操作・レイアウト） |</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>| `[WEB SP]` | WEB版 スマホブラウザ（スマホブラウザ固有の操作・レイアウト） |</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>| `[Mobile]` | Mobileアプリ（iOS・Android） |</span></div>
+          </div>
+        </div>
+
+        <p>追加後の4ラベルの見え方:</p>
+        <div class="label-legend">
+          <span class="label-tag label-web">[WEB]</span>
+          <span style="font-size: 12px; color: #6b7280; line-height: 2;">PC・SPで操作が共通の場合</span>
+        </div>
+        <div class="label-legend">
+          <span class="label-tag label-web-pc">[WEB PC]</span>
+          <span style="font-size: 12px; color: #6b7280; line-height: 2;">デスクトップブラウザ固有の操作・レイアウト</span>
+        </div>
+        <div class="label-legend">
+          <span class="label-tag label-web-sp">[WEB SP]</span>
+          <span style="font-size: 12px; color: #6b7280; line-height: 2;">スマホブラウザ固有の操作・レイアウト</span>
+        </div>
+        <div class="label-legend">
+          <span class="label-tag label-mobile">[Mobile]</span>
+          <span style="font-size: 12px; color: #6b7280; line-height: 2;">Mobileアプリ（iOS・Android）</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">WEB SP版固有のスワイプ操作（家事割り当て・買い物ステータス変更など）が [WEB SP] で明記されている</div>
+      </div>
+      <div class="ac-body">
+        <p>WEB SP版固有のスワイプ操作を <code>[WEB SP]</code> ラベルで明示した。主な箇所:</p>
+
+        <div style="background: #fdf4ff; border: 1px solid #e9d5ff; border-radius: 6px; padding: 12px 16px; font-size: 12px; margin-bottom: 12px;">
+          <div style="font-weight: 700; color: #7e22ce; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">WEB SP 固有スワイプ操作（明記箇所）</div>
+          <div style="color: #374151; display: grid; gap: 6px;">
+            <div><strong>家事割り当て（3-4）:</strong> 右スワイプで自分に割り当て、左スワイプでメンバー選択ピッカーが開く</div>
+            <div><strong>マイタスク（3-5）:</strong> 右スワイプで完了、左スワイプでスキップ</div>
+            <div><strong>未購入→かご移動（4-3）:</strong> アイテムカードを右スワイプ</div>
+            <div><strong>アイテム削除（4-3）:</strong> アイテムカードを左スワイプで削除確認ダイアログ表示</div>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>hw-hub-knowledge/howto.md（3-5. マイタスク ステータス変更）</span>
+            <span class="diff-stat">+8 / -5</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">141</span><span class="line-prefix">-</span><span>**タスクのステータス変更方法:**</span></div>
+            <div class="code-line line-del"><span class="line-num">142</span><span class="line-prefix">-</span><span>- **[WEB]** タスクカードの「完了」「スキップ」ボタンを押す。または右スワイプ（SP）で完了、左スワイプ（SP）でスキップ。</span></div>
+            <div class="code-line line-del"><span class="line-num">143</span><span class="line-prefix">-</span><span>- **[Mobile]** タスクカードをタップして完了ボタンを押すか、スワイプ操作で変更します。</span></div>
+            <div class="code-line line-add"><span class="line-num">154</span><span class="line-prefix">+</span><span>**タスクのステータス変更方法:**</span></div>
+            <div class="code-line line-add"><span class="line-num">155</span><span class="line-prefix">+</span><span>- **[WEB PC]** タスクカードの「完了」または「スキップ」ボタンを押します。</span></div>
+            <div class="code-line line-add"><span class="line-num">156</span><span class="line-prefix">+</span><span>- **[WEB SP]** タスクカードを右スワイプで完了、左スワイプでスキップします。</span></div>
+            <div class="code-line line-add"><span class="line-num">157</span><span class="line-prefix">+</span><span>- **[Mobile]** タスクカードをタップしてステータスを変更するか、スワイプ操作で変更します。</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>改修前は「[WEB] スワイプ（SP）」のように括弧内にデバイス補足を書いていた。これではAIが適切に解釈できないため、ラベル自体を [WEB SP] に変更して明示的に分離した。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation notes -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <ul class="notes-list">
+      <li class="notes-item">
+        <div class="notes-icon">判</div>
+        <div class="notes-content">
+          <strong>分離した箇所の選定</strong>
+          <span>hw-hub-frontend のコードを実調査し、PC/SP で操作・レイアウトが異なる箇所を特定した。分離した主なセクション: おうち作成・おうち切り替え・おうち設定メンバー一覧・家事割り当て・マイタスクのステータス変更・買い物リストレイアウト・アイテム追加ボタン・未購入→かご移動・アイテム削除・ホーム画面カードレイアウト。</span>
+        </div>
+      </li>
+      <li class="notes-item">
+        <div class="notes-icon">判</div>
+        <div class="notes-content">
+          <strong>[WEB]のまま維持した箇所</strong>
+          <span>通知センター・言語切替・外観設定・かご内一括購入完了・マイタスクの表示フィルタ・過去タスクの一括完了など、PC/SPで操作に差異がない箇所は [WEB] を維持した。</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>howto.md の冒頭に凡例テーブルが表示されること</strong>
+          <span>hw-hub-knowledge/howto.md を開き、「このガイドでは〜」の直後に [WEB] / [WEB PC] / [WEB SP] / [Mobile] の4行の凡例テーブルが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「おうちを作成する」セクションにPC版とSP版が分かれて記載されていること</strong>
+          <span>[WEB PC] 右上の「新規おうちを作成」ボタン、[WEB SP] 点線の追加カード、の2種類が別々に記載されていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>「家事の割り当て」でドラッグ＆ドロップが [WEB PC] のみに記載されていること</strong>
+          <span>[WEB SP] にはドラッグ＆ドロップの記述がなく、スワイプ操作のみが記載されていること。[WEB PC] にはドラッグ＆ドロップ・セレクトボックス・「自分にする」ボタンが記載されていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>「マイタスク」でスワイプ操作が [WEB SP] のみに記載されていること</strong>
+          <span>[WEB SP] に「右スワイプで完了、左スワイプでスキップ」が記載されていること。[WEB PC] にはボタン操作のみが記載されていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>「買い物リスト」のレイアウトがPC版とSP版で分かれて記載されていること</strong>
+          <span>[WEB PC] に「2カラムレイアウト」が、[WEB SP] に「タブバーで切り替え」が記載されていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>通知センターは [WEB] のままであること</strong>
+          <span>「6-1. 通知センターを開く」の WEB 側は [WEB] ラベルのまま（PC/SP で操作が同一のため分離不要）であること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>hw-hub-knowledge/howto.md</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>冒頭に4ラベルの凡例テーブルを追加。PC/SP で操作差異がある10箇所で [WEB] を [WEB PC] / [WEB SP] に分離。PC/SP で共通の箇所は [WEB] を維持。1-4. アカウント設定に外観設定・通知設定・Google連携の記述を追加（howto.md 拡充時の漏れ補完）</td>
+      </tr>
+      <tr>
+        <td><code>hw-hub-knowledge/faq.md</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>#181で対応済み（faq.md 内のデバイス表記は #181 コードレビュー対応時に [WEB PC版] / [WEB SP版] 統一まで実施）</td>
+      </tr>
+      <tr>
+        <td>hw-hub-frontend / mobile / backend</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>コード調査のみ実施。アプリケーションコードへの変更なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

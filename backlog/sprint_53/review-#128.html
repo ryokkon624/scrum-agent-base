@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 53 Review — #128 アカウント設定画面で通知設定をOFF→ONにした際に各グループ設定値が復活しない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  .mock-settings { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; font-size: 13px; }
+  .mock-settings-header { background: #f3f4f6; padding: 8px 12px; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-setting-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-bottom: 1px solid #f0f0f0; }
+  .mock-setting-row:last-child { border-bottom: none; }
+  .mock-setting-label { font-size: 13px; color: #374151; }
+  .mock-setting-sub { font-size: 11px; color: #9ca3af; }
+  .toggle-on { width: 36px; height: 20px; background: #22c55e; border-radius: 10px; position: relative; }
+  .toggle-on::after { content: ''; position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; background: white; border-radius: 50%; }
+  .toggle-off { width: 36px; height: 20px; background: #d1d5db; border-radius: 10px; position: relative; }
+  .toggle-off::after { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: white; border-radius: 50%; }
+  .toggle-off-bad { width: 36px; height: 20px; background: #fca5a5; border-radius: 10px; position: relative; border: 1px solid #ef4444; }
+  .toggle-off-bad::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: white; border-radius: 50%; }
+  .step-label { font-size: 10px; font-weight: 700; color: #6b7280; text-align: center; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .step-arrow { text-align: center; color: #9ca3af; font-size: 18px; margin: 4px 0; }
+  .step-block { margin-bottom: 8px; }
+  .bad-note { font-size: 11px; color: #b91c1c; margin-top: 6px; padding: 5px 8px; background: #fef2f2; border-radius: 4px; border-left: 3px solid #ef4444; }
+  .good-note { font-size: 11px; color: #166534; margin-top: 6px; padding: 5px 8px; background: #f0fdf4; border-radius: 4px; border-left: 3px solid #22c55e; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .cause-body code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; color: #374151; }
+
+  .flow-box { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+  .flow-step { display: flex; gap: 10px; padding: 6px 0; font-size: 12px; color: #4b5563; align-items: flex-start; }
+  .flow-num { width: 20px; height: 20px; background: #fef2f2; color: #b91c1c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .flow-step-text { flex: 1; }
+  .flow-step-text strong { color: #1a1a1a; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; font-size: 12px; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .mismatch-table .bad { background: #fef2f2; }
+  .mismatch-table .good { background: #f0fdf4; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 32px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* impl notes */
+  .impl-note-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .impl-note-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .impl-note-item:last-child { border-bottom: none; }
+  .impl-note-icon { color: #6b7280; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .impl-note-title { font-weight: 600; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .impl-note-desc { font-size: 12px; color: #6b7280; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+  .ac-body code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; color: #374151; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 53 Review &middot; Bug Fix</div>
+  <h1>#128 &mdash; アカウント設定画面で通知設定を<br>OFF&rarr;ONにした際に各グループ設定値が復活しない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 53</span>
+    <span class="badge badge-issue">#128</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）ON&rarr;OFF&rarr;ON の操作後</div>
+
+        <div class="step-block">
+          <div class="step-label">操作前の初期状態</div>
+          <div class="mock-settings">
+            <div class="mock-settings-header">通知設定</div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">通知をONにする</div></div>
+              <div class="toggle-on"></div>
+            </div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">グループ100</div><div class="mock-setting-sub">家事割り当て</div></div>
+              <div class="toggle-on"></div>
+            </div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">グループ200</div><div class="mock-setting-sub">お知らせ</div></div>
+              <div class="toggle-off"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-arrow">&darr; グローバルOFF &rarr; グローバルON</div>
+
+        <div class="step-block">
+          <div class="step-label">ON&rarr;OFF&rarr;ON 操作後</div>
+          <div class="mock-settings">
+            <div class="mock-settings-header">通知設定</div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">通知をONにする</div></div>
+              <div class="toggle-on"></div>
+            </div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">グループ100</div><div class="mock-setting-sub">家事割り当て</div></div>
+              <div class="toggle-off-bad"></div>
+            </div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">グループ200</div><div class="mock-setting-sub">お知らせ</div></div>
+              <div class="toggle-off-bad"></div>
+            </div>
+          </div>
+          <div class="bad-note">グループ設定が全て OFF に変わってしまう。グループ200は元々OFFだったが、グループ100はONだったはずが戻らない。</div>
+        </div>
+      </div>
+
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）ON&rarr;OFF&rarr;ON の操作後</div>
+
+        <div class="step-block">
+          <div class="step-label">操作前の初期状態</div>
+          <div class="mock-settings">
+            <div class="mock-settings-header">通知設定</div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">通知をONにする</div></div>
+              <div class="toggle-on"></div>
+            </div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">グループ100</div><div class="mock-setting-sub">家事割り当て</div></div>
+              <div class="toggle-on"></div>
+            </div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">グループ200</div><div class="mock-setting-sub">お知らせ</div></div>
+              <div class="toggle-off"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-arrow">&darr; グローバルOFF &rarr; グローバルON</div>
+
+        <div class="step-block">
+          <div class="step-label">ON&rarr;OFF&rarr;ON 操作後</div>
+          <div class="mock-settings">
+            <div class="mock-settings-header">通知設定</div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">通知をONにする</div></div>
+              <div class="toggle-on"></div>
+            </div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">グループ100</div><div class="mock-setting-sub">家事割り当て</div></div>
+              <div class="toggle-on"></div>
+            </div>
+            <div class="mock-setting-row">
+              <div><div class="mock-setting-label">グループ200</div><div class="mock-setting-sub">お知らせ</div></div>
+              <div class="toggle-off"></div>
+            </div>
+          </div>
+          <div class="good-note">操作前の状態（グループ100=ON、グループ200=OFF）が正しく復活する。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#x1F50D;</span>
+        <span class="title">グローバル ON/OFF 時にグループ設定値の全量を payload に含めていた</span>
+      </div>
+      <div class="cause-body">
+        <p>
+          バックエンドの <code>UserService.updateNotificationEnabled</code> は、
+          <strong><code>notificationEnabled=true</code> の場合のみ</strong>受け取った <code>groupSettings</code> を
+          差分テーブル（<code>m_user_notification_setting</code>）に upsert/delete する仕様。
+          <code>notificationEnabled=false</code> の場合は <code>groupSettings</code> は無視される。
+        </p>
+        <p>
+          また、バックエンドのレスポンス（<code>buildNotificationGroupMap</code>）は
+          <code>notificationEnabled=false</code> の時に<strong>全グループの設定値を false で返す</strong>（UI 表示用の派生値）。
+        </p>
+        <div class="flow-box">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-step-text">グローバル ON&rarr;OFF: バックエンドがレスポンスの <code>groupSettings</code> に全グループ <code>false</code> を返す</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-step-text"><strong>（バグ）</strong> モバイル側がそのレスポンスをそのまま state に保持。state の <code>groupSettings</code> が「全 false」になる</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-step-text">続けて OFF&rarr;ON: state に保持された「全 false」の <code>groupSettings</code> をフル Map として PUT ボディに送信</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-step-text">バックエンドは <code>notificationEnabled=true</code> の分岐に入り、送られてきた「全 false」を <code>m_user_notification_setting</code> に upsert してしまう</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">5</div>
+            <div class="flow-step-text">結果として全グループが enabled=0 で書き込まれ、画面非表示の <code>notification_group900</code> も OFF 固定になる</div>
+          </div>
+        </div>
+        <table class="mismatch-table">
+          <tr>
+            <th>操作</th>
+            <th>修正前: 送信する groupSettings</th>
+            <th>修正後: 送信する groupSettings</th>
+          </tr>
+          <tr>
+            <td>グローバル ON&rarr;OFF</td>
+            <td class="code bad">全グループのフル Map（例: {'100': true, '200': false}）</td>
+            <td class="code good">空 Map {}</td>
+          </tr>
+          <tr>
+            <td>グローバル OFF&rarr;ON</td>
+            <td class="code bad">state に保持されていた「全グループ false」のフル Map</td>
+            <td class="code good">空 Map {}</td>
+          </tr>
+          <tr>
+            <td>グループ個別変更</td>
+            <td class="code bad">全グループのフル Map（他グループも含む）</td>
+            <td class="code good">対象グループのみの delta Map（例: {'100': false}）</td>
+          </tr>
+        </table>
+        <p style="font-size:12px;color:#6b7280;">
+          WEB 版（<code>notificationSettingsStore</code>）は <code>setGlobalEnabled</code> で <code>groupSettings: {}</code>（空 Map）、<code>setGroupEnabled</code> で <code>{[group]: enabled}</code>（delta のみ）を送信する設計になっておりバグがなかった。モバイル側が WEB 版と同じ delta 送信をしていなかったことが根本原因。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/account_settings/presentation/account_settings/account_settings_notifier.dart</span>
+        <span class="diff-stat">+17 / -11</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">160</span><span class="line-prefix"> </span><span>  /// グローバル通知設定を切り替える。</span></div>
+        <div class="code-line line-add"><span class="line-num">161</span><span class="line-prefix">+</span><span>  /// groupSettings は空 Map を送信する（Web版の setGlobalEnabled と同じ挙動）。</span></div>
+        <div class="code-line line-add"><span class="line-num">162</span><span class="line-prefix">+</span><span>  /// グローバル ON/OFF は m_user.notification_enabled のみを更新し、</span></div>
+        <div class="code-line line-add"><span class="line-num">163</span><span class="line-prefix">+</span><span>  /// 各グループ設定値（m_user_notification_setting）は変更しない。</span></div>
+        <div class="code-line line-ctx"><span class="line-num">165</span><span class="line-prefix"> </span><span>  Future&lt;void&gt; toggleGlobalNotification({required bool enabled}) async {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">166</span><span class="line-prefix"> </span><span>    final current = state.valueOrNull;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">167</span><span class="line-prefix"> </span><span>    if (current == null || current.notificationSettings == null) return;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">168</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-del"><span class="line-num">169</span><span class="line-prefix">-</span><span>    final oldSettings = current.notificationSettings!;</span></div>
+        <div class="code-line line-del"><span class="line-num">170</span><span class="line-prefix">-</span><span>    final newSettings = NotificationSettingsDto(</span></div>
+        <div class="code-line line-del"><span class="line-num">171</span><span class="line-prefix">-</span><span>      notificationEnabled: enabled,</span></div>
+        <div class="code-line line-del"><span class="line-num">172</span><span class="line-prefix">-</span><span>      groupSettings: oldSettings.groupSettings,  // ← 全グループのフル Map</span></div>
+        <div class="code-line line-del"><span class="line-num">173</span><span class="line-prefix">-</span><span>    );</span></div>
+        <div class="code-line line-add"><span class="line-num">169</span><span class="line-prefix">+</span><span>    // delta: groupSettings は空 Map を送信（バックエンドはグループ差分テーブルを更新しない）</span></div>
+        <div class="code-line line-add"><span class="line-num">170</span><span class="line-prefix">+</span><span>    final payload = NotificationSettingsDto(</span></div>
+        <div class="code-line line-add"><span class="line-num">171</span><span class="line-prefix">+</span><span>      notificationEnabled: enabled,</span></div>
+        <div class="code-line line-add"><span class="line-num">172</span><span class="line-prefix">+</span><span>      groupSettings: const {},  // ← 空 Map</span></div>
+        <div class="code-line line-add"><span class="line-num">173</span><span class="line-prefix">+</span><span>    );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">174</span><span class="line-prefix"> </span><span>    try {</span></div>
+        <div class="code-line line-add"><span class="line-num">175</span><span class="line-prefix">+</span><span>      final updated = await _repo.updateNotificationSettings(payload);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">176</span><span class="line-prefix"> </span><span>      state = AsyncData(current.copyWith(notificationSettings: updated));</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#x1F4A1;</span>
+        <span>
+          <strong>グローバル ON/OFF</strong>: <code>groupSettings: const {}</code>（空 Map）を送信。バックエンドはグループ差分テーブル（<code>m_user_notification_setting</code>）を一切更新しない。レスポンスでは表示用に「全 false」が返ってくるが、それを state に反映しても次回送信時には payload には使わないため問題ない。
+        </span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/account_settings/presentation/account_settings/account_settings_notifier.dart</span>
+        <span class="diff-stat">toggleGroupNotification の変更</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">189</span><span class="line-prefix"> </span><span>  /// グループ通知設定を切り替える。</span></div>
+        <div class="code-line line-add"><span class="line-num">190</span><span class="line-prefix">+</span><span>  /// groupSettings は対象グループのみ含む delta Map を送信する。</span></div>
+        <div class="code-line line-add"><span class="line-num">191</span><span class="line-prefix">+</span><span>  /// 他グループの設定値は送信せず、バックエンドは対象グループのみ差分更新する。</span></div>
+        <div class="code-line line-ctx"><span class="line-num">193</span><span class="line-prefix"> </span><span>    final current = state.valueOrNull;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">194</span><span class="line-prefix"> </span><span>    if (current == null || current.notificationSettings == null) return;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">195</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-del"><span class="line-num">196</span><span class="line-prefix">-</span><span>    final oldSettings = current.notificationSettings!;</span></div>
+        <div class="code-line line-del"><span class="line-num">197</span><span class="line-prefix">-</span><span>    final newGroupSettings = Map&lt;String, bool&gt;.from(oldSettings.groupSettings)</span></div>
+        <div class="code-line line-del"><span class="line-num">198</span><span class="line-prefix">-</span><span>      ..[groupCode] = enabled;  // ← 全グループ + 対象グループを書き換えたフル Map</span></div>
+        <div class="code-line line-del"><span class="line-num">199</span><span class="line-prefix">-</span><span>    final newSettings = NotificationSettingsDto(</span></div>
+        <div class="code-line line-del"><span class="line-num">200</span><span class="line-prefix">-</span><span>      notificationEnabled: oldSettings.notificationEnabled,</span></div>
+        <div class="code-line line-del"><span class="line-num">201</span><span class="line-prefix">-</span><span>      groupSettings: newGroupSettings,</span></div>
+        <div class="code-line line-del"><span class="line-num">202</span><span class="line-prefix">-</span><span>    );</span></div>
+        <div class="code-line line-add"><span class="line-num">196</span><span class="line-prefix">+</span><span>    final currentSettings = current.notificationSettings!;</span></div>
+        <div class="code-line line-add"><span class="line-num">197</span><span class="line-prefix">+</span><span>    // delta: 対象グループのみ含む Map を送信</span></div>
+        <div class="code-line line-add"><span class="line-num">198</span><span class="line-prefix">+</span><span>    final payload = NotificationSettingsDto(</span></div>
+        <div class="code-line line-add"><span class="line-num">199</span><span class="line-prefix">+</span><span>      notificationEnabled: currentSettings.notificationEnabled,</span></div>
+        <div class="code-line line-add"><span class="line-num">200</span><span class="line-prefix">+</span><span>      groupSettings: {groupCode: enabled},  // ← delta: 対象グループのみ</span></div>
+        <div class="code-line line-add"><span class="line-num">201</span><span class="line-prefix">+</span><span>    );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">202</span><span class="line-prefix"> </span><span>    try {</span></div>
+        <div class="code-line line-add"><span class="line-num">203</span><span class="line-prefix">+</span><span>      final updated = await _repo.updateNotificationSettings(payload);</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#x1F4A1;</span>
+        <span>
+          <strong>グループ個別変更</strong>: <code>groupSettings: {groupCode: enabled}</code>（対象グループのみ含む delta Map）を送信。バックエンドは対象グループのみを <code>m_user_notification_setting</code> に upsert/delete し、他グループには触れない。
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note-box">
+      <div class="impl-note-item">
+        <span class="impl-note-icon">&#x2192;</span>
+        <div>
+          <span class="impl-note-title">Repository インターフェースは変更しない判断</span>
+          <span class="impl-note-desc">
+            <code>updateNotificationSettings(NotificationSettingsDto)</code> の interface を変えず、Notifier 側で送信用の DTO を組み立てる形にした。
+            <code>NotificationSettingsDto</code> の <code>groupSettings</code> フィールドは空 Map や単一エントリを受け入れる汎用型なのでそのまま活用できた。
+          </span>
+        </div>
+      </div>
+      <div class="impl-note-item">
+        <span class="impl-note-icon">&#x2192;</span>
+        <div>
+          <span class="impl-note-title"><code>NotificationSettingsDto.toUpdateJson()</code> は残存（未使用）</span>
+          <span class="impl-note-desc">
+            Notifier 側では <code>toUpdateJson()</code> を経由せず直接 DTO を組み立てるため、実質的に <code>toUpdateJson()</code> は未使用の状態。将来の混乱を防ぐためにコメントを追加することも検討したが、今回のスコープ外とした。
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#x2713;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">グローバル通知設定のON&rarr;OFFでは m_user.notification_enabled のみ更新され、各グループ設定値は変更されない</div>
+      </div>
+      <div class="ac-body">
+        <code>toggleGlobalNotification</code> が <code>groupSettings: const {}</code>（空 Map）を送信するようになったため、バックエンドは <code>m_user_notification_setting</code> を更新しない。テスト「ON&rarr;OFF時: payload の groupSettings が空 Map である」で検証済み。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#x2713;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">グローバル通知設定のOFF&rarr;ONでは m_user.notification_enabled のみ更新され、各グループ設定値は変更されない</div>
+      </div>
+      <div class="ac-body">
+        OFF&rarr;ON 時も同様に <code>groupSettings: const {}</code> を送信する。state に保持された「全 false」のレスポンスは次回の ON 送信時の payload には使われない。テスト「OFF&rarr;ON時: payload の groupSettings が空 Map である」「ON&rarr;OFF&rarr;ON シナリオ: 最後の ON 送信時も groupSettings が空 Map」で検証済み。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#x2713;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">ON&rarr;OFF&rarr;ONの操作後、各グループのスイッチが操作前と同じ状態でアカウント設定画面に表示される</div>
+      </div>
+      <div class="ac-body">
+        グループ設定値は <code>m_user_notification_setting</code> に書き込まれなくなったため、ON に戻したときのバックエンドレスポンスには本来の差分設定値が返ってくる。画面はそのレスポンスを表示するため操作前の状態が復活する。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>通知設定をONにして各グループの設定を変えてから、グローバルをOFF&rarr;ONに切り替えたとき、グループ設定が元の状態のまま表示されること</strong>
+          <span>例: グループ100=ON、グループ200=OFF の状態でグローバル OFF&rarr;ON &rarr; グループ100=ON、グループ200=OFF が維持されているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>各グループ通知スイッチをON/OFFしたとき、対象グループのみ変更されて他のグループは変わらないこと</strong>
+          <span>グループ100のスイッチをOFFにしたとき、グループ200の設定に影響がないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>グローバル通知をOFFにした状態でアカウント設定画面を閉じて再度開いたとき、各グループのスイッチ表示が適切に表示されること</strong>
+          <span>グローバルOFF時はグループスイッチが無効（グレーアウト）状態で、前の設定値を維持しているか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>根本原因は「バックエンドのレスポンス値（UI表示用の派生値）をそのまま次回リクエストの payload として使用してしまったこと」。同種のバグを防ぐため、5件のテストを新規追加してバックエンドに送る payload を明示的に検証するようにした。</p>
+      <div class="test-item">
+        <span class="test-icon">&#x2713;</span>
+        <div>
+          <div class="test-name">account_settings_notifier_test.dart — toggleGlobalNotification ON&rarr;OFF</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">Repository に渡される payload の groupSettings が空 Map であることを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#x2713;</span>
+        <div>
+          <div class="test-name">account_settings_notifier_test.dart — toggleGlobalNotification OFF&rarr;ON</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">OFF&rarr;ON 時も payload の groupSettings が空 Map であることを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#x2713;</span>
+        <div>
+          <div class="test-name">account_settings_notifier_test.dart — ON&rarr;OFF&rarr;ON シナリオ</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">バックエンドが「全グループ false」のレスポンスを返した後でも、次の ON 送信時の payload の groupSettings が空 Map であることを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#x2713;</span>
+        <div>
+          <div class="test-name">account_settings_notifier_test.dart — toggleGroupNotification グループ OFF</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">グループ200をOFFにしたとき、payload の groupSettings が {'200': false} のみで他グループ（100）を含まないことを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#x2713;</span>
+        <div>
+          <div class="test-name">account_settings_notifier_test.dart — toggleGroupNotification グループ ON</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">グループ200をONにしたとき、payload の groupSettings が {'200': true} のみで他グループを含まないことを検証</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

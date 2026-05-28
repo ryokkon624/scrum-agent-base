@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 57 Review — #163 ホーム画面おうちの様子カードでデータがない場合にデータがないことを明示する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; margin-bottom: 8px; }
+  .problem-box p:last-child { margin-bottom: 0; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 40px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* UI mockup */
+  .mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .mockup-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px; }
+  .mockup-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .label-bad { color: #b91c1c; }
+  .label-good { color: #166534; }
+
+  /* Chart mockup */
+  .mock-bars-wrong { display: flex; align-items: flex-end; gap: 4px; height: 80px; margin-bottom: 4px; }
+  .mock-bars-right { display: flex; align-items: flex-end; gap: 4px; height: 80px; margin-bottom: 4px; }
+  .bar-full { height: 80px; background: #d1fae5; border-radius: 2px 2px 0 0; flex: 1; border: 1px solid #fca5a5; }
+  .bar-correct-tall { height: 60px; background: #d1fae5; border-radius: 2px 2px 0 0; flex: 1; }
+  .bar-correct-tiny { height: 2px; background: #e5e7eb; border-radius: 1px; flex: 1; }
+  .mock-caption { font-size: 11px; color: #9ca3af; text-align: center; margin-top: 4px; }
+  .mock-caption-bad { color: #b91c1c; }
+  .mock-caption-good { color: #166534; }
+
+  /* Empty state mockup */
+  .mock-empty { text-align: center; padding: 20px 0; }
+  .mock-empty-icon { font-size: 28px; margin-bottom: 8px; color: #9ca3af; }
+  .mock-empty-text { font-size: 12px; color: #9ca3af; line-height: 1.5; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Implementation notes */
+  .impl-note { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
+  .impl-note-title { font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 6px; }
+  .impl-note p { font-size: 13px; color: #0c4a6e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 57 Review</div>
+  <h1>#163 — ホーム画面おうちの様子カードで<br>データがない場合にデータがないことを明示する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 57</span>
+    <span class="badge badge-issue">#163</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p><strong>AC1（棒グラフMAX表示）</strong>: データが0件の日の棒グラフが最大高さで表示されていた。<code>BarChartData.maxY</code> を明示的に設定していなかったため、fl_chart が最小表示用の <code>0.001</code> を最大値として認識してしまっていた。データあり・なしを視覚的に区別できず、「データがある」と誤認させる可能性があった。</p>
+      <p><strong>AC2（データなし全体表示）</strong>: 家事テンプレートを未登録の状態でホーム画面を開くと、空のグラフ（0件の棒が並ぶだけ）が表示され、データなし状態であることがわかりにくかった。</p>
+    </div>
+
+    <!-- Before/After visual -->
+    <div class="mockup-grid">
+      <div class="mockup-card">
+        <div class="mockup-label label-bad">AC1: 修正前（棒グラフMAX表示）</div>
+        <div class="mock-bars-wrong">
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+        </div>
+        <div class="mock-caption mock-caption-bad">0件日の棒が最大高さで表示（誤認リスク）</div>
+      </div>
+      <div class="mockup-card">
+        <div class="mockup-label label-good">AC1: 修正後（正常表示）</div>
+        <div class="mock-bars-right">
+          <div class="bar-correct-tall"></div>
+          <div class="bar-correct-tiny"></div>
+          <div class="bar-correct-tall"></div>
+          <div class="bar-correct-tiny"></div>
+          <div class="bar-correct-tall"></div>
+          <div class="bar-correct-tiny"></div>
+          <div class="bar-correct-tall"></div>
+        </div>
+        <div class="mock-caption mock-caption-good">maxY 明示指定で0件日は最小表示</div>
+      </div>
+    </div>
+
+    <div class="mockup-grid">
+      <div class="mockup-card">
+        <div class="mockup-label label-bad">AC2: 修正前（データなし判定なし）</div>
+        <div class="mock-bars-wrong">
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+          <div class="bar-full"></div>
+        </div>
+        <div class="mock-caption mock-caption-bad">全件0でも棒グラフが表示されてしまう</div>
+      </div>
+      <div class="mockup-card">
+        <div class="mockup-label label-good">AC2: 修正後（空状態表示）</div>
+        <div class="mock-empty">
+          <div class="mock-empty-icon">📊</div>
+          <div class="mock-empty-text">まだデータがありません。<br>家事テンプレートを登録し、<br>家事割り当てを行うとここに表示されます。</div>
+        </div>
+        <div class="mock-caption mock-caption-good">空状態テキストで明示</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">おうちの様子カードのデータが存在しない日の棒グラフがMAXで表示されない</div>
+      </div>
+      <div class="ac-body">
+        <p>グループ構築ループ内で全グループの最大値を追跡し、<code>BarChartData.maxY</code> に明示的に設定した。fl_chart は <code>maxY</code> 未指定の場合にグラフ内の最大値（<code>0.001</code>）を自動採用するため、0件日の最小バーが最大高さで表示されていた。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/home/presentation/widgets/household_overview_card.dart</span>
+            <span class="diff-stat">+6 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">147</span><span class="line-prefix"> </span><span>    final groups = &lt;BarChartGroupData&gt;[];</span></div>
+            <div class="code-line line-add"><span class="line-num">148</span><span class="line-prefix">+</span><span>    double maxY = 0;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">149</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-ctx"><span class="line-num">150</span><span class="line-prefix"> </span><span>    for (var i = 0; i &lt; overview.length; i++) {</span></div>
+            <div class="code-line line-ctx"><span class="line-num">151</span><span class="line-prefix"> </span><span>      // ...（スタック積み上げ処理）...</span></div>
+            <div class="code-line line-ctx"><span class="line-num">172</span><span class="line-prefix"> </span><span>      fromY += unassignedCount;</span></div>
+            <div class="code-line line-add"><span class="line-num">173</span><span class="line-prefix">+</span><span>      if (fromY &gt; maxY) maxY = fromY;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">174</span><span class="line-prefix"> </span><span>      groups.add(BarChartGroupData(...));</span></div>
+            <div class="code-line line-ctx"><span class="line-num">199</span><span class="line-prefix"> </span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">200</span><span class="line-prefix">+</span><span>    // maxYを明示的に設定することで、0件日のバーがMAX表示になるのを防ぐ</span></div>
+            <div class="code-line line-add"><span class="line-num">201</span><span class="line-prefix">+</span><span>    // maxが0の場合でも1以上を設定して軸が崩れないようにする</span></div>
+            <div class="code-line line-add"><span class="line-num">202</span><span class="line-prefix">+</span><span>    final chartMaxY = maxY &gt; 0 ? maxY : 1.0;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">203</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-ctx"><span class="line-num">204</span><span class="line-prefix"> </span><span>    return BarChart(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">205</span><span class="line-prefix"> </span><span>      BarChartData(</span></div>
+            <div class="code-line line-add"><span class="line-num">206</span><span class="line-prefix">+</span><span>        maxY: chartMaxY,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">207</span><span class="line-prefix"> </span><span>        barGroups: groups,</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>実際のアプリでは <code>hasOverviewData: false</code> の場合は BarChart 自体が表示されないため、<code>chartMaxY = 1.0</code> になるケースは非表示時のフォールバックとして機能する。防御的な実装として残している。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">おうちの様子カードのデータが存在しない場合、データがないことを示す表示になる</div>
+      </div>
+      <div class="ac-body">
+        <p>Notifier 側で <code>hasOverviewData</code> フラグを事前計算し、HomeState に持たせた。Widget は <code>hasOverviewData</code> を参照するだけで済む設計（build() 内重複計算回避ルール対応）。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/home/presentation/home_state.dart</span>
+            <span class="diff-stat">+8 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">9</span><span class="line-prefix"> </span><span>    this.householdOverview = const [],</span></div>
+            <div class="code-line line-ctx"><span class="line-num">10</span><span class="line-prefix"> </span><span>    this.members = const [],</span></div>
+            <div class="code-line line-ctx"><span class="line-num">11</span><span class="line-prefix"> </span><span>    this.hasHousehold = false,</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>    this.hasOverviewData = false,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">13</span><span class="line-prefix"> </span><span>    this.isLoading = false,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">20</span><span class="line-prefix"> </span><span>  final List&lt;HouseholdMember&gt; members;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">21</span><span class="line-prefix"> </span><span>  final bool hasHousehold;</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>  /// householdOverview に1件以上のタスクが存在するか（棒グラフの空状態表示制御用）</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>  final bool hasOverviewData;</span></div>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/home/presentation/home_notifier.dart</span>
+            <span class="diff-stat">+4 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">42</span><span class="line-prefix"> </span><span>    final householdOverview = _calcDailyOverview(raw, todayDate);</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>    final hasOverviewData = householdOverview.any(</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>      (d) =&gt; d.countsByAssignee.values.any((c) =&gt; c &gt; 0),</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-ctx"><span class="line-num">77</span><span class="line-prefix"> </span><span>      householdOverview: householdOverview,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">78</span><span class="line-prefix"> </span><span>      members: members,</span></div>
+            <div class="code-line line-add"><span class="line-num">79</span><span class="line-prefix">+</span><span>      hasOverviewData: hasOverviewData,</span></div>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/home/presentation/widgets/household_overview_card.dart（空状態表示）</span>
+            <span class="diff-stat">+13 / -11</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">81</span><span class="line-prefix"> </span><span>            const SizedBox(height: AppSpacing.md),</span></div>
+            <div class="code-line line-add"><span class="line-num">82</span><span class="line-prefix">+</span><span>            if (!hasOverviewData)</span></div>
+            <div class="code-line line-add"><span class="line-num">83</span><span class="line-prefix">+</span><span>              Container(</span></div>
+            <div class="code-line line-add"><span class="line-num">84</span><span class="line-prefix">+</span><span>                key: const Key('overviewEmpty'),</span></div>
+            <div class="code-line line-add"><span class="line-num">85</span><span class="line-prefix">+</span><span>                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),</span></div>
+            <div class="code-line line-add"><span class="line-num">86</span><span class="line-prefix">+</span><span>                child: Text(l10n.homeOverviewEmpty, textAlign: TextAlign.center, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">87</span><span class="line-prefix">+</span><span>              )</span></div>
+            <div class="code-line line-add"><span class="line-num">88</span><span class="line-prefix">+</span><span>            else ...[</span></div>
+            <div class="code-line line-ctx"><span class="line-num">89</span><span class="line-prefix"> </span><span>              SizedBox(height: 160, child: _OverviewChart(...)),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">90</span><span class="line-prefix"> </span><span>              // 凡例...</span></div>
+            <div class="code-line line-add"><span class="line-num">91</span><span class="line-prefix">+</span><span>            ],</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>空状態のテキストは <code>homeOverviewEmpty</code> キーで ARB に定義。日本語: 「まだデータがありません。家事テンプレートを登録し、家事割り当てを行うとここに表示されます。」</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation notes -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note">
+      <div class="impl-note-title">hasOverviewData を HomeState に追加し Notifier 側で事前計算</div>
+      <p>ACではウィジェットレベルの実装でも動作するが、<code>build()</code> 内の重複計算を避けるルール（long_term.md）に従い、Notifier 側で <code>hasOverviewData</code> フラグを計算して State に持たせた。ウィジェットは参照するだけで済む。</p>
+    </div>
+    <div class="impl-note">
+      <div class="impl-note-title">maxY 設定で AC1 を解決</div>
+      <p><code>0.001</code> の最小バー表示は維持しつつ、<code>BarChartData.maxY</code> に全グループの最大値を明示的に設定することで、fl_chart が <code>0.001</code> を最大値として扱う問題を解決した。データが全件0の場合は <code>maxY: 1.0</code> を設定して軸が崩れないようにした。</p>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>家事テンプレートが未登録の状態でホーム画面を開くと空状態メッセージが表示されること</strong>
+          <span>「まだデータがありません。家事テンプレートを登録し...」というテキストが表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>家事テンプレートを登録して割り当て後、おうちの様子カードに棒グラフが表示されること</strong>
+          <span>データあり状態に切り替わると空状態テキストが消えてグラフが表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>タスクが0件の日の棒グラフが他の日と比べて極端に高く表示されていないこと</strong>
+          <span>タスクあり日と0件日の棒の高さが適切に相対比較できる状態になっているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>過去13日間すべてにタスクがある場合は棒グラフが正常に表示されること</strong>
+          <span>空状態メッセージが表示されず、グラフが正常に描画されるか確認（デグレ確認）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>home_state.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>hasOverviewData: bool フィールド追加・copyWith に追記</td>
+      </tr>
+      <tr>
+        <td><code>home_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>hasOverviewData の計算処理を追加</td>
+      </tr>
+      <tr>
+        <td><code>home_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>HouseholdOverviewCard に hasOverviewData を渡す</td>
+      </tr>
+      <tr>
+        <td><code>household_overview_card.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>hasOverviewData プロパティ追加・空状態表示・maxY 明示設定</td>
+      </tr>
+      <tr>
+        <td><code>household_overview_card_test.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>hasOverviewData=false/true のウィジェットテスト追加</td>
+      </tr>
+      <tr>
+        <td><code>app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>homeOverviewEmpty キー追加（空状態テキスト）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

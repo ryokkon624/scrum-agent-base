@@ -85,6 +85,34 @@ public class HouseworkTaskConverter {
 
 ---
 
+## 4a. N+1問題の防止
+
+Service 層でループ内に Repository 呼び出し（クエリ）を行ってはならない。
+
+```java
+// NG: ループ内でクエリを実行（N+1）
+for (Long householdId : householdIds) {
+    int count = memberRepository.countActiveMembersByHouseholdId(householdId); // N回クエリが走る
+    if (count > 1) throw new OwnerCannotBeDeletedException();
+}
+
+// OK: 一括クエリで取得
+Map<Long, Integer> countMap =
+    memberRepository.countActiveMembersByHouseholdIds(householdIds); // 1回のクエリ
+for (Long householdId : householdIds) {
+    if (countMap.getOrDefault(householdId, 0) > 1) throw new OwnerCannotBeDeletedException();
+}
+```
+
+一括クエリのパターン:
+- `findByIds(List<Long> ids)` — ID リストで複数件取得
+- `countByIds(List<Long> ids)` — ID リストで件数を `Map<Long, Integer>` で返す
+- `findAllEnabled()` — 条件なし全件取得（一覧のグループ化が必要な場合）
+
+> **背景（Sprint 45 レビュー）**: `UserService.deleteAccount()` でループ内に `findActiveByHouseholdId()` を呼び出す N+1 が発生。`countActiveMembersByHouseholdIds()` 一括クエリに変更した。`buildNotificationGroupMap()` でも同様の指摘。
+
+---
+
 ## 5. セキュリティ & パーミッション
 
 - 認証: JWT（jjwt）+ Google OAuth / Spring Security で保護
@@ -122,6 +150,22 @@ public List<AdminInquiryRow> findPendingStaff() { ... }
 | ------- | ---------- | ---------------------------------------------------- |
 | ADMIN   | `ADMIN`    | USER_LIST_VIEW / ROLE_MANAGE / INQUIRY_REPLY（全て） |
 | SUPPORT | `SPPRT`    | INQUIRY_REPLY のみ                                   |
+
+### 例外メッセージに内部IDを含めない（セキュリティ）
+
+例外・エラーレスポンスのメッセージに内部ユーザーID（`userId` 等）を含めてはならない。ログや API レスポンスに内部IDが露出するとセキュリティリスクになる。
+
+```java
+// NG: 例外メッセージに内部 userId を含める
+throw new IllegalArgumentException(
+    "User " + userId + " is already linked to another Google account");
+
+// OK: 固定メッセージのみ使う
+throw new AlreadyLinkedException(
+    "このGoogleアカウントはすでに別のアカウントに連携されています");
+```
+
+> **背景（Sprint 45 レビュー）**: `UserService.java` の Google 連携処理で例外メッセージに内部 userId を埋め込んでいた（4箇所）。
 
 ---
 

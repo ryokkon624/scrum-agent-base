@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 50 Review — #154 flutter analyzeでlint警告が11件発生している</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* Warning list */
+  .warn-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 12px; }
+  .warn-item:last-child { border-bottom: none; }
+  .warn-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  .warn-badge-error { background: #fef2f2; color: #b91c1c; }
+  .warn-badge-count { background: #f3f4f6; color: #6b7280; font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; }
+  .warn-text { color: #374151; }
+  .warn-zero { font-size: 13px; font-weight: 700; color: #166534; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 10px; }
+
+  .warn-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .warn-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .warn-table td { padding: 8px 12px; border: 1px solid #e5e5e5; font-size: 12px; }
+  .warn-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .count-cell { text-align: center; font-weight: 700; color: #b91c1c; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Notes */
+  .notes-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .note-item { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+  .note-item:last-child { border-bottom: none; }
+  .note-bullet { color: #6b7280; flex-shrink: 0; margin-top: 1px; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 50 Review · Bug Fix</div>
+  <h1>#154 — flutter analyzeでlint警告が<br>11件発生している</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 50</span>
+    <span class="badge badge-issue">#154</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（flutter analyze 結果）</div>
+        <div class="warn-item">
+          <span class="warn-badge warn-badge-error">unused_import</span>
+          <span class="warn-badge-count">7件</span>
+          <span class="warn-text">テストファイル4件で未使用 import が残存</span>
+        </div>
+        <div class="warn-item">
+          <span class="warn-badge warn-badge-error">deprecated_member_use</span>
+          <span class="warn-badge-count">6件</span>
+          <span class="warn-text">invitation_section / members_section で .withOpacity() を使用</span>
+        </div>
+        <div class="warn-item">
+          <span class="warn-badge warn-badge-error">unused_element</span>
+          <span class="warn-badge-count">1件</span>
+          <span class="warn-text">app_router.dart に未参照クラス _P が存在</span>
+        </div>
+        <div class="warn-item">
+          <span class="warn-badge warn-badge-error">unused_catch_clause</span>
+          <span class="warn-badge-count">1件</span>
+          <span class="warn-text">google_link_section.dart の catch 節で変数 e が未使用</span>
+        </div>
+        <div class="warn-item">
+          <span class="warn-badge warn-badge-error">no_leading_underscores</span>
+          <span class="warn-badge-count">複数</span>
+          <span class="warn-text">テストのローカル関数名に先頭アンダースコア</span>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（flutter analyze 結果）</div>
+        <div class="warn-zero">
+          <span style="font-size:18px;">✓</span>
+          <span>Warning 0件</span>
+        </div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 12px;">
+          ※ auth_interceptor.dart の TODO コメントは<br>バックエンド実装待ちのため除外対象
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">不要コード・非推奨 API が複数ファイルに分散して残存していた</span>
+      </div>
+      <div class="cause-body">
+        <p>主に4種類の警告が計15件（調査後）検出されていた。警告カテゴリごとの内訳と修正対象ファイルは以下の通り。</p>
+        <table class="warn-table">
+          <tr>
+            <th>警告種別</th>
+            <th>件数</th>
+            <th>対象ファイル</th>
+          </tr>
+          <tr>
+            <td class="code">unused_import</td>
+            <td class="count-cell">7</td>
+            <td>household_notifier_extended_test.dart / header_user_icon_test.dart / account_settings_notifier_test.dart / account_settings_page_test.dart / inquiry_list_page_test.dart</td>
+          </tr>
+          <tr>
+            <td class="code">deprecated_member_use</td>
+            <td class="count-cell">6</td>
+            <td>invitation_section.dart（2件）・members_section.dart（4件）<br><em style="font-size:11px;color:#6b7280;">※調査時に初期想定2件から実際は6件に拡大</em></td>
+          </tr>
+          <tr>
+            <td class="code">unused_element</td>
+            <td class="count-cell">1</td>
+            <td>app_router.dart（仮画面クラス _P）</td>
+          </tr>
+          <tr>
+            <td class="code">unused_catch_clause</td>
+            <td class="count-cell">1</td>
+            <td>google_link_section.dart</td>
+          </tr>
+          <tr>
+            <td class="code">no_leading_underscores_for_local_identifiers</td>
+            <td class="count-cell">複数</td>
+            <td>household_notifier_extended_test.dart 等</td>
+          </tr>
+        </table>
+        <p><code>.withOpacity()</code> は Flutter 3.x 以降で非推奨となり、<code>.withValues(alpha:)</code> への移行が推奨されている。<code>_P</code> クラスは Phase 4 以降の実装プレースホルダーとして残っていたが、実際には参照箇所がゼロになっていた。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <!-- AC3: _P クラス削除 -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/app_router.dart</span>
+        <span class="diff-stat">+0 / -20</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">306</span><span class="line-prefix"> </span><span>  static const _settingsPrivacyRelative = 'privacy';</span></div>
+        <div class="code-line line-ctx"><span class="line-num">307</span><span class="line-prefix"> </span><span>}</span></div>
+        <div class="code-line line-del"><span class="line-num">309</span><span class="line-prefix">-</span><span>// Phase 4以降で実装するまでの仮画面</span></div>
+        <div class="code-line line-del"><span class="line-num">310</span><span class="line-prefix">-</span><span>class _P extends StatelessWidget {</span></div>
+        <div class="code-line line-del"><span class="line-num">311</span><span class="line-prefix">-</span><span>  const _P(this.name);</span></div>
+        <div class="code-line line-del"><span class="line-num">312</span><span class="line-prefix">-</span><span>  final String name;</span></div>
+        <div class="code-line line-del"><span class="line-num">313</span><span class="line-prefix">-</span><span></span></div>
+        <div class="code-line line-del"><span class="line-num">314</span><span class="line-prefix">-</span><span>  @override</span></div>
+        <div class="code-line line-del"><span class="line-num">315</span><span class="line-prefix">-</span><span>  Widget build(BuildContext context) {</span></div>
+        <div class="code-line line-del"><span class="line-num">316</span><span class="line-prefix">-</span><span>    return Scaffold(</span></div>
+        <div class="code-line line-del"><span class="line-num">317</span><span class="line-prefix">-</span><span>      appBar: AppBar(title: Text(name.split('\n').first)),</span></div>
+        <div class="code-line line-del"><span class="line-num">318</span><span class="line-prefix">-</span><span>      body: Center(child: Text(name, ...)),</span></div>
+        <div class="code-line line-del"><span class="line-num">323</span><span class="line-prefix">-</span><span>  }</span></div>
+        <div class="code-line line-del"><span class="line-num">324</span><span class="line-prefix">-</span><span>}</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>Phase 3 以降の実装が完了し、<code>_P</code> を使う GoRoute が一つも残っていないことを確認して削除。Phase 4 実装時に改めて必要なウィジェットを作成する。</span>
+      </div>
+    </div>
+
+    <!-- AC4: catch 節 -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/account_settings/presentation/account_settings/widgets/google_link_section.dart</span>
+        <span class="diff-stat">+1 / -1</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span>      await onLink(idToken);</span></div>
+        <div class="code-line line-del"><span class="line-num">32</span><span class="line-prefix">-</span><span>    } on Exception catch (e) {</span></div>
+        <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>    } on Exception catch (_) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">33</span><span class="line-prefix"> </span><span>      // Google サインイン失敗: Notifier 側でハンドリングされるが、</span></div>
+        <div class="code-line line-ctx"><span class="line-num">34</span><span class="line-prefix"> </span><span>      // ここで catch した場合は onLink が呼ばれていないため Notifier の state には影響しない</span></div>
+        <div class="code-line line-ctx"><span class="line-num">35</span><span class="line-prefix"> </span><span>      debugPrint('Google Sign-In error occurred');</span></div>
+        <div class="code-line line-ctx"><span class="line-num">36</span><span class="line-prefix"> </span><span>    }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>変数 <code>e</code> を使っていないため <code>_</code> に変更。catch 内での <code>debugPrint</code> は固定メッセージのみ（エラーオブジェクト全体を出力しないセキュリティルール準拠）。</span>
+      </div>
+    </div>
+
+    <!-- AC5: withOpacity → withValues (invitation_section) -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/household_settings/presentation/household_settings/widgets/invitation_section.dart</span>
+        <span class="diff-stat">+4 / -2</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">218</span><span class="line-prefix"> </span><span>        decoration: BoxDecoration(</span></div>
+        <div class="code-line line-del"><span class="line-num">219</span><span class="line-prefix">-</span><span>          color: statusColor.withOpacity(0.15),</span></div>
+        <div class="code-line line-add"><span class="line-num">219</span><span class="line-prefix">+</span><span>          color: statusColor.withValues(alpha: 0.15),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">220</span><span class="line-prefix"> </span><span>          borderRadius: BorderRadius.circular(4),</span></div>
+        <div class="code-line line-del"><span class="line-num">221</span><span class="line-prefix">-</span><span>          border: Border.all(color: statusColor.withOpacity(0.5)),</span></div>
+        <div class="code-line line-add"><span class="line-num">221</span><span class="line-prefix">+</span><span>          border: Border.all(</span></div>
+        <div class="code-line line-add"><span class="line-num">222</span><span class="line-prefix">+</span><span>            color: statusColor.withValues(alpha: 0.5),</span></div>
+        <div class="code-line line-add"><span class="line-num">223</span><span class="line-prefix">+</span><span>          ),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>Flutter 3.x で <code>.withOpacity()</code> が非推奨に。<code>.withValues(alpha:)</code> は named parameter でより明示的。招待ステータスバッジの背景色・ボーダー色の2箇所を修正。</span>
+      </div>
+    </div>
+
+    <!-- AC5: withOpacity → withValues (members_section) -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/household_settings/presentation/household_settings/widgets/members_section.dart</span>
+        <span class="diff-stat">+4 / -4</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">290</span><span class="line-prefix"> </span><span>    return Container(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">291</span><span class="line-prefix"> </span><span>      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">292</span><span class="line-prefix"> </span><span>      decoration: BoxDecoration(</span></div>
+        <div class="code-line line-del"><span class="line-num">293</span><span class="line-prefix">-</span><span>        color: color.withOpacity(0.15),</span></div>
+        <div class="code-line line-add"><span class="line-num">293</span><span class="line-prefix">+</span><span>        color: color.withValues(alpha: 0.15),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">294</span><span class="line-prefix"> </span><span>        borderRadius: BorderRadius.circular(4),</span></div>
+        <div class="code-line line-del"><span class="line-num">295</span><span class="line-prefix">-</span><span>        border: Border.all(color: color.withOpacity(0.5)),</span></div>
+        <div class="code-line line-add"><span class="line-num">295</span><span class="line-prefix">+</span><span>        border: Border.all(color: color.withValues(alpha: 0.5)),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">320</span><span class="line-prefix"> </span><span>        decoration: BoxDecoration(</span></div>
+        <div class="code-line line-del"><span class="line-num">321</span><span class="line-prefix">-</span><span>        color: Colors.blue.withOpacity(0.15),</span></div>
+        <div class="code-line line-add"><span class="line-num">321</span><span class="line-prefix">+</span><span>        color: Colors.blue.withValues(alpha: 0.15),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">322</span><span class="line-prefix"> </span><span>        borderRadius: BorderRadius.circular(4),</span></div>
+        <div class="code-line line-del"><span class="line-num">323</span><span class="line-prefix">-</span><span>        border: Border.all(color: Colors.blue.withOpacity(0.5)),</span></div>
+        <div class="code-line line-add"><span class="line-num">323</span><span class="line-prefix">+</span><span>        border: Border.all(color: Colors.blue.withValues(alpha: 0.5)),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>_StatusBadge</code> と <code>_RoleBadge</code> の2クラス計4箇所。いずれもバッジの背景色（15% 透過）とボーダー色（50% 透過）を指定している箇所。視覚的変化なし。</span>
+      </div>
+    </div>
+
+    <!-- AC2: unused_import テストファイル -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>test ファイル（4ファイル）— unused_import 削除</span>
+        <span class="diff-stat">+0 / -7</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>// household_notifier_extended_test.dart</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>import 'package:flutter_riverpod/flutter_riverpod.dart';</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>// header_user_icon_test.dart</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>import 'package:flutter_riverpod/flutter_riverpod.dart';</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>// account_settings_notifier_test.dart</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>import 'package:hw_hub_mobile/features/account_settings/presentation/account_settings/account_settings_state.dart';</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>// account_settings_page_test.dart</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>import 'package:flutter_riverpod/flutter_riverpod.dart'; // + 2件</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>// inquiry_list_page_test.dart</span></div>
+        <div class="code-line line-del"><span class="line-num"> </span><span class="line-prefix">-</span><span>import 'package:hw_hub_mobile/features/inquiry/inquiry_providers.dart';</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>テスト追加・リファクタリングの過程で参照しなくなった import が残存。Dart の analyzer が検出した7件を機械的に削除。</span>
+      </div>
+    </div>
+
+    <!-- no_leading_underscores -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>test/core/household/household_notifier_extended_test.dart</span>
+        <span class="diff-stat">+3 / -3</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-del"><span class="line-num">107</span><span class="line-prefix">-</span><span>  void _setupHouseholdsApi(MockDio dio, List&lt;Household&gt; households) {</span></div>
+        <div class="code-line line-add"><span class="line-num">107</span><span class="line-prefix">+</span><span>  void setupHouseholdsApi(MockDio dio, List&lt;Household&gt; households) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">117</span><span class="line-prefix"> </span><span>  group('HouseholdNotifier.refresh()', () {</span></div>
+        <div class="code-line line-del"><span class="line-num">119</span><span class="line-prefix">-</span><span>      _setupHouseholdsApi(mockDio, [const Household(id: 1, name: '山田家')]);</span></div>
+        <div class="code-line line-add"><span class="line-num">119</span><span class="line-prefix">+</span><span>      setupHouseholdsApi(mockDio, [const Household(id: 1, name: '山田家')]);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">143</span><span class="line-prefix"> </span><span>  group('HouseholdNotifier.addHousehold()', () {</span></div>
+        <div class="code-line line-del"><span class="line-num">145</span><span class="line-prefix">-</span><span>      _setupHouseholdsApi(mockDio, [const Household(id: 1, name: '山田家')]);</span></div>
+        <div class="code-line line-add"><span class="line-num">145</span><span class="line-prefix">+</span><span>      setupHouseholdsApi(mockDio, [const Household(id: 1, name: '山田家')]);</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>Dart の lint ルール <code>no_leading_underscores_for_local_identifiers</code>: ローカルスコープの関数（テスト内のヘルパー関数）にアンダースコアプレフィックスを付けることが推奨されなくなった。先頭の <code>_</code> を削除。</span>
+      </div>
+    </div>
+
+    <!-- header_user_icon.dart Key 追加（テスト対応） -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/core/ui/header_user_icon.dart — Key 追加（Keyベース検証対応）</span>
+        <span class="diff-stat">+5 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">64</span><span class="line-prefix"> </span><span>        PopupMenuItem(</span></div>
+        <div class="code-line line-add"><span class="line-num">65</span><span class="line-prefix">+</span><span>          key: const Key('menuItemSettings'),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">66</span><span class="line-prefix"> </span><span>          value: _MenuAction.settings,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">68</span><span class="line-prefix"> </span><span>        PopupMenuItem(</span></div>
+        <div class="code-line line-add"><span class="line-num">69</span><span class="line-prefix">+</span><span>          key: const Key('menuItemLogout'),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">70</span><span class="line-prefix"> </span><span>          value: _MenuAction.logout,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">96</span><span class="line-prefix"> </span><span>      builder: (dialogContext) =&gt; AlertDialog(</span></div>
+        <div class="code-line line-add"><span class="line-num">97</span><span class="line-prefix">+</span><span>        key: const Key('logoutConfirmDialog'),</span></div>
+        <div class="code-line line-add"><span class="line-num">101</span><span class="line-prefix">+</span><span>            key: const Key('logoutCancelButton'),</span></div>
+        <div class="code-line line-add"><span class="line-num">104</span><span class="line-prefix">+</span><span>            key: const Key('logoutConfirmButton'),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>既存テストが <code>find.text('設定')</code> / <code>find.text('ログアウト')</code> で日本語テキストを直接検証していた（Sprint 50 レビュー指摘）。Key ベース検証に対応するため、ウィジェット側に Key を追加しテストも更新した。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更）</h2>
+    <div class="notes-box">
+      <div class="note-item">
+        <span class="note-bullet">•</span>
+        <div>
+          <strong style="font-size:13px;display:block;margin-bottom:3px;">_P クラスの削除</strong>
+          <span style="font-size:12px;color:#6b7280;">app_router.dart にあった「Phase 4以降で実装するまでの仮画面」クラスが完全に参照されていないことを確認して削除。Phase 4 の実装時に改めて作成する前提。</span>
+        </div>
+      </div>
+      <div class="note-item">
+        <span class="note-bullet">•</span>
+        <div>
+          <strong style="font-size:13px;display:block;margin-bottom:3px;">deprecated_member_use 件数が初期想定より多かった</strong>
+          <span style="font-size:12px;color:#6b7280;">Issue 作成時は invitation_section.dart の 2 件のみだったが、調査の結果 members_section.dart に 4 件が追加発見された（計 6 件）。Sprint 50 Planning 時に判明し、全件修正対象とすることをりょこさんに承認済み。</span>
+        </div>
+      </div>
+      <div class="note-item">
+        <span class="note-bullet">•</span>
+        <div>
+          <strong style="font-size:13px;display:block;margin-bottom:3px;">account_settings_page_test.dart の未使用 import 精査</strong>
+          <span style="font-size:12px;color:#6b7280;">元々 account_settings_providers.dart と account_settings_notifier_test.mocks.dart、mockito の 3 つが未使用だったが、accountSettingsNotifierProvider が account_settings_notifier.dart 内で定義されているため providers.dart も実際には不要だった。削除後に再度 analyze して確認。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">flutter analyze を実行して Warning が 0件 になること（auth_interceptor.dart の TODO コメントは除外）</div>
+      </div>
+      <div class="ac-body">全修正適用後に flutter analyze を実行し、Warning 0件を確認。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">unused_import 7件を削除すること（対象テストファイル4ファイル）</div>
+      </div>
+      <div class="ac-body">household_notifier_extended_test.dart / header_user_icon_test.dart / account_settings_notifier_test.dart / account_settings_page_test.dart / inquiry_list_page_test.dart の計 7 件を削除。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">unused_element 1件を修正すること（app_router.dart の _P を削除）</div>
+      </div>
+      <div class="ac-body">仮画面クラス <code>_P</code>（20行）を削除。参照箇所がゼロであることを確認済み。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">unused_catch_clause 1件を修正すること（google_link_section.dart の catch 節から変数 e を除去）</div>
+      </div>
+      <div class="ac-body"><code>on Exception catch (e)</code> → <code>on Exception catch (_)</code> に変更。ロジックへの影響なし。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">deprecated_member_use 6件を修正すること（invitation_section.dart 2件・members_section.dart 4件）</div>
+      </div>
+      <div class="ac-body"><code>.withOpacity(x)</code> → <code>.withValues(alpha: x)</code> に全6箇所変更。視覚的な変化なし。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">既存テストが全て pass すること</div>
+      </div>
+      <div class="ac-body">flutter test 実行で全テスト PASS 確認済み。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>世帯設定画面の招待ステータスバッジが正常に表示されること</strong>
+          <span>招待中・承認済みなど各ステータスのバッジが崩れずに表示されるか確認（invitation_section の withValues 修正が視覚的に正常か確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>世帯設定画面のメンバー一覧でステータス・ロールバッジが正常に表示されること</strong>
+          <span>OWNER・MEMBER バッジ、アクティブ・保留中などのステータスバッジが崩れずに表示されるか確認（members_section の withValues 修正が視覚的に正常か確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>ヘッダーのユーザーアイコンタップでメニューが正常に開くこと</strong>
+          <span>「設定」「ログアウト」メニューが表示され、設定タップで設定画面に遷移すること（Key 追加による影響がないか確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>flutter analyze を実行して Warning 0件になること</strong>
+          <span>ターミナルで <code>flutter analyze</code> を実行し、auth_interceptor.dart の TODO 以外に Warning が出ないことを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>コミット前に <code>flutter analyze</code> を必ず実行するルールを mobile-conventions に記載済み。今回の修正で 0件になったことで、以降のスプリントでは増分のみを検出できる。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">test/core/ui/header_user_icon_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">日本語テキスト直接検証 → Key ベース検証に更新（<code>find.byKey(const Key('menuItemSettings'))</code> 等）</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">全既存テスト（flutter test）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">全テストが PASS であることを確認（デグレなし）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

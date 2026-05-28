@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 61 Review — #176 [mobile] data 層のモデルファイルの配置が feature によって異なる</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-refactor { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+  .badge-noop { background: #f1f5f9; color: #475569; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Info box */
+  .info-box { background: #f0fdf4; border-left: 3px solid #22c55e; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .info-box .label { font-size: 11px; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .info-box p { color: #14532d; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.bad { border-color: #fca5a5; }
+  .arch-box.good { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; margin-top: 40px; }
+  .flow-item { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: #374151; padding: 2px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+  .dot-gray { background: #9ca3af; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-check.noop { background: #f1f5f9; color: #475569; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-noop { font-size: 11px; font-weight: 600; background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 3px; }
+
+  /* Code block */
+  .tree-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.8; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 6px; overflow-x: auto; margin-bottom: 12px; }
+  .tree-good { color: #a6e3a1; }
+  .tree-normal { color: #cdd6f4; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 61 Review</div>
+  <h1>#176 — [mobile] data 層のモデルファイルの配置が<br>feature によって異なる</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 61</span>
+    <span class="badge badge-issue">#176</span>
+    <span class="badge badge-refactor">refactor</span>
+    <span class="badge badge-mobile">mobile</span>
+    <span class="badge badge-noop">No-op</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>DTO やリクエスト/レスポンスモデルの配置が feature によって <code>data/</code> 直下と <code>data/models/</code> サブフォルダの2パターンに混在していた。開発者がファイルを探す際に「この feature はどちらのパターンか」を確認するコストが発生していた。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box bad">
+        <div class="arch-title">想定されていた不統一パターン</div>
+        <div class="flow-item"><span class="dot dot-red"></span>features/home/data/home_raw_data.dart</div>
+        <div class="flow-item"><span class="dot dot-red"></span>features/home/data/housework_dto.dart</div>
+        <div class="flow-item"><span class="dot dot-red"></span>features/shopping/data/shopping_attachment_dto.dart</div>
+        <div class="flow-item"><span class="dot dot-red"></span>models/ サブフォルダなしで直置き</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box good">
+        <div class="arch-title">統一後（期待パターン）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>features/home/data/models/home_raw_data.dart</div>
+        <div class="flow-item"><span class="dot dot-green"></span>features/home/data/models/housework_dto.dart</div>
+        <div class="flow-item"><span class="dot dot-green"></span>features/shopping/data/models/shopping_attachment_dto.dart</div>
+        <div class="flow-item"><span class="dot dot-green"></span>全 feature が models/ サブフォルダに統一</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- No-op 説明 -->
+  <section>
+    <h2>実施内容（No-op）</h2>
+    <div class="info-box">
+      <div class="label">調査結果</div>
+      <p>調査の結果、全 feature のモデルファイルはすでに <code>data/models/</code> サブフォルダに整理済みであることを確認した。<br>Issue 作成時点では <code>data/</code> 直下に散乱していたが、過去の実装（#177 のフォルダリネームを含む）の中で整理が完了していた。</p>
+    </div>
+    <p style="font-size: 13px; color: #4b5563; margin-bottom: 12px;">調査した全 feature の現在の配置（確認済み）:</p>
+    <div class="tree-block">
+      <span class="tree-good">lib/features/auth/data/models/</span><br>
+      <span class="tree-normal">  auth_user.dart, login_response.dart, register_response.dart ✓</span><br>
+      <span class="tree-good">lib/features/home/data/models/</span><br>
+      <span class="tree-normal">  home_raw_data.dart, household_member_dto.dart, ... ✓</span><br>
+      <span class="tree-good">lib/features/shopping/data/models/</span><br>
+      <span class="tree-normal">  shopping_item_dto.dart, shopping_attachment_dto.dart, ... ✓</span><br>
+      <span class="tree-good">lib/features/my_tasks/data/models/</span><br>
+      <span class="tree-normal">  housework_task_dto.dart ✓</span><br>
+      <span class="tree-good">lib/features/housework_assign/data/models/</span><br>
+      <span class="tree-normal">（housework_task_dto は my_tasks/data/models/ を参照）✓</span><br>
+      <span class="tree-good">lib/features/inquiry/data/models/</span><br>
+      <span class="tree-normal">  inquiry_dto.dart, ... ✓</span>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実施内容</h2>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check noop">—</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">home/data/ 直下のモデルファイルが home/data/models/ に移動する</div>
+      </div>
+      <div class="ac-body">
+        <p>No-op。調査の結果、<code>home/data/models/</code> には既に全モデルファイルが配置済みであることを確認。<code>data/</code> 直下にモデルファイルは存在しなかった。</p>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check noop">—</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">shopping/data/ 直下のモデルファイルが shopping/data/models/ に移動する</div>
+      </div>
+      <div class="ac-body">
+        <p>No-op。調査の結果、<code>shopping/data/models/</code> には既に全モデルファイルが配置済みであることを確認。<code>data/</code> 直下にモデルファイルは存在しなかった。</p>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check noop">—</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">他 feature の data/ 配下も確認し、models/ サブフォルダなしで直置きされているモデルファイルがあれば移動する</div>
+      </div>
+      <div class="ac-body">
+        <p>No-op。全 feature を調査した結果、<code>data/</code> 直下に直置きされているモデルファイルはなかった。auth / home / shopping / my_tasks / housework_assign / inquiry 全て <code>data/models/</code> に整理済み。</p>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check noop">—</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">移動に伴う import パスが全ファイルで更新される</div>
+      </div>
+      <div class="ac-body">
+        <p>No-op。ファイル移動が不要なため、import パスの更新も不要。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>対象</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td>全 feature の data/models/ 配置</td>
+        <td><span class="tag-noop">変更なし（No-op）</span></td>
+        <td>調査の結果、既に全 feature が統一パターンで整理済みであることを確認</td>
+      </tr>
+      <tr>
+        <td>import パス</td>
+        <td><span class="tag-noop">変更なし（No-op）</span></td>
+        <td>ファイル移動が不要なため変更なし</td>
+      </tr>
+      <tr>
+        <td>コミット</td>
+        <td><span class="tag-noop">なし</span></td>
+        <td>No-op のためコミットなし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

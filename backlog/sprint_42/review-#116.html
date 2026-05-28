@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 42 Review — #116 スワイプモードで自分に割り当てるスワイプ方向が逆</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* モックカード（スワイプUI） */
+  .mock-swipe-wrap { position: relative; border-radius: 8px; overflow: hidden; }
+  .mock-swipe-bg-bad { background: #0EA5E9; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: white; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .mock-swipe-bg-good { background: #CBD5E1; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: white; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .mock-swipe-bg-blue { background: #0EA5E9; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: white; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .mock-card-body { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px; font-size: 13px; }
+  .mock-card-name { font-weight: 700; margin-bottom: 4px; }
+  .mock-card-date { font-size: 12px; color: #6b7280; }
+  .mock-direction { font-size: 12px; color: #6b7280; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+  .arrow-right { color: #1a1a1a; font-weight: 700; }
+  .arrow-left { color: #1a1a1a; font-weight: 700; }
+  .tag-bad { background: #fef2f2; color: #b91c1c; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+  .tag-good { background: #f0fdf4; color: #166534; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+  .swipe-action-row { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; }
+  .swipe-action-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .swipe-action-label { color: #6b7280; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #ef4444; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 42 Review · Bug Fix</div>
+  <h1>#116 — 家事割り当て画面のスワイプモードで<br>自分に割り当てるスワイプ方向が逆になっている</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 42</span>
+    <span class="badge badge-issue">#116</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">スワイプ方向とアクションが逆</div>
+        <div class="mock-swipe-bg-bad" style="justify-content:flex-start;">&#8594; 右スワイプ <span class="tag-bad">「自分にする」が実行</span></div>
+        <div class="mock-card-body">
+          <div class="mock-card-name">食器洗い</div>
+          <div class="mock-card-date">実施日: 2026-05-18</div>
+        </div>
+        <div class="mock-swipe-bg-good" style="margin-top:8px;justify-content:flex-end;">&#8592; 左スワイプ <span class="tag-bad">「次へ（スキップ）」が実行</span></div>
+        <div style="margin-top:10px;font-size:12px;color:#b91c1c;font-weight:600;">通常リストモードの左スワイプ「自分にする」と逆！</div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">通常リストモードと方向が統一</div>
+        <div class="mock-swipe-bg-good" style="justify-content:flex-start;">&#8594; 右スワイプ <span class="tag-good">「次へ（スキップ）」が実行</span></div>
+        <div class="mock-card-body">
+          <div class="mock-card-name">食器洗い</div>
+          <div class="mock-card-date">実施日: 2026-05-18</div>
+        </div>
+        <div class="mock-swipe-bg-blue" style="margin-top:8px;justify-content:flex-end;">&#8592; 左スワイプ <span class="tag-good">「自分にする」が実行</span></div>
+        <div style="margin-top:10px;font-size:12px;color:#166534;font-weight:600;">通常リストモードと同じ左スワイプで「自分にする」</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">background/secondaryBackground の中身と confirmDismiss の direction 判定が不一致</span>
+      </div>
+      <div class="cause-body">
+        <p><code>swipe_mode_card.dart</code> の <code>Dismissible</code> において、<code>background</code>（右スワイプで見える背景）に「自分にする」アイコン・青色を設定し、<code>secondaryBackground</code>（左スワイプで見える背景）に「次へ」アイコン・グレーを設定していた。しかし <code>confirmDismiss</code> の <code>direction</code> 判定で <code>startToEnd</code>（右スワイプ）のときに <code>onAssignToMe()</code> を呼んでいたため、UIの表示と実際の動作が一致していても、通常リストモードの「左スワイプで自分にする」と逆方向になっていた。</p>
+        <table class="mismatch-table">
+          <tr>
+            <th>要素</th>
+            <th>修正前（誤）</th>
+            <th></th>
+            <th>修正後（正）</th>
+          </tr>
+          <tr>
+            <td>background（右スワイプ）</td>
+            <td class="code mismatch">青・「自分にする」アイコン</td>
+            <td class="arrow-cell">&#8594;</td>
+            <td class="code match">グレー・「次へ」アイコン</td>
+          </tr>
+          <tr>
+            <td>secondaryBackground（左スワイプ）</td>
+            <td class="code mismatch">グレー・「次へ」アイコン</td>
+            <td class="arrow-cell">&#8594;</td>
+            <td class="code match">青・「自分にする」アイコン</td>
+          </tr>
+          <tr>
+            <td>confirmDismiss startToEnd</td>
+            <td class="code mismatch">onAssignToMe() 呼び出し</td>
+            <td class="arrow-cell">&#8594;</td>
+            <td class="code match">onNext() 呼び出し</td>
+          </tr>
+          <tr>
+            <td>confirmDismiss endToStart</td>
+            <td class="code mismatch">onNext() 呼び出し</td>
+            <td class="arrow-cell">&#8594;</td>
+            <td class="code match">onAssignToMe() 呼び出し</td>
+          </tr>
+        </table>
+        <p style="font-size:12px;color:#6b7280;">Sprint 40 #115（通常リストモードの同種バグ）と同じパターン。スワイプモード実装時に同じミスが持ち込まれた。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/widgets/swipe_mode_card.dart</span>
+        <span class="diff-stat">+8 / -8（スワイプ方向修正部分のみ抜粋）</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num"> 45</span><span class="line-prefix"> </span><span>      // background: startToEnd（右スワイプ）→ 次へ</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 46</span><span class="line-prefix"> </span><span>      background: Container(</span></div>
+        <div class="code-line line-del"><span class="line-num"> 47</span><span class="line-prefix">-</span><span>        color: colorScheme?.swipeSelf ?? const Color(0xFF0EA5E9),</span></div>
+        <div class="code-line line-add"><span class="line-num"> 47</span><span class="line-prefix">+</span><span>        color: colorScheme?.swipeDisabled ?? const Color(0xFFCBD5E1),</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 48</span><span class="line-prefix"> </span><span>        alignment: Alignment.centerLeft,</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 53</span><span class="line-prefix"> </span><span>            const Icon(Icons.arrow_forward, color: Colors.white),</span></div>
+        <div class="code-line line-del"><span class="line-num"> 56</span><span class="line-prefix">-</span><span>              l10n.houseworkAssignSwipeMakeMineLabel,</span></div>
+        <div class="code-line line-add"><span class="line-num"> 56</span><span class="line-prefix">+</span><span>              l10n.houseworkAssignSwipeNextLabel,</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 62</span><span class="line-prefix"> </span><span>      // secondaryBackground: endToStart（左スワイプ）→ 自分にする</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 63</span><span class="line-prefix"> </span><span>      secondaryBackground: Container(</span></div>
+        <div class="code-line line-del"><span class="line-num"> 64</span><span class="line-prefix">-</span><span>        color: colorScheme?.swipeDisabled ?? const Color(0xFFCBD5E1),</span></div>
+        <div class="code-line line-add"><span class="line-num"> 64</span><span class="line-prefix">+</span><span>        color: colorScheme?.swipeSelf ?? const Color(0xFF0EA5E9),</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 71</span><span class="line-prefix"> </span><span>            Text(</span></div>
+        <div class="code-line line-del"><span class="line-num"> 72</span><span class="line-prefix">-</span><span>              l10n.houseworkAssignSwipeNextLabel,</span></div>
+        <div class="code-line line-add"><span class="line-num"> 72</span><span class="line-prefix">+</span><span>              l10n.houseworkAssignSwipeMakeMineLabel,</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 75</span><span class="line-prefix"> </span><span>            const Icon(Icons.person, color: Colors.white),</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 79</span><span class="line-prefix"> </span><span>      confirmDismiss: (direction) async {</span></div>
+        <div class="code-line line-del"><span class="line-num"> 80</span><span class="line-prefix">-</span><span>        if (direction == DismissDirection.startToEnd) {</span></div>
+        <div class="code-line line-add"><span class="line-num"> 80</span><span class="line-prefix">+</span><span>        if (direction == DismissDirection.endToStart) {</span></div>
+        <div class="code-line line-add"><span class="line-num"> 81</span><span class="line-prefix">+</span><span>          // 左スワイプ（endToStart）→ 自分にする</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 82</span><span class="line-prefix"> </span><span>          onAssignToMe();</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 83</span><span class="line-prefix"> </span><span>        } else {</span></div>
+        <div class="code-line line-add"><span class="line-num"> 84</span><span class="line-prefix">+</span><span>          // 右スワイプ（startToEnd）→ 次へ</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 85</span><span class="line-prefix"> </span><span>          onNext();</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 86</span><span class="line-prefix"> </span><span>        }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>3箇所（background の色・ラベル、secondaryBackground の色・ラベル、confirmDismiss の direction 判定）をセットで修正。どれか1箇所だけ変えると表示と動作がずれるため、必ず3点同時修正が鉄則。「他メンバーのタスクを奪う」モードも同じ <code>SwipeModeCard</code> を使っているため、AC3 も自動的に解決された。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">スワイプモードで左スワイプすると「自分に割り当てる」アクションが実行される</div>
+      </div>
+      <div class="ac-body"><code>confirmDismiss</code> の <code>endToStart</code>（左スワイプ）で <code>onAssignToMe()</code> を呼ぶよう修正。<code>secondaryBackground</code>（左スワイプ背景）に青色と「自分にする」ラベルを設定して視覚表現も一致させた。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">スワイプモードで右スワイプすると「次へ（スキップ）」アクションが実行される</div>
+      </div>
+      <div class="ac-body"><code>confirmDismiss</code> の <code>startToEnd</code>（右スワイプ）で <code>onNext()</code> を呼ぶよう修正。<code>background</code>（右スワイプ背景）にグレーと「次へ」ラベルを設定。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">「他メンバーのタスクを奪う」スワイプモードでも左スワイプで割り当て・右スワイプでスキップの方向に統一</div>
+      </div>
+      <div class="ac-body">「自分に割り当てる」モードと「他メンバーのタスクを奪う」モードは同じ <code>SwipeModeCard</code> ウィジェットを共用しているため、同一ファイルの修正で両モードが同時に対応済みになった。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>「自分に割り当てる」スワイプモードで左スワイプすると自分への割り当てが実行されること</strong>
+          <span>カードを左方向に引っ張って離したとき、タスクが自分に割り当てられてカードが次に進むことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「自分に割り当てる」スワイプモードで右スワイプするとスキップ（次へ）が実行されること</strong>
+          <span>カードを右方向に引っ張って離したとき、割り当てられずにカードが次に進むことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>「他メンバーのタスクを奪う」スワイプモードでも同じ方向性（左=割り当て、右=スキップ）になっていること</strong>
+          <span>メンバー選択の「奪う」モードでも方向が統一されていることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>通常リストモードのスワイプ方向と一致していること</strong>
+          <span>リストモードで左スワイプ「自分にする」→ スワイプモードでも左スワイプ「自分にする」で同じ操作感であることを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>Sprint 40 #115 と同種のバグ（Dismissible の background/secondaryBackground と confirmDismiss direction 判定のミスマッチ）の再発。今回追加したウィジェットテストで左右のスワイプコールバックを自動検証できるようになった。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/housework_assign/presentation/widgets/swipe_mode_card_test.dart（新規）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「左スワイプ（endToStart）で onAssignToMe が呼ばれる」「右スワイプ（startToEnd）で onNext が呼ばれる」の各方向のコールバックをウィジェットテストで検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">mobile-conventions スキル更新済み</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">Dismissible の 3 箇所セット確認ルール（background / secondaryBackground / confirmDismiss direction 判定）を規約として記録。Sprint 40 での追記から継続。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

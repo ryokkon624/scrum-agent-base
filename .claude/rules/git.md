@@ -80,4 +80,3 @@ style: deleteItemのJSDocコメントを修正 (ryokkon624/hw-hub-manage#12)
 ## 禁止事項
 
 - `main` ブランチへの直接push
-- PRの作成（PRはりょこさんが行う）

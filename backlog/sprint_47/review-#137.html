@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 47 Review — #137 [mobile] 家事新規作成画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 24px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+  .flow-diagram { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .flow-diagram .flow-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .flow-steps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .flow-step { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 6px 12px; font-size: 12px; color: #166534; font-weight: 600; }
+  .flow-step-arrow { color: #888; font-size: 16px; }
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1d4ed8; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-shared { font-size: 11px; font-weight: 600; background: #fdf4ff; color: #7e22ce; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 47 Review</div>
+  <h1>#137 — [mobile] 家事新規作成画面を実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 47</span>
+    <span class="badge badge-issue">#137</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの実装が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>家事設定一覧（#136）の「家事を追加する」ボタンから遷移する新規作成画面がなかった。
+      家事名・カテゴリ・周期設定・担当者などを入力してバックエンドに保存する画面が必要だった。
+      加えて、#138（編集画面）でもフォームが共用できるよう、共通 <code>HouseworkForm</code> ウィジェットとして切り出す設計を取った。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>新規作成画面への遷移先がプレースホルダー</div>
+        <div class="flow-item"><span class="dot dot-red"></span>テンプレート一覧API（<code>/api/housework-templates</code>）を使う画面なし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>周期タイプ別の動的フォーム切り替えUI未実装</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span><code>HouseworkCreatePage</code>（<code>/settings/housework/new</code>）を実装</div>
+        <div class="flow-item"><span class="dot dot-green"></span>テンプレートモーダル（<code>TemplatePickerModal</code>）でカテゴリフィルタ付き選択</div>
+        <div class="flow-item"><span class="dot dot-green"></span>周期タイプ別入力ウィジェット（WEEKLY / MONTHLY / NTH_WEEKDAY）を動的切り替え</div>
+        <div class="flow-item"><span class="dot dot-green"></span>保存成功後に一覧 Provider を invalidate して最新反映</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">「テンプレートから選択」タップでモーダルが開き、テンプレート一覧がカテゴリフィルタ付きで表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>「テンプレートから選択」ボタン（Key: <code>'houseworkTemplateButton'</code>）タップで <code>showModalBottomSheet</code> を呼び出し、<code>TemplatePickerModal</code> を表示する。モーダル内はカテゴリフィルタ（FilterChip）とテンプレート一覧（ListView）で構成され、フィルタ選択でリアルタイムに絞り込まれる。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_settings/presentation/housework_create/widgets/template_picker_modal.dart</span>
+            <span class="diff-stat">新規 +124行</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>class _TemplatePickerModalState extends State&lt;TemplatePickerModal&gt; {</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>  String? _selectedCategory;  // null = すべて</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>  List&lt;HouseworkTemplateDto&gt; get _filtered {</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>    if (_selectedCategory == null) return widget.templates;</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>    return widget.templates.where((t) =&gt; t.category == _selectedCategory).toList();</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>モーダルは StatefulWidget で実装し、カテゴリフィルタは内部 state（<code>_selectedCategory</code>）で管理する。Notifier 不要のシンプルな設計。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">テンプレート選択時に家事名・説明・カテゴリ・周期設定が一括反映される</div>
+      </div>
+      <div class="ac-body">
+        <p>テンプレートタップ時に <code>notifier.applyTemplate(t, locale)</code> を呼び出す。<code>applyTemplate</code> は現在のロケール（ja/en/es）に応じて家事名・説明・推薦メモを選択し、フォーム全フィールドを一括更新する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_settings/presentation/housework_create/housework_create_notifier.dart</span>
+            <span class="diff-stat">applyTemplate メソッド</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">143</span><span class="line-prefix">+</span><span>  void applyTemplate(HouseworkTemplateDto template, String locale) {</span></div>
+            <div class="code-line line-add"><span class="line-num">147</span><span class="line-prefix">+</span><span>    final name = locale == 'es' ? template.nameEs</span></div>
+            <div class="code-line line-add"><span class="line-num">148</span><span class="line-prefix">+</span><span>        : locale == 'en' ? template.nameEn : template.nameJa;</span></div>
+            <div class="code-line line-add"><span class="line-num">163</span><span class="line-prefix">+</span><span>    final newForm = current.form.copyWith(</span></div>
+            <div class="code-line line-add"><span class="line-num">164</span><span class="line-prefix">+</span><span>      name: name, description: description ?? '',</span></div>
+            <div class="code-line line-add"><span class="line-num">165</span><span class="line-prefix">+</span><span>      category: template.category,</span></div>
+            <div class="code-line line-add"><span class="line-num">166</span><span class="line-prefix">+</span><span>      recurrenceType: template.recurrenceType,</span></div>
+            <div class="code-line line-add"><span class="line-num">167</span><span class="line-prefix">+</span><span>      weeklyDays: template.weeklyDays ?? 0,</span></div>
+            <div class="code-line line-add"><span class="line-num">168</span><span class="line-prefix">+</span><span>      dayOfMonth: template.dayOfMonth ?? 1,</span></div>
+            <div class="code-line line-add"><span class="line-num">169</span><span class="line-prefix">+</span><span>      nthWeek: template.nthWeek ?? 1,</span></div>
+            <div class="code-line line-add"><span class="line-num">170</span><span class="line-prefix">+</span><span>      weekday: template.weekday ?? 1,</span></div>
+            <div class="code-line line-add"><span class="line-num">171</span><span class="line-prefix">+</span><span>    );</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">推薦メモ（recommendation）があればバナー表示され、×で閉じられる</div>
+      </div>
+      <div class="ac-body">
+        <p>テンプレート選択後、<code>HouseworkCreateState.recommendationText</code> が非 null の場合にアンバー色のバナーを表示する。×ボタン（Key: <code>'dismissRecommendation'</code>）タップで <code>notifier.dismissRecommendation()</code> を呼び出し、<code>clearRecommendation: true</code> で state をクリアしてバナーを消す。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_settings/presentation/housework_create/housework_create_page.dart</span>
+            <span class="diff-stat">推薦メモバナー</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">139</span><span class="line-prefix">+</span><span>          // 推薦メモバナー（recommendationText が非null の時のみ表示）</span></div>
+            <div class="code-line line-add"><span class="line-num">140</span><span class="line-prefix">+</span><span>          if (state.recommendationText != null) ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">141</span><span class="line-prefix">+</span><span>            Container(</span></div>
+            <div class="code-line line-add"><span class="line-num">142</span><span class="line-prefix">+</span><span>              decoration: BoxDecoration(color: colors.accentSoft, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">161</span><span class="line-prefix">+</span><span>              IconButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">162</span><span class="line-prefix">+</span><span>                key: const Key('dismissRecommendation'),</span></div>
+            <div class="code-line line-add"><span class="line-num">163</span><span class="line-prefix">+</span><span>                onPressed: () =&gt; notifier.dismissRecommendation(),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">周期タイプに応じて入力欄が動的に切り替わる（WEEKLY=曜日チェック / MONTHLY=日付 / NTH_WEEKDAY=第n週+曜日）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>HouseworkForm</code> ウィジェット内で <code>form.recurrenceType</code>（<code>'1'</code>=WEEKLY / <code>'2'</code>=MONTHLY / <code>'3'</code>=NTH_WEEKDAY）に応じて専用ウィジェットを条件表示する。</p>
+        <div class="flow-diagram">
+          <div class="flow-title">周期タイプ別ウィジェット構成</div>
+          <div class="flow-steps">
+            <div class="flow-step">recurrenceType = '1' (WEEKLY)</div>
+            <div class="flow-step-arrow">→</div>
+            <div class="flow-step">WeeklyDaysSelector（7曜日チェックボックス）</div>
+          </div>
+          <div style="margin-top: 8px;" class="flow-steps">
+            <div class="flow-step">recurrenceType = '2' (MONTHLY)</div>
+            <div class="flow-step-arrow">→</div>
+            <div class="flow-step">MonthDaySelector（1〜30+月末 ドロップダウン）</div>
+          </div>
+          <div style="margin-top: 8px;" class="flow-steps">
+            <div class="flow-step">recurrenceType = '3' (NTH_WEEKDAY)</div>
+            <div class="flow-step-arrow">→</div>
+            <div class="flow-step">NthWeekdaySelector（第1〜5週 + 曜日）</div>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_settings/presentation/widgets/housework_form.dart</span>
+            <span class="diff-stat">新規 +333行（#137・#138共用）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">160</span><span class="line-prefix">+</span><span>              // 周期タイプ別入力（if/if/if で動的切り替え）</span></div>
+            <div class="code-line line-add"><span class="line-num">161</span><span class="line-prefix">+</span><span>              if (form.recurrenceType == '1') ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">162</span><span class="line-prefix">+</span><span>                WeeklyDaysSelector(weeklyDays: form.weeklyDays,</span></div>
+            <div class="code-line line-add"><span class="line-num">163</span><span class="line-prefix">+</span><span>                  onToggle: onWeeklyDayToggled),</span></div>
+            <div class="code-line line-add"><span class="line-num">164</span><span class="line-prefix">+</span><span>              ],</span></div>
+            <div class="code-line line-add"><span class="line-num">165</span><span class="line-prefix">+</span><span>              if (form.recurrenceType == '2') ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">166</span><span class="line-prefix">+</span><span>                MonthDaySelector(dayOfMonth: form.dayOfMonth,</span></div>
+            <div class="code-line line-add"><span class="line-num">167</span><span class="line-prefix">+</span><span>                  onChanged: onDayOfMonthChanged),</span></div>
+            <div class="code-line line-add"><span class="line-num">168</span><span class="line-prefix">+</span><span>              ],</span></div>
+            <div class="code-line line-add"><span class="line-num">169</span><span class="line-prefix">+</span><span>              if (form.recurrenceType == '3') ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">170</span><span class="line-prefix">+</span><span>                NthWeekdaySelector(nthWeek: form.nthWeek, weekday: form.weekday,</span></div>
+            <div class="code-line line-add"><span class="line-num">171</span><span class="line-prefix">+</span><span>                  onNthChanged: onNthWeekChanged, onWeekdayChanged: onWeekdayChanged),</span></div>
+            <div class="code-line line-add"><span class="line-num">172</span><span class="line-prefix">+</span><span>              ],</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>周期タイプコード値 <code>'1'</code>/<code>'2'</code>/<code>'3'</code> はバックエンドの <code>m_code</code> テーブルで管理されている。<code>RecurrenceType</code> enum の <code>code</code> フィールドに対応。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">必須フィールドのバリデーションが動作する（家事名最大100文字、曜日1つ以上選択 等）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>HouseworkCreateNotifier.validate()</code> メソッドでバリデーションを実行し、エラーキー文字列を <code>HouseworkFormErrors</code> として返す。<code>HouseworkForm</code> ウィジェットがエラーキーを ARB から翻訳して各フィールドの <code>errorText</code> に表示する。保存ボタン押下時（<code>_onSubmit</code>）に <code>setState(() => _errors = errors)</code> でフォームを再描画する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_settings/presentation/housework_create/housework_create_notifier.dart</span>
+            <span class="diff-stat">validate メソッド</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">200</span><span class="line-prefix">+</span><span>    if (form.name.trim().isEmpty) {</span></div>
+            <div class="code-line line-add"><span class="line-num">201</span><span class="line-prefix">+</span><span>      nameError = 'houseworkCreateErrorNameRequired';</span></div>
+            <div class="code-line line-add"><span class="line-num">202</span><span class="line-prefix">+</span><span>    } else if (form.name.length &gt; 100) {</span></div>
+            <div class="code-line line-add"><span class="line-num">203</span><span class="line-prefix">+</span><span>      nameError = 'houseworkCreateErrorNameTooLong';</span></div>
+            <div class="code-line line-add"><span class="line-num">204</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">206</span><span class="line-prefix">+</span><span>    if (form.recurrenceType == '1' &amp;&amp; form.weeklyDays == 0) {</span></div>
+            <div class="code-line line-add"><span class="line-num">207</span><span class="line-prefix">+</span><span>      weeklyDaysError = 'houseworkCreateErrorWeeklyDaysRequired';</span></div>
+            <div class="code-line line-add"><span class="line-num">208</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">216</span><span class="line-prefix">+</span><span>    // 終了日 &lt; 開始日のチェック</span></div>
+            <div class="code-line line-add"><span class="line-num">217</span><span class="line-prefix">+</span><span>    if (form.endDate.compareTo(form.startDate) &lt; 0) {</span></div>
+            <div class="code-line line-add"><span class="line-num">218</span><span class="line-prefix">+</span><span>      endDateError = 'houseworkCreateErrorEndDateBeforeStart';</span></div>
+            <div class="code-line line-add"><span class="line-num">219</span><span class="line-prefix">+</span><span>    }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">POST /api/houseworks で保存され、成功後スナックバー表示→家事設定一覧へ戻る</div>
+      </div>
+      <div class="ac-body">
+        <p>保存成功後に <code>state.successMessage</code> が設定される。Page 側の <code>ref.listen</code> が検知し、スナックバー表示 → <code>ref.invalidate(houseworkListNotifierProvider)</code> で一覧を更新 → <code>Navigator.of(context).pop()</code> で前画面（一覧）に戻る。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_settings/presentation/housework_create/housework_create_page.dart</span>
+            <span class="diff-stat">ref.listen による後処理</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>    ref.listen(houseworkCreateNotifierProvider, (_, next) {</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>      if (!next.hasValue) return;</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>      if (val.successMessage != null) {</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>        AppSnackBar.showSuccess(l10n.houseworkCreateSaveSuccess);</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>        // 一覧Providerをinvalidateして最新状態を反映（IndexedStack 対策）</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>        ref.invalidate(houseworkListNotifierProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>        if (mounted) Navigator.of(context).pop();</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>      }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>IndexedStack 配下では AutoDispose が機能しないため、編集・作成系の画面ではかならず <code>ref.invalidate(一覧Provider)</code> を保存成功後に呼ぶ。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC7 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC7</div>
+        <div class="ac-text">カバレッジ ≥ 95%</div>
+      </div>
+      <div class="ac-body">
+        <p>Notifier テスト（家事名バリデーション・テンプレート適用・保存成功/失敗・推薦メモ非表示）と Repository テストを実装し、主要分岐を網羅した。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>「テンプレートから選択」タップでモーダルが開き、掃除テンプレートなどが表示されること</strong>
+          <span>カテゴリフィルタチップで「掃除」を選ぶと掃除カテゴリのテンプレートだけが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>テンプレートを選択するとフォームの家事名・カテゴリ・周期が一括反映されること</strong>
+          <span>推薦メモがあるテンプレートを選んだ場合、黄色いバナーが表示され「×」で閉じられること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>周期タイプを「毎週」「毎月」「第n週曜日」に切り替えると、それぞれ対応する入力欄が表示されること</strong>
+          <span>毎週→曜日チェックボックス7つ、毎月→日付ドロップダウン（1〜30+月末）、第n週→週番号+曜日</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>家事名を入力せずに保存すると「家事名は必須です」エラーが表示されること</strong>
+          <span>毎週を選んで曜日を1つも選択せずに保存すると「曜日を1つ以上選択してください」と表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>正しく入力して保存ボタンをタップすると、スナックバー「家事を保存しました」が表示されて一覧画面に戻ること</strong>
+          <span>一覧画面に戻った後、追加した家事が表示されること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>housework_create_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>テンプレートボタン・推薦メモバナー・共通フォーム・保存/キャンセルボタン・ref.listen による後処理</td>
+      </tr>
+      <tr>
+        <td><code>housework_create_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>各フィールド更新メソッド・applyTemplate・dismissRecommendation・validate・save</td>
+      </tr>
+      <tr>
+        <td><code>housework_create_state.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>HouseworkFormState（全フィールド copyWith）・HouseworkFormErrors・HouseworkCreateState</td>
+      </tr>
+      <tr>
+        <td><code>housework_form.dart</code></td>
+        <td><span class="tag-shared">共用（#137/#138）</span></td>
+        <td>家事名・説明・カテゴリ・周期タイプ・周期別ウィジェット・担当者・開始日・終了日フォームをまとめた共通ウィジェット</td>
+      </tr>
+      <tr>
+        <td><code>weekly_days_selector.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>7曜日チェックボックス（ビットマスク操作）</td>
+      </tr>
+      <tr>
+        <td><code>month_day_selector.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>1〜30 + 月末（=31）のドロップダウン</td>
+      </tr>
+      <tr>
+        <td><code>nth_weekday_selector.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>第1〜5週 + 曜日のドロップダウン2連</td>
+      </tr>
+      <tr>
+        <td><code>template_picker_modal.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>StatefulWidget によるカテゴリフィルタ付きテンプレート選択モーダル</td>
+      </tr>
+      <tr>
+        <td><code>housework_template_dto.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>HouseworkTemplateDto（多言語フィールド・周期設定含む）</td>
+      </tr>
+      <tr>
+        <td><code>housework_create_notifier_test.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>Notifier テスト（バリデーション・テンプレート適用・保存成功/失敗）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

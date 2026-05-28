@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 38 Review — #91 買い物リスト購入済みタブのスワイプ対応</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #e0f2fe; color: #0369a1; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* Swipe mock UI */
+  .swipe-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .swipe-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px; }
+  .swipe-box .swipe-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .swipe-label-before { color: #b91c1c; }
+  .swipe-label-after { color: #166534; }
+  .mock-phone { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; }
+  .mock-tab-bar { display: flex; gap: 0; margin-bottom: 10px; border-bottom: 2px solid #e5e5e5; }
+  .mock-tab { font-size: 11px; padding: 4px 10px; color: #9ca3af; }
+  .mock-tab.active { color: #0369a1; border-bottom: 2px solid #0369a1; margin-bottom: -2px; font-weight: 700; }
+  .mock-card-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #e9f5ee; border-radius: 6px; margin-bottom: 6px; }
+  .mock-card-item.swipe-active { background: linear-gradient(to right, #f9fafb 60%, #fef3c7 100%); position: relative; }
+  .mock-card-name { font-size: 12px; color: #1a1a1a; flex: 1; }
+  .mock-no-swipe-badge { font-size: 10px; background: #f3f4f6; color: #9ca3af; padding: 1px 5px; border-radius: 3px; }
+  .mock-swipe-hint { background: #fef9c3; border: 1px solid #fde68a; border-radius: 4px; padding: 4px 8px; font-size: 10px; color: #78350f; margin-top: 6px; }
+  .mock-swipe-arrow { font-size: 14px; color: #f59e0b; }
+  .mock-snack { background: #1f2937; color: #f9fafb; font-size: 10px; padding: 6px 10px; border-radius: 4px; margin-top: 8px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 38 Review</div>
+  <h1>#91 — 買い物リスト画面の購入済みタブで<br>スワイプを可能にしたい</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 38</span>
+    <span class="badge badge-issue">#91</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Why -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>買い物リスト画面の購入済みタブはスワイプが無効になっており、他のタブ（未購入・かご）と操作感が異なっていた。Web版SPモードでは購入済みタブでも左スワイプが使えるため、モバイルアプリの操作体験を Web SPモードに揃える必要があった。</p>
+    </div>
+
+    <!-- Before/After mock UI -->
+    <div class="swipe-demo">
+      <div class="swipe-box">
+        <div class="swipe-label swipe-label-before">改修前（スワイプ不可）</div>
+        <div class="mock-phone">
+          <div class="mock-tab-bar">
+            <div class="mock-tab">未購入</div>
+            <div class="mock-tab">かご</div>
+            <div class="mock-tab active">購入済み</div>
+          </div>
+          <div class="mock-card-item">
+            <span class="mock-card-name">牛乳</span>
+            <span class="mock-no-swipe-badge">スワイプ不可</span>
+          </div>
+          <div class="mock-card-item">
+            <span class="mock-card-name">シャンプー</span>
+            <span class="mock-no-swipe-badge">スワイプ不可</span>
+          </div>
+        </div>
+      </div>
+      <div class="swipe-box">
+        <div class="swipe-label swipe-label-after">改修後（左スワイプ有効）</div>
+        <div class="mock-phone">
+          <div class="mock-tab-bar">
+            <div class="mock-tab">未購入</div>
+            <div class="mock-tab">かご</div>
+            <div class="mock-tab active">購入済み</div>
+          </div>
+          <div class="mock-card-item swipe-active">
+            <span class="mock-card-name">牛乳</span>
+            <span class="mock-swipe-arrow">&#8592;</span>
+          </div>
+          <div class="mock-card-item">
+            <span class="mock-card-name">シャンプー</span>
+          </div>
+          <div class="mock-snack">ステータスを変更するには、編集画面で更新してください</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>購入済みタブ: <code>enableSwipe: false</code></div>
+        <div class="flow-item"><span class="dot dot-red"></span>スワイプジェスチャー一切無効</div>
+        <div class="flow-item"><span class="dot dot-red"></span>他タブと操作感が異なる</div>
+        <div class="flow-item"><span class="dot dot-red"></span>Web SPモードと体験が一致しない</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>購入済みタブ: <code>enableSwipe: true</code></div>
+        <div class="flow-item"><span class="dot dot-green"></span>左スワイプのみ有効（<code>endToStart</code>）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>右スワイプは不可（<code>direction: endToStart</code>）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>スワイプ後にSnackBarでヒント表示</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">購入済みタブのアイテムカードで左スワイプが可能である</div>
+      </div>
+      <div class="ac-body">
+        <p><code>SwipeableShoppingCard</code> に <code>direction</code> パラメータを追加。<code>purchased_tab.dart</code> では <code>enableSwipe: true</code> かつ <code>direction: DismissDirection.endToStart</code> を渡すことで左スワイプを有効にした。</p>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/swipeable_shopping_card.dart</span>
+            <span class="diff-stat">+5 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>    required this.onTap,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">20</span><span class="line-prefix"> </span><span>    required this.onFavoriteTap,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">21</span><span class="line-prefix"> </span><span>    this.enableSwipe = true,</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>    this.direction = DismissDirection.horizontal,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">23</span><span class="line-prefix"> </span><span>  });</span></div>
+            <div class="code-line line-ctx"><span class="line-num">37</span><span class="line-prefix"> </span><span>  /// false のときはスワイプなしでカード本体（_CardBody）のみを表示する（購入済みタブ用）</span></div>
+            <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>  final bool enableSwipe;</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>  /// スワイプ方向。購入済みタブでは endToStart（左スワイプのみ）を指定する</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>  final DismissDirection direction;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">65</span><span class="line-prefix"> </span><span>    return Dismissible(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">66</span><span class="line-prefix"> </span><span>      key: ValueKey('${variant.name}_${item.shoppingItemId}'),</span></div>
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>      direction: direction,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">68</span><span class="line-prefix"> </span><span>      dismissThresholds: const {</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>デフォルトは <code>DismissDirection.horizontal</code> のため、既存の未購入・かごタブの動作は変わらない。購入済みタブからのみ <code>endToStart</code> を渡す。</span>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/purchased_tab.dart</span>
+            <span class="diff-stat">+3 / -2</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">107</span><span class="line-prefix"> </span><span>                  child: SwipeableShoppingCard(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">108</span><span class="line-prefix"> </span><span>                    item: item,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">109</span><span class="line-prefix"> </span><span>                    variant: ShoppingTab.purchased,</span></div>
+            <div class="code-line line-del"><span class="line-num">110</span><span class="line-prefix">-</span><span>                    enableSwipe: false,</span></div>
+            <div class="code-line line-add"><span class="line-num">110</span><span class="line-prefix">+</span><span>                    enableSwipe: true,</span></div>
+            <div class="code-line line-add"><span class="line-num">111</span><span class="line-prefix">+</span><span>                    direction: DismissDirection.endToStart,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">112</span><span class="line-prefix"> </span><span>                    onTap: () =&gt; onCardTap(item.shoppingItemId),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">113</span><span class="line-prefix"> </span><span>                    onFavoriteTap: () {},</span></div>
+            <div class="code-line line-ctx"><span class="line-num">114</span><span class="line-prefix"> </span><span>                    onPrimarySwipe: () async =&gt; false,</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">左スワイプ後、「ステータスを変更するには、編集画面で更新してください」のトーストメッセージが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>ヘルパー関数 <code>_showPurchasedSwipeHint()</code> を追加。<code>onSecondarySwipe</code> コールバック内でSnackBarを表示し、<code>false</code> を返すことでカードが元の位置に戻る（アイテムは削除されない）。メッセージはARBファイルで管理（i18n対応）。</p>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/purchased_tab.dart</span>
+            <span class="diff-stat">+19 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>/// 購入済みタブのカードで左スワイプしたときに表示するSnackBar</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>void _showPurchasedSwipeHint(BuildContext context, AppLocalizations l10n) {</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>  ScaffoldMessenger.of(context)</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>    ..hideCurrentSnackBar()</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>    ..showSnackBar(</span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>      SnackBar(</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>        content: Text(l10n.shoppingSwipePurchasedHint),</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>        behavior: SnackBarBehavior.floating,</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>        duration: const Duration(seconds: 3),</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>      ),</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>}</span></div>
+            <div class="code-line line-ctx"><span class="line-num">114</span><span class="line-prefix"> </span><span>                    onPrimarySwipe: () async =&gt; false,</span></div>
+            <div class="code-line line-del"><span class="line-num">115</span><span class="line-prefix">-</span><span>                    onSecondarySwipe: () async =&gt; false,</span></div>
+            <div class="code-line line-add"><span class="line-num">115</span><span class="line-prefix">+</span><span>                    onSecondarySwipe: () async {</span></div>
+            <div class="code-line line-add"><span class="line-num">116</span><span class="line-prefix">+</span><span>                      _showPurchasedSwipeHint(context, l10n);</span></div>
+            <div class="code-line line-add"><span class="line-num">117</span><span class="line-prefix">+</span><span>                      return false;</span></div>
+            <div class="code-line line-add"><span class="line-num">118</span><span class="line-prefix">+</span><span>                    },</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>onSecondarySwipe</code> が <code>false</code> を返すことで <code>Dismissible</code> のスワイプ確定が取り消され、カードが元の位置に戻る。アイテムは削除されない。</span>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/l10n/app_ja.arb（/app_en.arb / app_es.arb も同様）</span>
+            <span class="diff-stat">+1 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">327</span><span class="line-prefix"> </span><span>  "shoppingSwipeMarkPurchased": "購入済みに",</span></div>
+            <div class="code-line line-ctx"><span class="line-num">328</span><span class="line-prefix"> </span><span>  "shoppingSwipeMoveBack": "戻す",</span></div>
+            <div class="code-line line-add"><span class="line-num">329</span><span class="line-prefix">+</span><span>  "shoppingSwipePurchasedHint": "ステータスを変更するには、編集画面で更新してください",</span></div>
+            <div class="code-line line-ctx"><span class="line-num">330</span><span class="line-prefix"> </span><span>  "shoppingBulkPurchaseButton": "購入済みにする",</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">右スワイプは無効である</div>
+      </div>
+      <div class="ac-body">
+        <p><code>direction: DismissDirection.endToStart</code> を指定することで、Flutter の <code>Dismissible</code> が右スワイプ（<code>startToEnd</code>）を受け付けなくなる。右スワイプジェスチャーは無視される。</p>
+        <div class="annotation">
+          <span class="annotation-icon">&#128161;</span>
+          <span><code>DismissDirection.endToStart</code> は「右端 → 左方向」の1方向のみ。<code>horizontal</code>（両方向）ではないため、右スワイプは物理的に動作しない。<code>onPrimarySwipe: () async =&gt; false</code> との二重ガードになっている。</span>
+        </div>
+
+        <!-- レビュー指摘対応 -->
+        <p style="margin-top:12px;font-size:13px;color:#4b5563;">また、コードレビューの指摘に基づいて <code>items.map()</code> 内の <code>Padding</code> に <code>ValueKey</code> を追加した。スワイプ後のリスト更新時にウィジェット状態が混乱しないようにするための対応。</p>
+        <div class="file-change" style="margin-top:12px;">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/purchased_tab.dart</span>
+            <span class="diff-stat">+1 / -0（レビュー指摘対応）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">101</span><span class="line-prefix"> </span><span>              ...items.map(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">102</span><span class="line-prefix"> </span><span>                (item) =&gt; Padding(</span></div>
+            <div class="code-line line-add"><span class="line-num">103</span><span class="line-prefix">+</span><span>                  key: ValueKey(item.shoppingItemId),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">104</span><span class="line-prefix"> </span><span>                  padding: const EdgeInsets.symmetric(</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>購入済みタブのアイテムを左スワイプできること</strong>
+          <span>カードを左方向にスワイプしてSnackBarが表示されるか確認。カードがスルッと引っかかる感じで動作すれば左スワイプ有効</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>左スワイプ後に「ステータスを変更するには、編集画面で更新してください」のメッセージが表示されること</strong>
+          <span>スワイプが完了したタイミングでフローティングSnackBarが3秒表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>スワイプ後もカードが消えずに残ること</strong>
+          <span>アイテムが削除されず、元の位置にカードが戻るか確認（ステータス変更なし）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>右スワイプが無効なこと</strong>
+          <span>カードを右方向に引っ張っても動かないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>未購入・かごタブのスワイプ動作が変わっていないこと</strong>
+          <span>他のタブで右スワイプ（かごに入れる/購入済みに）・左スワイプ（削除/戻す）が引き続き正常動作するか確認（デグレ確認）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>swipeable_shopping_card.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>direction</code> パラメータ追加（デフォルト: <code>horizontal</code>）。<code>Dismissible</code> に <code>direction</code> を渡す</td>
+      </tr>
+      <tr>
+        <td><code>purchased_tab.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>enableSwipe: true</code> / <code>direction: endToStart</code> に変更。<code>onSecondarySwipe</code> でSnackBar表示。<code>Padding</code> に <code>ValueKey</code> 追加</td>
+      </tr>
+      <tr>
+        <td><code>app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>shoppingSwipePurchasedHint</code> キーを3言語に追加</td>
+      </tr>
+      <tr>
+        <td><code>test/features/shopping/presentation/purchased_tab_test.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>5件のウィジェットテスト追加（Dismissible存在確認・direction確認・SnackBar表示確認・カード残存確認・空リスト確認）</td>
+      </tr>
+      <tr>
+        <td><code>test/features/shopping/presentation/swipeable_shopping_card_test.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>directionパラメータ</code> グループとして3件のテスト追加</td>
+      </tr>
+      <tr>
+        <td>未購入タブ・かごタブの実装</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>他タブのスワイプ動作は変更なし（デフォルト引数により既存動作を維持）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

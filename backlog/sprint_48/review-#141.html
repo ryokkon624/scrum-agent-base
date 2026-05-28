@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 48 Review — #141 問い合わせ詳細画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #e0f2fe; color: #0369a1; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1d4ed8; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Chat UI mock */
+  .screen-mock { background: #1a1a2e; border-radius: 24px; padding: 16px; max-width: 360px; margin: 0 auto; }
+  .screen-inner { background: #f8f7f5; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-height: 560px; }
+  .app-bar { background: white; padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-weight: 700; font-size: 16px; color: #1a1a1a; flex-shrink: 0; }
+  .detail-header { background: white; padding: 12px 14px; border-bottom: 1px solid #e5e5e5; flex-shrink: 0; }
+  .detail-title { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+  .detail-badges { display: flex; gap: 6px; margin-bottom: 4px; align-items: center; }
+  .detail-status-desc { font-size: 10px; color: #9ca3af; }
+  .message-area { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .bubble-wrapper-user { display: flex; flex-direction: column; align-items: flex-end; }
+  .bubble-wrapper-other { display: flex; flex-direction: column; align-items: flex-start; }
+  .bubble-label { font-size: 10px; color: #9ca3af; font-weight: 600; margin-bottom: 3px; }
+  .bubble-user { background: #059669; color: white; padding: 8px 12px; border-radius: 12px; font-size: 12px; max-width: 75%; }
+  .bubble-ai { background: white; border: 1px solid #e5e5e5; color: #1a1a1a; padding: 8px 12px; border-radius: 12px; font-size: 12px; max-width: 75%; }
+  .bubble-staff { background: white; border: 1px solid #e5e5e5; color: #1a1a1a; padding: 8px 12px; border-radius: 12px; font-size: 12px; max-width: 75%; }
+  .bubble-time { font-size: 10px; color: #9ca3af; margin-top: 3px; }
+  .reply-area { background: white; border-top: 1px solid #e5e5e5; padding: 10px 12px; flex-shrink: 0; }
+  .reply-actions { margin-bottom: 6px; }
+  .btn-escalate { border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; text-align: center; font-size: 11px; color: #374151; margin-bottom: 6px; }
+  .reply-row { display: flex; gap: 6px; align-items: flex-end; }
+  .reply-input { flex: 1; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; font-size: 11px; color: #9ca3af; }
+  .send-btn { background: #059669; color: white; padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .send-btn-disabled { background: #9ca3af; color: white; padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .btn-close { border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; text-align: center; font-size: 11px; color: #374151; margin-top: 6px; }
+  .badge-sm { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 500; }
+  .badge-housework { background: #fef3c7; color: #92400e; }
+  .badge-ai-answered { background: #ede9fe; color: #5b21b6; }
+
+  /* Status flow table */
+  .status-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .status-table th { padding: 6px 10px; background: #f9fafb; border: 1px solid #e5e5e5; text-align: left; font-size: 11px; font-weight: 700; color: #6b7280; }
+  .status-table td { padding: 8px 10px; border: 1px solid #e5e5e5; color: #374151; }
+  .check-yes { color: #059669; font-weight: 700; }
+  .check-no { color: #9ca3af; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 48 Review</div>
+  <h1>#141 — 問い合わせ詳細画面を実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 48</span>
+    <span class="badge badge-issue">#141</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- なぜこの機能が必要だったか -->
+  <section>
+    <h2>なぜこの機能が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>問い合わせ一覧（#23）タップ・新規作成（#24）送信後の遷移先として必要。サポートとのメッセージスレッドをチャット形式で表示し、返信・クローズ・スタッフ引き継ぎの操作をユーザーが行える画面がなかった。ステータスに応じてUIが動的に変化する複雑な画面。</p>
+    </div>
+
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px;">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #888; text-align: center; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">AI_ANSWERED 状態（返信・「スタッフへ引き継ぐ」・「解決した」）</div>
+        <div class="screen-mock">
+          <div class="screen-inner">
+            <div class="app-bar">お問い合わせ詳細</div>
+            <div class="detail-header">
+              <div class="detail-title">#3: 家事の繰り返し設定について</div>
+              <div class="detail-badges">
+                <span class="badge-sm badge-housework">家事</span>
+                <span class="badge-sm badge-ai-answered">AI回答済み</span>
+              </div>
+              <div class="detail-status-desc">AIが回答しました。解決した場合はクローズ、スタッフに引き継ぐこともできます。</div>
+            </div>
+            <div class="message-area">
+              <div class="bubble-wrapper-user">
+                <div class="bubble-label">あなた</div>
+                <div class="bubble-user">繰り返し設定の使い方を教えてください</div>
+                <div class="bubble-time">2026/05/19 10:30</div>
+              </div>
+              <div class="bubble-wrapper-other">
+                <div class="bubble-label">AI サポート</div>
+                <div class="bubble-ai">タスク編集画面から「繰り返し設定」を選択できます...</div>
+                <div class="bubble-time">2026/05/19 10:31</div>
+              </div>
+            </div>
+            <div class="reply-area">
+              <div class="reply-actions">
+                <div class="btn-escalate">スタッフへ引き継ぐ</div>
+              </div>
+              <div class="reply-row">
+                <div class="reply-input">返信を入力...</div>
+                <div class="send-btn-disabled">送信</div>
+              </div>
+              <div class="btn-close">解決した</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #888; text-align: center; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">CLOSED 状態（返信フォーム非表示）</div>
+        <div class="screen-mock">
+          <div class="screen-inner">
+            <div class="app-bar">お問い合わせ詳細</div>
+            <div class="detail-header">
+              <div class="detail-title">#1: ログインできない</div>
+              <div class="detail-badges">
+                <span class="badge-sm" style="background: #f3f4f6; color: #6b7280;">バグ報告</span>
+                <span class="badge-sm" style="background: #f3f4f6; color: #6b7280;">クローズ</span>
+              </div>
+              <div class="detail-status-desc">この問い合わせはクローズされました。</div>
+            </div>
+            <div class="message-area">
+              <div class="bubble-wrapper-user">
+                <div class="bubble-label">あなた</div>
+                <div class="bubble-user">ログインできません</div>
+                <div class="bubble-time">2026/05/18 09:00</div>
+              </div>
+              <div class="bubble-wrapper-other">
+                <div class="bubble-label">スタッフ</div>
+                <div class="bubble-staff">解決のお役に立てて嬉しいです</div>
+                <div class="bubble-time">2026/05/18 10:00</div>
+              </div>
+            </div>
+            <!-- 返信フォームなし -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC別 実装内容 -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">GET /api/inquiries/{inquiryId} で取得したスレッドがチャット形式で表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>InquiryDetailNotifier</code>（<code>AutoDisposeFamilyNotifier</code>）が <code>build(int arg)</code> で <code>inquiryId</code> を受け取り、<code>Future.microtask</code> で API を呼び出す。取得した <code>InquiryDetailDto.messages</code> を <code>ListView.separated</code> で <code>MessageBubble</code> ウィジェットとして一覧表示する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_notifier.dart</span>
+            <span class="diff-stat">新規（_fetchDetail）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>class InquiryDetailNotifier</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>    extends AutoDisposeFamilyNotifier&lt;InquiryDetailState, int&gt; {</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>  @override</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>  InquiryDetailState build(int arg) {</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    Future.microtask(_fetchDetail);</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>    return const InquiryDetailState();</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>AutoDisposeFamilyNotifier&lt;InquiryDetailState, int&gt;</code> で <code>inquiryId</code> をキーにした画面固有 Provider。詳細画面を閉じると自動破棄され、次回開くと最新データを取得する設計。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">USER/AI/STAFF の送信者タイプに応じて表示位置と色が仕様通りになる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>MessageBubble</code> ウィジェットで <code>SenderType.fromCode()</code> を使い、送信者タイプを enum に変換して表示位置・バブル色・送信者ラベルを切り替える。</p>
+
+        <table class="status-table" style="margin-bottom: 12px;">
+          <tr>
+            <th>送信者タイプ</th>
+            <th>コード値</th>
+            <th>表示位置</th>
+            <th>バブル色</th>
+          </tr>
+          <tr>
+            <td>USER（あなた）</td>
+            <td><code>SenderType.you</code></td>
+            <td>右寄せ</td>
+            <td style="color: #059669;">プライマリ（緑）</td>
+          </tr>
+          <tr>
+            <td>AI サポート</td>
+            <td><code>SenderType.aiSupport</code></td>
+            <td>左寄せ</td>
+            <td style="color: #374151;">白（ボーダーあり）</td>
+          </tr>
+          <tr>
+            <td>スタッフ</td>
+            <td><code>SenderType.staff</code></td>
+            <td>左寄せ</td>
+            <td style="color: #374151;">白（ボーダーあり）</td>
+          </tr>
+        </table>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/widgets/message_bubble.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>    final senderType = SenderType.fromCode(message.senderType);</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>    final isUser = senderType == SenderType.you;</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>    final senderLabel = switch (senderType) {</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>      SenderType.you =&gt; l10n.senderTypeUser,</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>      SenderType.aiSupport =&gt; l10n.senderTypeAi,</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>      SenderType.staff =&gt; l10n.senderTypeStaff,</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>      null =&gt; message.senderType,  // 不明なコード値はそのまま表示</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>    };</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>    final bubbleColor = isUser ? colors.primary : colors.surfaceCard;</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>    final textColor = isUser ? colors.onPrimary : colors.textBody;</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>    final alignment = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>マジックストリング比較を避け、<code>core/models/SenderType.fromCode()</code> を使って enum に変換してから switch。不明コードは <code>null</code> になり、コード値文字列をそのまま送信者ラベルとして表示するフォールバック設計。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">ステータスに応じた説明文がスレッド末尾に表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>詳細ヘッダーに現在のステータスに応じた説明文を表示。<code>_statusDescription()</code> メソッドで enum を switch して ARB の i18n キーを使い分ける。</p>
+
+        <table class="status-table">
+          <tr>
+            <th>ステータス</th>
+            <th>説明文（i18n キー）</th>
+          </tr>
+          <tr><td>OPEN</td><td><code>inquiryDetailStatusOpen</code>（AIが回答を準備中です）</td></tr>
+          <tr><td>AI_ANSWERED</td><td><code>inquiryDetailStatusAiAnswered</code>（AIが回答しました）</td></tr>
+          <tr><td>PENDING_STAFF</td><td><code>inquiryDetailStatusPendingStaff</code>（スタッフへの引き継ぎを受け付けました）</td></tr>
+          <tr><td>STAFF_ANSWERED</td><td><code>inquiryDetailStatusStaffAnswered</code>（スタッフが回答しました）</td></tr>
+          <tr><td>CLOSED</td><td><code>inquiryDetailStatusClosed</code>（この問い合わせはクローズされました）</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">CLOSED 以外のステータスで返信フォームが表示され、POST /api/inquiries/{id}/messages で送信できる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>isClosed</code> フラグで返信エリア全体の表示/非表示を制御。<code>TextEditingController</code> の状態を <code>ValueListenableBuilder</code> で監視し、テキスト入力中のみ送信ボタンを有効化する。送信後は <code>InquiryDetailNotifier.sendReply()</code> がメッセージ送信 → 最新データ再取得 → スクロール最下部移動を行う。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_page.dart</span>
+            <span class="diff-stat">新規（返信エリア部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">172</span><span class="line-prefix">+</span><span>        if (!isClosed) ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">173</span><span class="line-prefix">+</span><span>          Container(</span></div>
+            <div class="code-line line-add"><span class="line-num">174</span><span class="line-prefix">+</span><span>            key: const Key('replyArea'),</span></div>
+            <div class="code-line line-add"><span class="line-num">   </span><span class="line-prefix"> </span><span>            ...</span></div>
+            <div class="code-line line-add"><span class="line-num">217</span><span class="line-prefix">+</span><span>            ValueListenableBuilder&lt;TextEditingValue&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">218</span><span class="line-prefix">+</span><span>              valueListenable: _replyController,</span></div>
+            <div class="code-line line-add"><span class="line-num">219</span><span class="line-prefix">+</span><span>              builder: (context, value, _) {</span></div>
+            <div class="code-line line-add"><span class="line-num">220</span><span class="line-prefix">+</span><span>                final canSend = value.text.trim().isNotEmpty;</span></div>
+            <div class="code-line line-add"><span class="line-num">221</span><span class="line-prefix">+</span><span>                return ElevatedButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">222</span><span class="line-prefix">+</span><span>                  key: const Key('sendButton'),</span></div>
+            <div class="code-line line-add"><span class="line-num">223</span><span class="line-prefix">+</span><span>                  onPressed: canSend ? () =&gt; _sendReply() : null,</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>ValueListenableBuilder</code> でコントローラーのテキスト変化を監視し、空文字列のときは <code>onPressed: null</code> で送信ボタンを無効化。state では管理せず、コントローラーの値を直接使うことで余分な state 更新を避けた設計（AC5 の「空の場合は無効」を自然に満たす）。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_notifier.dart</span>
+            <span class="diff-stat">新規（sendReply メソッド）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; sendReply(String body) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>      final repo = ref.read(inquiryRepositoryProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>      await repo.addMessage(arg, body);       // POST /api/inquiries/{id}/messages</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>      final detail = await repo.fetchInquiry(arg); // GET して最新状態取得</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>      state = state.copyWith(detail: detail, replySent: true);</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>    } on AppException catch (e) {</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>      state = state.copyWith(errorMessage: e.message);</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>      state = state.copyWith(errorMessage: 'errorUnexpected');</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">返信テキストが空の場合は送信ボタンが無効になる</div>
+      </div>
+      <div class="ac-body">
+        <p>AC4 の実装内容に内包。<code>ValueListenableBuilder</code> で <code>_replyController</code> の値を監視し、<code>value.text.trim().isNotEmpty</code> のときのみ <code>onPressed</code> に関数を設定（空のとき <code>null</code> → ボタン非活性）。</p>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">AI_ANSWERED 時に「解決した」「スタッフへ引き継ぐ」ボタンが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>canEscalate = status == InquiryStatus.aiAnswered</code> で「スタッフへ引き継ぐ」ボタンの表示を制御。返信エリア内に条件分岐で表示し、タップすると <code>_confirmEscalate()</code> の確認ダイアログを経由して API を呼ぶ。「解決した」ボタンは CLOSED 以外で常に表示（AC7・AC8 と合わせて制御）。</p>
+
+        <table class="status-table" style="margin-bottom: 12px;">
+          <tr>
+            <th>ステータス</th>
+            <th>返信フォーム</th>
+            <th>「解決した」</th>
+            <th>「スタッフへ引き継ぐ」</th>
+          </tr>
+          <tr>
+            <td>OPEN</td>
+            <td class="check-yes">&#10003;</td>
+            <td class="check-yes">&#10003;</td>
+            <td class="check-no">&#10007;</td>
+          </tr>
+          <tr>
+            <td>AI_ANSWERED</td>
+            <td class="check-yes">&#10003;</td>
+            <td class="check-yes">&#10003;</td>
+            <td class="check-yes">&#10003;</td>
+          </tr>
+          <tr>
+            <td>PENDING_STAFF</td>
+            <td class="check-yes">&#10003;</td>
+            <td class="check-yes">&#10003;</td>
+            <td class="check-no">&#10007;</td>
+          </tr>
+          <tr>
+            <td>STAFF_ANSWERED</td>
+            <td class="check-yes">&#10003;</td>
+            <td class="check-yes">&#10003;</td>
+            <td class="check-no">&#10007;</td>
+          </tr>
+          <tr>
+            <td>CLOSED</td>
+            <td class="check-no">&#10007;</td>
+            <td class="check-no">&#10007;</td>
+            <td class="check-no">&#10007;</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- AC7 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC7</div>
+        <div class="ac-text">STAFF_ANSWERED 時に「解決した」ボタンのみが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>AC6 の表で確認の通り、<code>STAFF_ANSWERED</code> のときは <code>canEscalate = false</code> のため「スタッフへ引き継ぐ」は非表示。「解決した」ボタンのみが表示される。</p>
+      </div>
+    </div>
+
+    <!-- AC8 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC8</div>
+        <div class="ac-text">各アクションボタンは確認ダイアログを経由して API を呼び出す</div>
+      </div>
+      <div class="ac-body">
+        <p>「解決した」「スタッフへ引き継ぐ」の両ボタンで <code>showDialog</code> を使った確認ダイアログを表示。キャンセルを選ぶとダイアログが閉じるだけ（API 呼び出しなし）、確認を選ぶと対応する API を呼ぶ。ダイアログの <code>BuildContext</code> は <code>builder: (dialogContext)</code> で明示的に受け取り、<code>Navigator.pop(dialogContext)</code> を使う（外側の <code>context</code> を使うと go_router でページが閉じるバグを防止）。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_page.dart</span>
+            <span class="diff-stat">新規（_confirmClose / _confirmEscalate）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">264</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; _confirmClose(BuildContext context, AppLocalizations l10n) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">265</span><span class="line-prefix">+</span><span>    final confirmed = await showDialog&lt;bool&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">266</span><span class="line-prefix">+</span><span>      context: context,</span></div>
+            <div class="code-line line-add"><span class="line-num">267</span><span class="line-prefix">+</span><span>      builder: (dialogContext) =&gt; AlertDialog(</span></div>
+            <div class="code-line line-add"><span class="line-num">268</span><span class="line-prefix">+</span><span>        title: Text(l10n.inquiryDetailCloseConfirmTitle),</span></div>
+            <div class="code-line line-add"><span class="line-num">269</span><span class="line-prefix">+</span><span>        content: Text(l10n.inquiryDetailCloseConfirmBody),</span></div>
+            <div class="code-line line-add"><span class="line-num">270</span><span class="line-prefix">+</span><span>        actions: [</span></div>
+            <div class="code-line line-add"><span class="line-num">271</span><span class="line-prefix">+</span><span>          TextButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">272</span><span class="line-prefix">+</span><span>            onPressed: () =&gt; Navigator.pop(dialogContext, false), // dialogContextを使う</span></div>
+            <div class="code-line line-add"><span class="line-num">273</span><span class="line-prefix">+</span><span>            child: Text(l10n.commonCancel),</span></div>
+            <div class="code-line line-add"><span class="line-num">274</span><span class="line-prefix">+</span><span>          ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>builder: (dialogContext)</code> でダイアログ専用の <code>BuildContext</code> を受け取り、<code>Navigator.pop(dialogContext)</code> を使う。外側 <code>context</code> を使うと go_router 環境でページ自体が閉じるバグが発生するため（long_term.md の既知ハマりポイント）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC9 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC9</div>
+        <div class="ac-text">取得失敗時は問い合わせ一覧へリダイレクトされる</div>
+      </div>
+      <div class="ac-body">
+        <p>API 呼び出し失敗時は state の <code>fetchFailed: true</code> をセット。Page の <code>ref.listen</code> が <code>fetchFailed</code> の変化を検知して <code>context.go(AppRoutes.settingsInquiries)</code> でリダイレクト。画面内エラー表示ではなく即時リダイレクトする設計でユーザーが取得失敗画面に留まらない。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_page.dart</span>
+            <span class="diff-stat">新規（ref.listen 部分）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>    ref.listen(inquiryDetailNotifierProvider(widget.inquiryId), (prev, next) {</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>      if (next.fetchFailed &amp;&amp; !(prev?.fetchFailed ?? false)) {</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>        // 取得失敗時: 問い合わせ一覧へリダイレクト</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>        context.go(AppRoutes.settingsInquiries);</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>        return;</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>      }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC10 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC10</div>
+        <div class="ac-text">カバレッジ 95% 以上</div>
+      </div>
+      <div class="ac-body">
+        <p>Notifier テスト（fetch成功・失敗・sendReply・close・escalate・clearReplySent）と Page ウィジェットテスト（初期ロード・返信フォーム・ダイアログ確認等）を実装。</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 22px; font-weight: 700; color: #166534;">10</div>
+            <div style="font-size: 11px; color: #166534; font-weight: 600;">Notifier テスト</div>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 22px; font-weight: 700; color: #166534;">7</div>
+            <div style="font-size: 11px; color: #166534; font-weight: 600;">Page テスト</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認ポイント -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>問い合わせのメッセージスレッドがチャット形式で表示されること</strong>
+          <span>ユーザーのメッセージは右寄せ（緑バブル）、AI/スタッフのメッセージは左寄せ（白バブル）で表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>ステータスに応じた説明文がヘッダーに表示されること</strong>
+          <span>例: AI_ANSWERED 状態で「AIが回答しました。解決した場合はクローズ...」のような説明文が表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>AI_ANSWERED 状態で「スタッフへ引き継ぐ」ボタンが表示されること</strong>
+          <span>返信フォームの上に「スタッフへ引き継ぐ」ボタンが表示され、タップすると確認ダイアログが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>STAFF_ANSWERED 状態で「解決した」ボタンのみが表示されること</strong>
+          <span>「スタッフへ引き継ぐ」ボタンは非表示、「解決した」ボタンのみ表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>CLOSED 状態で返信フォームが非表示になること</strong>
+          <span>クローズ済みの問い合わせでは返信フォーム・「解決した」・「スタッフへ引き継ぐ」が一切表示されないこと</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>返信テキストが空のとき送信ボタンがグレー（無効）になること</strong>
+          <span>テキストを入力すると送信ボタンが有効になり、削除すると再び無効になること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">7</div>
+        <div class="verify-content">
+          <strong>「解決した」「スタッフへ引き継ぐ」ボタンで確認ダイアログが表示されること</strong>
+          <span>ダイアログでキャンセルを選ぶと操作がキャンセルされ、確認を選ぶと API が呼ばれスナックバーが表示されること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 改修スコープ確認 -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>inquiry_detail_state.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>詳細状態（detail・isLoading・fetchFailed・replySent・closed・escalated）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_detail_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>AutoDisposeFamilyNotifier（fetch・sendReply・close・escalate）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_detail_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>詳細 UI（ヘッダー・チャットリスト・返信エリア・確認ダイアログ）</td>
+      </tr>
+      <tr>
+        <td><code>message_bubble.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>送信者タイプ別バブルウィジェット</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_detail_dto.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>詳細レスポンスモデル（メッセージ一覧を含む）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_message_dto.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>メッセージ1件のモデル（senderType・body・createdAt）</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_repository.dart</code></td>
+        <td><span class="tag-unchanged">変更なし（#139 で新規作成済み）</span></td>
+        <td>fetchInquiry・addMessage・closeInquiry・escalateToStaff メソッドは #139 で実装済み</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

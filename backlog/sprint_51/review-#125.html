@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 51 Review — #125 ログアウト後のログイン画面でスピナーが動作し続けてログインできない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-screen { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+  .mock-screen-header { background: #1a1a1a; padding: 10px 14px; }
+  .mock-screen-title { color: white; font-size: 13px; font-weight: 600; text-align: center; }
+  .mock-screen-body { padding: 16px; }
+  .mock-input { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; font-size: 12px; color: #9ca3af; }
+  .mock-button { display: flex; align-items: center; justify-content: center; gap: 8px; background: #059669; border-radius: 6px; padding: 10px; font-size: 12px; font-weight: 600; color: white; }
+  .mock-button-disabled { background: #d1fae5; color: #6b7280; }
+  .mock-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #a7f3d0; border-top: 2px solid #059669; border-radius: 50%; animation: spin 1s linear infinite; }
+  .mock-spinner-white { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .mock-flow-note { font-size: 11px; color: #6b7280; margin-top: 8px; text-align: center; padding: 4px; background: #fef9c3; border-radius: 4px; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .flow-steps { margin-bottom: 12px; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-step-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-bad { background: #fef2f2; color: #b91c1c; }
+  .step-good { background: #f0fdf4; color: #166534; }
+  .flow-step-text { font-size: 12px; color: #374151; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; color: #374151; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 51 Review · Bug Fix</div>
+  <h1>#125 — ログアウト後のログイン画面でスピナーが<br>動作し続けてログインできない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 51</span>
+    <span class="badge badge-issue">#125</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-header">
+            <div class="mock-screen-title">ログイン</div>
+          </div>
+          <div class="mock-screen-body">
+            <div class="mock-input">メールアドレス</div>
+            <div class="mock-input">パスワード</div>
+            <div class="mock-button mock-button-disabled">
+              <span class="mock-spinner"></span>
+              <span>処理中...</span>
+            </div>
+            <div class="mock-flow-note">ログアウト直後に遷移するとスピナーが消えず、ボタンをタップできない</div>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-header">
+            <div class="mock-screen-title">ログイン</div>
+          </div>
+          <div class="mock-screen-body">
+            <div class="mock-input">メールアドレス</div>
+            <div class="mock-input">パスワード</div>
+            <div class="mock-button">
+              ログイン
+            </div>
+            <div class="mock-flow-note">ログアウト後も初期状態のボタンが表示され、正常にログインできる</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">loginNotifierProvider に autoDispose が設定されていなかった</span>
+      </div>
+      <div class="cause-body">
+        <p>ログイン成功時は <code>authNotifierProvider</code> の state 変更 → router redirect で別画面に遷移するが、<code>loginNotifierProvider</code> は <code>NotifierProvider</code>（autoDispose 未設定）で実装されていたため、画面を離れてもメモリに残り続ける。</p>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num step-bad">1</div>
+            <div class="flow-step-text">ログインボタン押下 → <code>submit()</code> が <code>isLoading: true</code> をセット</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num step-bad">2</div>
+            <div class="flow-step-text">ログイン成功 → auth state 変更 → router が別画面にリダイレクト。<code>submit()</code> は isLoading を false に戻していなかった（修正前）</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num step-bad">3</div>
+            <div class="flow-step-text">ログアウト → ログイン画面に戻る。<code>loginNotifierProvider</code> が破棄されていないため <code>isLoading: true</code> の古い state がそのまま残る</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num step-bad">4</div>
+            <div class="flow-step-text">ログイン画面のボタンはスピナー表示 + <code>canSubmit = false</code> でタップ不可（永久ループ）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/auth/presentation/login/login_notifier.dart</span>
+        <span class="diff-stat">+7 / -5</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-del"><span class="line-num">8</span><span class="line-prefix">-</span><span>final loginNotifierProvider = NotifierProvider&lt;LoginNotifier, LoginState&gt;(</span></div>
+        <div class="code-line line-del"><span class="line-num">9</span><span class="line-prefix">-</span><span>  LoginNotifier.new,</span></div>
+        <div class="code-line line-del"><span class="line-num">10</span><span class="line-prefix">-</span><span>);</span></div>
+        <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>final loginNotifierProvider =</span></div>
+        <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>    NotifierProvider.autoDispose&lt;LoginNotifier, LoginState&gt;(LoginNotifier.new);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">10</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-del"><span class="line-num">11</span><span class="line-prefix">-</span><span>class LoginNotifier extends Notifier&lt;LoginState&gt; {</span></div>
+        <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>class LoginNotifier extends AutoDisposeNotifier&lt;LoginState&gt; {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">12</span><span class="line-prefix"> </span><span>  @override</span></div>
+        <div class="code-line line-ctx"><span class="line-num">13</span><span class="line-prefix"> </span><span>  LoginState build() =&gt; const LoginState();</span></div>
+        <div class="code-line line-ctx"><span class="line-num">14</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">33</span><span class="line-prefix"> </span><span>          refreshToken: resp.refreshToken,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">34</span><span class="line-prefix"> </span><span>          user: resp.user,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">35</span><span class="line-prefix"> </span><span>        );</span></div>
+        <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>      state = state.copyWith(isLoading: false);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">37</span><span class="line-prefix"> </span><span>    } on AppException catch (e) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>      state = state.copyWith(isLoading: false, errorMessage: e.message);</span></div>
+        <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+        <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>      state = state.copyWith(isLoading: false, errorMessage: 'errorUnexpected');</span></div>
+        <div class="code-line line-ctx"><span class="line-num">41</span><span class="line-prefix"> </span><span>    }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">42</span><span class="line-prefix"> </span><span>  }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">43</span><span class="line-prefix"> </span><span>}</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>根本対策: <code>autoDispose</code> を付けることで画面を離れた際にプロバイダーが破棄され、ログイン画面に戻るたびに初期状態から始まる。防御策として <code>saveTokens()</code> 後にも <code>isLoading: false</code> をセットし、予期しない例外でもスピナーが残らないよう <code>catch (_)</code> ブロックを追加。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">ユーザーアイコンからログアウト直後のログイン画面でスピナーが表示されず通常の入力フォームが表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>loginNotifierProvider</code> を <code>autoDispose</code> に変更。ログアウト → ログイン画面遷移時にプロバイダーが破棄されるため、<code>build()</code> が呼ばれて <code>isLoading: false</code> の初期状態が返る。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">ログアウト後のログイン画面からログインが正常に完了できる</div>
+      </div>
+      <div class="ac-body">
+        ログインボタンが活性化（スピナーなし）で表示されるため、メール・パスワード入力後にタップ可能。ログイン成功後の <code>isLoading: false</code> リセットも追加済み。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>ユーザーアイコン → ログアウト後のログイン画面でボタンが通常表示されること</strong>
+          <span>スピナーではなく「ログイン」ボタンのテキストが表示され、タップできる状態になっていることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>ログアウト後のログイン画面でメール・パスワードを入力してログインできること</strong>
+          <span>正常にホーム画面に遷移することを確認（AC2 の基本フロー確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>アプリ再起動後のログインが引き続き正常に動作すること</strong>
+          <span>既存の正常ケースにデグレがないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>複数回ログアウト → ログインを繰り返しても毎回正常に動作すること</strong>
+          <span>2回目、3回目のログアウト後も同様にスピナーなしでログイン画面が表示されることを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>autoDispose の動作確認と isLoading リセットの検証をテストとして追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">login_notifier_test.dart — ログイン成功時 isLoading が false に戻ること</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">ログイン成功後に <code>loginState.isLoading</code> が <code>false</code> であることを明示的に検証するアサーションを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">login_notifier_test.dart — autoDispose: コンテナ再生成時に初期状態になること</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">isLoading: true 状態のコンテナを dispose して新しいコンテナを作成すると <code>isLoading: false</code>・<code>errorMessage: null</code> になることを検証。ログアウト後の再遷移を模倣したテスト</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

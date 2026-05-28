@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 55 Review — #131 おうち設定画面でおうちを切り替えた際におうち名、ニックネームが切り替わらない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* Mock UI */
+  .mock-screen { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 12px; overflow: hidden; }
+  .mock-section { background: white; margin: 8px; border-radius: 8px; padding: 12px 14px; border: 1px solid #e5e5e5; }
+  .mock-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin-bottom: 6px; }
+  .mock-field { background: #f9fafb; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 10px; font-size: 13px; color: #374151; }
+  .mock-field-bad { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
+  .mock-field-good { border-color: #86efac; background: #f0fdf4; color: #166534; }
+  .mock-switch-bar { background: #1a2e1a; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: white; }
+  .mock-badge { background: rgba(255,255,255,0.15); border-radius: 10px; padding: 2px 8px; font-size: 11px; }
+  .mock-note { font-size: 11px; padding: 6px 8px; border-radius: 4px; margin-top: 6px; }
+  .mock-note-bad { color: #b91c1c; background: #fef2f2; }
+  .mock-note-good { color: #166534; background: #f0fdf4; }
+
+  /* 原因分析 */
+  .cause-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; }
+  .cause-header { background: #fef2f2; padding: 10px 14px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 14px; }
+  .cause-header .title { font-size: 12px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 12px 14px; }
+  .cause-body p { font-size: 12px; color: #4b5563; margin-bottom: 8px; line-height: 1.5; }
+  .cause-body code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 11px; }
+
+  /* Architecture comparison */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 24px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 55 Review · Bug Fix</div>
+  <h1>#131 — おうち設定画面でおうちを切り替えた際に<br>おうち名・ニックネームが切り替わらない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 55</span>
+    <span class="badge badge-issue">#131</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-switch-bar">
+            <span>山田家</span><span class="mock-badge">▼ 切替</span>
+          </div>
+          <div style="padding:4px 8px;font-size:10px;color:#ef4444;background:#fef2f2;text-align:center;">田中家に切り替えた後</div>
+          <div class="mock-section">
+            <div class="mock-section-title">おうち名</div>
+            <div class="mock-field mock-field-bad">山田家 ← 古い値のまま</div>
+            <div class="mock-note mock-note-bad">切り替え前の「山田家」が残ったまま</div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-title">ニックネーム</div>
+            <div class="mock-field mock-field-bad">（空欄）← 初回から空</div>
+            <div class="mock-note mock-note-bad">そもそも初期値も表示されていない</div>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-switch-bar">
+            <span>田中家</span><span class="mock-badge">▼ 切替</span>
+          </div>
+          <div style="padding:4px 8px;font-size:10px;color:#166534;background:#f0fdf4;text-align:center;">田中家に切り替えた後</div>
+          <div class="mock-section">
+            <div class="mock-section-title">おうち名</div>
+            <div class="mock-field mock-field-good">田中家 ← 即時更新</div>
+            <div class="mock-note mock-note-good">切り替え先の「田中家」に即時更新</div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-title">ニックネーム</div>
+            <div class="mock-field mock-field-good">お父さん ← 正しく表示</div>
+            <div class="mock-note mock-note-good">田中家でのニックネームが表示される</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-grid">
+      <div class="cause-box">
+        <div class="cause-header">
+          <span class="icon">&#128269;</span>
+          <span class="title">HouseholdNameSection の原因</span>
+        </div>
+        <div class="cause-body">
+          <p>
+            <code>initState()</code> で1回だけ <code>householdNotifier</code> から世帯名を取得して
+            <code>_controller.text</code> にセットしていた。
+            世帯切り替えで <code>householdNotifier</code> の <code>selectedHousehold</code> が更新されても、
+            この <code>State</code> は再生成されないため古い値が残り続ける。
+          </p>
+          <p>
+            <code>ref.listen</code> を呼び出しておらず、世帯名の変化を一切検知できていなかった。
+          </p>
+        </div>
+      </div>
+      <div class="cause-box">
+        <div class="cause-header">
+          <span class="icon">&#128269;</span>
+          <span class="title">NicknameSection の原因</span>
+        </div>
+        <div class="cause-body">
+          <p>
+            <code>_controller = TextEditingController()</code> と空で初期化しており、
+            ニックネームの初期値がそもそも表示されていなかった。
+          </p>
+          <p>
+            <code>HouseholdSettingsState</code> にニックネームのフィールドが存在しなかったため、
+            世帯切り替え後に members を再取得しても Section 側には反映されなかった。
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前（どちらも）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>initState で1回だけ初期値をセット</div>
+        <div class="flow-item"><span class="dot dot-red"></span>世帯切り替え時の変化を検知する仕組みなし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>Notifier が members を再取得しても</div>
+        <div class="flow-item"><span class="dot dot-red"></span>controller が更新されない</div>
+      </div>
+      <div class="arch-arrow">&#8594;</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>HouseholdNameSection: <code>ref.listen(householdNotifierProvider)</code> で selectedHousehold 変化を検知 → controller 更新</div>
+        <div class="flow-item"><span class="dot dot-green"></span>NicknameSection: State に <code>currentNickname</code> フィールドを追加。Notifier が members 取得後に <code>nickname ?? displayName</code> を計算してセット</div>
+        <div class="flow-item"><span class="dot dot-green"></span>NicknameSection: <code>ref.listen(householdSettingsNotifierProvider)</code> で <code>currentNickname</code> 変化を検知 → controller 更新</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <p style="font-size:13px;color:#4b5563;margin-bottom:16px;">4ファイルを変更した。それぞれの役割を説明する。</p>
+
+    <!-- household_settings_state.dart -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/.../household_settings/household_settings_state.dart</span>
+        <span class="diff-stat">+13 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">14</span><span class="line-prefix"> </span><span>  const HouseholdSettingsState({</span></div>
+        <div class="code-line line-ctx"><span class="line-num">15</span><span class="line-prefix"> </span><span>    this.members = const [],</span></div>
+        <div class="code-line line-ctx"><span class="line-num">16</span><span class="line-prefix"> </span><span>    this.invitations = const [],</span></div>
+        <div class="code-line line-ctx"><span class="line-num">17</span><span class="line-prefix"> </span><span>    ...</span></div>
+        <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>    this.currentNickname,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>  });</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>  /// ログインユーザーのニックネーム（nickname ?? displayName）</span></div>
+        <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>  /// NicknameSection の初期表示・世帯切り替え時の更新に使用する</span></div>
+        <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>  final String? currentNickname;</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>NicknameSection が参照できるように State にニックネームフィールドを追加。Notifier 側で事前計算した値をここに持たせる設計。</span>
+      </div>
+    </div>
+
+    <!-- household_settings_notifier.dart -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/.../household_settings/household_settings_notifier.dart</span>
+        <span class="diff-stat">+12 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">36</span><span class="line-prefix"> </span><span>    return HouseholdSettingsState(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">37</span><span class="line-prefix"> </span><span>      members: members,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>      invitations: invitations,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">39</span><span class="line-prefix"> </span><span>      isCurrentUserOwner: _computeIsOwner(members, loginUserId),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">40</span><span class="line-prefix"> </span><span>      hasOtherActiveMembers: _computeHasOtherActive(members, loginUserId),</span></div>
+        <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>      currentNickname: _computeCurrentNickname(members, loginUserId),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">42</span><span class="line-prefix"> </span><span>    );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>  String? _computeCurrentNickname(</span></div>
+        <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>    List&lt;HouseholdSettingsMemberDto&gt; members,</span></div>
+        <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>    int? loginUserId,</span></div>
+        <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>  ) {</span></div>
+        <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>    if (loginUserId == null) return null;</span></div>
+        <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>    final me = members.where((m) =&gt; m.userId == loginUserId).firstOrNull;</span></div>
+        <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>    if (me == null) return null;</span></div>
+        <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>    return me.nickname ?? me.displayName;</span></div>
+        <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>
+          ニックネームの優先順位は <code>nickname ?? displayName</code>（Issue #131 本文通り）。
+          世帯切り替え時は Notifier が自動で <code>build()</code> を再実行するため、
+          新しい世帯の members から <code>currentNickname</code> が再計算される。
+        </span>
+      </div>
+    </div>
+
+    <!-- household_name_section.dart -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/.../widgets/household_name_section.dart</span>
+        <span class="diff-stat">+12 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">47</span><span class="line-prefix"> </span><span>    final notifierState = ref.watch(householdSettingsNotifierProvider);</span></div>
+        <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>    // 世帯切り替えで selectedHousehold が変化したらコントローラーと _originalName を更新する</span></div>
+        <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>    ref.listen(householdNotifierProvider, (prev, next) {</span></div>
+        <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>      final prevName = prev?.valueOrNull?.selectedHousehold?.name;</span></div>
+        <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>      final nextName = next.valueOrNull?.selectedHousehold?.name;</span></div>
+        <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>      if (nextName != null &amp;&amp; nextName != prevName) {</span></div>
+        <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>        setState(() {</span></div>
+        <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>          _controller.text = nextName;</span></div>
+        <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>          _originalName = nextName;</span></div>
+        <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>        });</span></div>
+        <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>      }</span></div>
+        <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>    });</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>
+          <code>ref.listen</code> で <code>householdNotifierProvider</code> の変化を監視。
+          <code>setState()</code> を呼んで <code>_controller.text</code> と <code>_originalName</code>（差分検知用）の両方を更新する。
+          <code>setState</code> 忘れ防止のため lambda の中で両方まとめて更新している（Sprint 55 レビュー指摘を踏まえて修正済み）。
+        </span>
+      </div>
+    </div>
+
+    <!-- nickname_section.dart -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/.../widgets/nickname_section.dart</span>
+        <span class="diff-stat">+19 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">18</span><span class="line-prefix"> </span><span>  void initState() {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>    super.initState();</span></div>
+        <div class="code-line line-ctx"><span class="line-num">20</span><span class="line-prefix"> </span><span>    _controller = TextEditingController();</span></div>
+        <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>    // 初期表示: 既に State が利用可能な場合は currentNickname をセット</span></div>
+        <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>    final currentNickname = ref</span></div>
+        <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>        .read(householdSettingsNotifierProvider)</span></div>
+        <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>        .valueOrNull</span></div>
+        <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>        ?.currentNickname;</span></div>
+        <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>    if (currentNickname != null) {</span></div>
+        <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      _controller.text = currentNickname;</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>    }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">29</span><span class="line-prefix"> </span><span>  }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">46</span><span class="line-prefix"> </span><span>    // 世帯切り替えで currentNickname が変化したらコントローラーを更新する</span></div>
+        <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>    ref.listen(householdSettingsNotifierProvider, (prev, next) {</span></div>
+        <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>      final prevNickname = prev?.valueOrNull?.currentNickname;</span></div>
+        <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>      final nextNickname = next.valueOrNull?.currentNickname;</span></div>
+        <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>      if (nextNickname != null &amp;&amp; nextNickname != prevNickname) {</span></div>
+        <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>        setState(() {</span></div>
+        <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>          _controller.text = nextNickname;</span></div>
+        <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>        });</span></div>
+        <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>      }</span></div>
+        <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>    });</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>
+          初期表示と世帯切り替えの2パターンに対応。
+          <code>initState()</code> で <code>ref.read</code> による初期値セット（State がすでに ready な場合）と、
+          <code>ref.listen</code> による変化検知（世帯切り替え時）を両方実装。
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">おうちを切り替えた際に、おうち名セクションが切り替え先のおうち名に即時更新される</div>
+      </div>
+      <div class="ac-body">
+        <code>HouseholdNameSection</code> に <code>ref.listen(householdNotifierProvider)</code> を追加し、<code>selectedHousehold.name</code> の変化を検知して <code>setState(() { _controller.text = nextName; _originalName = nextName; })</code> を実行。即時更新される。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">おうちを切り替えた際に、ニックネームセクションが切り替え先のニックネーム（m_household_member.nickname ?? m_user.display_name）に即時更新される</div>
+      </div>
+      <div class="ac-body">
+        <code>HouseholdSettingsState</code> に <code>currentNickname</code> フィールドを追加し、Notifier が <code>nickname ?? displayName</code> を事前計算してセット。<code>NicknameSection</code> は <code>ref.listen(householdSettingsNotifierProvider)</code> でこの値の変化を検知して更新する。初期表示も <code>initState()</code> で <code>ref.read</code> により正しく表示される。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認ポイント -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>おうち設定画面を開いた状態でおうちを切り替えると、おうち名テキストフィールドが切り替え先の名前に即時更新されること</strong>
+          <span>「山田家」で開いている状態で「田中家」に切り替えると「田中家」に変わるか確認してください</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>おうち設定画面を開いた状態でおうちを切り替えると、ニックネームテキストフィールドが切り替え先のニックネームに即時更新されること</strong>
+          <span>「お父さん（山田家でのニックネーム）」が「お母さん（田中家でのニックネーム）」等に変わるか確認してください</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>おうち設定画面を初回表示した際に、おうち名とニックネームが正しく表示されること</strong>
+          <span>空欄のまま表示されないことを確認してください</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>おうち名・ニックネームの保存機能に影響がないこと（デグレ確認）</strong>
+          <span>おうち名・ニックネームを変更して保存ボタンを押したときに正常に保存されるか確認してください</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>
+        <code>ConsumerStatefulWidget</code> で <code>ref.listen</code> を使う際、コールバック内で <code>setState()</code> を必ず呼ぶことで UI が即時更新されることを確認するウィジェットテストを追加した。
+      </p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">household_settings_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">nicknameが設定されたメンバーリストから <code>currentNickname</code> が正しく計算されること（<code>nickname ?? displayName</code> 優先順位）を確認</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">household_name_section_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「世帯切り替え時: テキストフィールドが切り替え先のおうち名に更新される」テストを追加。<code>_SwitchableHouseholdNotifier.switchTo()</code> で世帯切り替えをシミュレートし、テキストフィールドが更新されることを確認</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">nickname_section_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「Stateにcurrentnicknameがある場合: 初期状態でテキストフィールドに表示される」テストを追加。<code>currentNickname: 'お父さん'</code> が設定された Fake Notifier で初回表示を確認</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -32,6 +32,31 @@ import { Plus, Trash2 } from "lucide-vue-next";
 import * as LucideIcons from "lucide-vue-next";
 ```
 
+### バックエンドから返されるコード値の表示変換（必須）
+
+バックエンドが返すコード値（m_code 管理の区分値など）をテンプレートにそのまま表示してはならない。必ず i18n キーに変換してから表示すること。
+
+```ts
+// NG: コード値 'web' / 'mobile' をそのまま表示
+<span>{{ inquiry.uiClient }}</span>
+
+// OK: マッピング関数または computed で i18n キーに変換して表示
+function uiClientLabel(code: string): string {
+  const map: Record<string, string> = {
+    web: t('inquiry.detail.uiWeb'),
+    mobile: t('inquiry.detail.uiMobile'),
+  };
+  return map[code] ?? code; // 未知のコードはコード値をフォールバック表示
+}
+<span>{{ uiClientLabel(inquiry.uiClient) }}</span>
+```
+
+適用すべき場面:
+- m_code テーブルで管理されている区分値（UIクライアント・カテゴリ・ステータス等）を画面に表示するとき
+- バックエンドの enum の `code` 値（例: `'web'`・`'1'` 等）を一覧・詳細画面に表示するとき
+
+> **背景（Sprint 63 convention-reviewer 指摘）**: InquiryDetailPage・AdminInquiryDetailPage で `uiClient` の値 `'web'`/`'mobile'` を翻訳せずそのまま表示していた。
+
 ---
 
 ## 2. アーキテクチャ & データフロー（Flux構造）

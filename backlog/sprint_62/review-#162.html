@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 62 Review — #162 家事設定系の画面で周期「第n曜日」の選択肢と周期タイプの表記がWeb版と異なる</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-form { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px; font-size: 13px; }
+  .mock-form-label { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .mock-dropdown { border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 10px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 10px; }
+  .mock-dropdown-bad { color: #b91c1c; font-weight: 600; }
+  .mock-dropdown-good { color: #166534; font-weight: 600; }
+  .mock-chip { font-size: 11px; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 4px; }
+  .mock-chip-bad { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+  .mock-chip-good { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .mismatch { background: #fef2f2; }
+  .mismatch-table .match { background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #ef4444; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 62 Review · Bug Fix</div>
+  <h1>#162 — 家事設定系の画面で周期「第n曜日」の選択肢と<br>周期タイプの表記がWeb版と異なる</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 62</span>
+    <span class="badge badge-issue">#162</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div style="margin-bottom: 10px;">
+          <div class="mock-form-label">問題1: 第n週 ドロップダウン</div>
+          <div class="mock-form">
+            <span class="mock-chip mock-chip-bad">第1</span>
+            <span class="mock-chip mock-chip-bad">第2</span>
+            <span class="mock-chip mock-chip-bad">第3</span>
+            <span class="mock-chip mock-chip-bad">第4</span>
+            <span class="mock-chip mock-chip-bad">第5</span>
+            <div style="font-size:11px;color:#b91c1c;margin-top:6px;">「最終週」なし。「第5」と表示されている</div>
+          </div>
+        </div>
+        <div>
+          <div class="mock-form-label">問題2: 周期タイプ表記</div>
+          <div class="mock-dropdown">
+            <span>周期タイプ</span>
+            <span class="mock-dropdown-bad">第n週曜日</span>
+          </div>
+          <div style="font-size:11px;color:#b91c1c;">「第n週曜日」は誤った表記</div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（Web版と統一）</div>
+        <div style="margin-bottom: 10px;">
+          <div class="mock-form-label">問題1: 第n週 ドロップダウン</div>
+          <div class="mock-form">
+            <span class="mock-chip mock-chip-good">第1週</span>
+            <span class="mock-chip mock-chip-good">第2週</span>
+            <span class="mock-chip mock-chip-good">第3週</span>
+            <span class="mock-chip mock-chip-good">第4週</span>
+            <span class="mock-chip mock-chip-good" style="background:#dcfce7;border-color:#166534;">最終週</span>
+            <div style="font-size:11px;color:#166534;margin-top:6px;">「最終週」が最後の選択肢として表示される</div>
+          </div>
+        </div>
+        <div>
+          <div class="mock-form-label">問題2: 周期タイプ表記</div>
+          <div class="mock-dropdown">
+            <span>周期タイプ</span>
+            <span class="mock-dropdown-good">第n曜日</span>
+          </div>
+          <div style="font-size:11px;color:#166534;">「第n曜日」に修正（Web版と同一）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">2点の独立したバグ：選択肢の生成方法 + ARBキーの文言</span>
+      </div>
+      <div class="cause-body">
+        <p><strong>バグ1（選択肢）:</strong> <code>nth_weekday_selector.dart</code> が <code>List.generate(5, (i) =&gt; i + 1)</code> で 1〜5 の整数リストを生成し、各項目を <code>Text('第$n')</code> で表示していた。<code>NthWeek</code> enum に <code>lastWeek('5')</code> が定義されているが、それを使わず生の数字から文字列を生成していたため、最終週が「最終週」ではなく「第5」と表示されていた。</p>
+        <p><strong>バグ2（表記）:</strong> <code>app_ja.arb</code> の <code>houseworkRecurrenceTypeNthWeekday</code> キーが「第n週曜日」と定義されており、Web版の「第n曜日」と表記が異なっていた。</p>
+        <table class="mismatch-table">
+          <tr>
+            <th>項目</th>
+            <th>モバイル実装（誤）</th>
+            <th></th>
+            <th>Web版・正しい表記</th>
+          </tr>
+          <tr>
+            <td>第5週目の選択肢</td>
+            <td class="code mismatch">第5</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">最終週</td>
+          </tr>
+          <tr>
+            <td>周期タイプの表記</td>
+            <td class="code mismatch">第n週曜日</td>
+            <td class="arrow-cell">→</td>
+            <td class="code match">第n曜日</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <!-- nth_weekday_selector.dart の修正 -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_settings/presentation/widgets/nth_weekday_selector.dart</span>
+        <span class="diff-stat">+20 / -4</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">37</span><span class="line-prefix"> </span><span>            key: const Key('nthWeekSelector'),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>            initialValue: nthWeek,</span></div>
+        <div class="code-line line-del"><span class="line-num">39</span><span class="line-prefix">-</span><span>            items: List.generate(5, (i) =&gt; i + 1)</span></div>
+        <div class="code-line line-del"><span class="line-num">40</span><span class="line-prefix">-</span><span>                .map((n) =&gt; DropdownMenuItem&lt;int&gt;(value: n, child: Text('第$n')))</span></div>
+        <div class="code-line line-del"><span class="line-num">41</span><span class="line-prefix">-</span><span>                .toList(),</span></div>
+        <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>            items: NthWeek.values</span></div>
+        <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>                .map(</span></div>
+        <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>                  (week) =&gt; DropdownMenuItem&lt;int&gt;(</span></div>
+        <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>                    value: int.parse(week.code),</span></div>
+        <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>                    child: Text(_nthWeekLabel(week, l10n)),</span></div>
+        <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>                  ),</span></div>
+        <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>                )</span></div>
+        <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>                .toList(),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">47</span><span class="line-prefix"> </span><span>            onChanged: (val) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">  </span><span class="line-prefix"> </span><span>// ...（省略）...</span></div>
+        <div class="code-line line-add"><span class="line-num">91</span><span class="line-prefix">+</span><span>  String _nthWeekLabel(NthWeek week, AppLocalizations l10n) {</span></div>
+        <div class="code-line line-add"><span class="line-num">92</span><span class="line-prefix">+</span><span>    switch (week) {</span></div>
+        <div class="code-line line-add"><span class="line-num">93</span><span class="line-prefix">+</span><span>      case NthWeek.firstWeek:  return l10n.houseworkNthWeekFirst;</span></div>
+        <div class="code-line line-add"><span class="line-num">94</span><span class="line-prefix">+</span><span>      case NthWeek.secondWeek: return l10n.houseworkNthWeekSecond;</span></div>
+        <div class="code-line line-add"><span class="line-num">95</span><span class="line-prefix">+</span><span>      case NthWeek.thirdWeek:  return l10n.houseworkNthWeekThird;</span></div>
+        <div class="code-line line-add"><span class="line-num">96</span><span class="line-prefix">+</span><span>      case NthWeek.fourthWeek: return l10n.houseworkNthWeekFourth;</span></div>
+        <div class="code-line line-add"><span class="line-num">97</span><span class="line-prefix">+</span><span>      case NthWeek.lastWeek:   return l10n.houseworkNthWeekLast;</span></div>
+        <div class="code-line line-add"><span class="line-num">98</span><span class="line-prefix">+</span><span>    }</span></div>
+        <div class="code-line line-add"><span class="line-num">99</span><span class="line-prefix">+</span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>生の整数ループ（1〜5）を <code>NthWeek.values</code> 列挙に変更。<code>lastWeek.code = '5'</code> だが、表示は <code>_nthWeekLabel()</code> で <code>l10n.houseworkNthWeekLast</code>（「最終週」）にマッピングされる。enum を経由することでコードと表示の対応が明示的になった。</span>
+      </div>
+    </div>
+
+    <!-- ARB ファイルの修正（2点） -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/l10n/app_ja.arb（+en.arb / +es.arb も同様に更新）</span>
+        <span class="diff-stat">+6 / -1</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">786</span><span class="line-prefix"> </span><span>  "houseworkCreateNthWeekLabel": "第n週",</span></div>
+        <div class="code-line line-add"><span class="line-num">787</span><span class="line-prefix">+</span><span>  "houseworkNthWeekFirst": "第1週",</span></div>
+        <div class="code-line line-add"><span class="line-num">788</span><span class="line-prefix">+</span><span>  "houseworkNthWeekSecond": "第2週",</span></div>
+        <div class="code-line line-add"><span class="line-num">789</span><span class="line-prefix">+</span><span>  "houseworkNthWeekThird": "第3週",</span></div>
+        <div class="code-line line-add"><span class="line-num">790</span><span class="line-prefix">+</span><span>  "houseworkNthWeekFourth": "第4週",</span></div>
+        <div class="code-line line-add"><span class="line-num">791</span><span class="line-prefix">+</span><span>  "houseworkNthWeekLast": "最終週",</span></div>
+        <div class="code-line line-ctx"><span class="line-num">  </span><span class="line-prefix"> </span><span>  ...</span></div>
+        <div class="code-line line-del"><span class="line-num">821</span><span class="line-prefix">-</span><span>  "houseworkRecurrenceTypeNthWeekday": "第n週曜日",</span></div>
+        <div class="code-line line-add"><span class="line-num">821</span><span class="line-prefix">+</span><span>  "houseworkRecurrenceTypeNthWeekday": "第n曜日",</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>5つの週選択肢（第1週〜最終週）を新規 ARB キーとして追加。英語は「1st Week」〜「Last Week」、スペイン語は「1ª semana」〜「Última semana」で3言語対応した。周期タイプ表記は「第n週曜日」→「第n曜日」に修正（Web版と統一）。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">周期「第n曜日」を選択している場合、第n週の最終の選択肢が「最終週」と表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>NthWeek.values</code> を使って選択肢を生成するよう変更し、<code>lastWeek</code>（code='5'）を <code>_nthWeekLabel()</code> で「最終週」にマッピングした。従来の <code>List.generate(5, ...)</code> + <code>Text('第$n')</code> は削除済み。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">周期タイプの表記が「第n曜日」と表示される（「第n週曜日」から修正）</div>
+      </div>
+      <div class="ac-body">
+        <code>app_ja.arb</code> の <code>houseworkRecurrenceTypeNthWeekday</code> キーを「第n週曜日」→「第n曜日」に修正した。この文字列は家事設定一覧・家事詳細・周期サマリ表示で参照されているすべての箇所に自動的に反映される。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>家事新規作成画面で周期「第n曜日」を選択し、第n週ドロップダウンを開く</strong>
+          <span>「第1週」「第2週」「第3週」「第4週」「最終週」の5項目が表示されること。「第5」ではなく「最終週」が最後の選択肢になっていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「最終週」を選択して保存し、編集画面で再開くと「最終週」が選択済みになっていること</strong>
+          <span>code値=5が「最終週」として正しく復元されること（選択肢の value が <code>int.parse(week.code)</code> で生成されているため対応確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>家事設定一覧や家事詳細で、周期タイプ「第n曜日」と表示されること</strong>
+          <span>「第n週曜日」という表記が残っていないこと。例：「毎月 第3曜日 月曜日」のような表示になること（Web版と同じ）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>英語モードで表示すると「1st Week」〜「Last Week」と表示されること</strong>
+          <span>3言語（日/英/西）すべてで正しい翻訳が確認できること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>今回のバグは「マジックストリングで選択肢を生成し、enum を使っていなかった」ことが根本原因。<code>NthWeek</code> enum を使って選択肢を生成することで、将来 enum が変更された際も自動追従するようになった。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">test/features/housework_settings/presentation/widgets/nth_weekday_selector_test.dart（更新）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">第1週〜最終週の5項目が表示されることをテスト（AC1の核心）。「最終週」を選択すると value=5 で onNthChanged が呼ばれることをテスト。既存テストの「第3」→「第3週」への表記修正</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修スコープ確認 -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>features/housework_settings/presentation/widgets/nth_weekday_selector.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>List.generate(5,...) → NthWeek.values 列挙に変更。_nthWeekLabel() 変換メソッド追加</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>houseworkNthWeekFirst〜Last の5キー追加。houseworkRecurrenceTypeNthWeekday を「第n曜日」に修正</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_en.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>houseworkNthWeekFirst〜Last の5キー追加（英語）</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>houseworkNthWeekFirst〜Last の5キー追加（スペイン語）</td>
+      </tr>
+      <tr>
+        <td><code>core/models/nth_week.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>既存の NthWeek enum（firstWeek〜lastWeek）をそのまま利用</td>
+      </tr>
+      <tr>
+        <td>家事設定画面のUI・ロジック（選択肢以外）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>onChanged コールバック・保存ロジック・バリデーション等は変更なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

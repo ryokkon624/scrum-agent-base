@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 59 Review — #170 確認ダイアログの実装が AppDialog と showDialog() 直接呼び出しで混在している</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-refactor { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 40px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Count grid */
+  .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .count-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; }
+  .count-box .label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .count-box .count { font-size: 36px; font-weight: 700; line-height: 1; }
+  .count-box .sublabel { font-size: 11px; color: #888; margin-top: 4px; }
+  .count-before { color: #ef4444; }
+  .count-after { color: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Memo box */
+  .memo-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px 20px; }
+  .memo-item { font-size: 13px; color: #14532d; padding: 5px 0; display: flex; gap: 8px; align-items: flex-start; }
+  .memo-item::before { content: '•'; flex-shrink: 0; color: #22c55e; font-weight: 700; }
+
+  /* File list */
+  .file-list { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 16px; }
+  .file-list-item { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #374151; padding: 4px 0; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+  .file-list-item:last-child { border-bottom: none; }
+  .dot-orange { width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+
+  /* Excluded box */
+  .excluded-box { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 16px; margin-top: 12px; }
+  .excluded-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .excluded-item { font-size: 12px; color: #6b7280; padding: 3px 0; display: flex; gap: 8px; align-items: flex-start; }
+  .excluded-item::before { content: '–'; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 59 Review</div>
+  <h1>#170 — 確認ダイアログの実装が AppDialog と showDialog() 直接呼び出しで混在している</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 59</span>
+    <span class="badge badge-issue">#170</span>
+    <span class="badge badge-refactor">refactor</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題</div>
+      <p>確認ダイアログの表示方法が <code>AppDialog.confirm()</code> と <code>showDialog&lt;bool&gt;(context: context, builder: ...)</code> の直接呼び出しで混在していた。
+      <code>AppDialog</code> はデザイントークン（<code>AppColorScheme</code>・<code>AppRadius</code>・<code>AppSpacing</code>）に準拠したスタイル統一・<code>isDanger</code> オプション・内部での <code>BuildContext</code> 管理（go_router 環境でのページ誤ポップ防止）を提供しているが、
+      旧パターンのままのページでは生の <code>AlertDialog</code> がバラバラに実装され、デザイン変更時に全ファイルを修正する必要があった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前（混在）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>bulk_skip_dialog.dart: StatelessWidget + showDialog&lt;bool&gt; の独自実装</div>
+        <div class="flow-item"><span class="dot dot-red"></span>bulk_purchase_dialog.dart: showDialog&lt;bool&gt; 2箇所</div>
+        <div class="flow-item"><span class="dot dot-red"></span>inquiry_detail_page.dart: showDialog&lt;bool&gt; 2箇所</div>
+        <div class="flow-item"><span class="dot dot-red"></span>shopping_item_detail_page.dart: showDialog&lt;bool&gt; 2箇所（#170と同時対応）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>household_settings系3ファイル: showDialog&lt;void&gt; 5箇所</div>
+        <div class="flow-item"><span class="dot dot-red"></span>account_settings danger_zone: showDialog&lt;bool&gt; 1箇所</div>
+        <div class="flow-item"><span class="dot dot-red"></span>header_user_icon.dart: showDialog&lt;bool&gt; 1箇所</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後（統一）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>全ページで <code>AppDialog.confirm()</code> に統一</div>
+        <div class="flow-item"><span class="dot dot-green"></span>デザイン変更は <code>app_dialog.dart</code> 1ファイルのみ</div>
+        <div class="flow-item"><span class="dot dot-green"></span>go_router 環境での BuildContext 管理は AppDialog 内で一元化</div>
+        <div class="flow-item"><span class="dot dot-green"></span>isDanger: true で赤テキスト（削除・脱退）を宣言的に指定</div>
+      </div>
+    </div>
+    <div class="count-grid" style="margin-top:16px;">
+      <div class="count-box">
+        <div class="label">showDialog() 直接呼び出し（改修前）</div>
+        <div class="count count-before">13</div>
+        <div class="sublabel">8ファイルに散在</div>
+      </div>
+      <div class="count-box">
+        <div class="label">showDialog() 直接呼び出し（改修後）</div>
+        <div class="count count-after">0</div>
+        <div class="sublabel">全て AppDialog.confirm に統一</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">bulk_skip_dialog.dart の showDialog() 直接呼び出しが AppDialog に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>BulkSkipDialog</code>（StatelessWidget クラス）自体が不要になるため、クラスを廃止して <code>showBulkSkipDialog()</code> という関数に置き換えた。
+        ファイル全体を書き直す形で実装。呼び出し元の <code>housework_assign_page.dart</code> も <code>BulkSkipDialog.show()</code> から <code>showBulkSkipDialog()</code> に変更した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/widgets/bulk_skip_dialog.dart</span>
+            <span class="diff-stat">+10 / -35</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">1</span><span class="line-prefix">-</span><span>class BulkSkipDialog extends StatelessWidget {</span></div>
+            <div class="code-line line-del"><span class="line-num">2</span><span class="line-prefix">-</span><span>  const BulkSkipDialog({super.key, required this.count});</span></div>
+            <div class="code-line line-del"><span class="line-num">3</span><span class="line-prefix">-</span><span>  final int count;</span></div>
+            <div class="code-line line-del"><span class="line-num">4</span><span class="line-prefix">-</span><span>  static Future&lt;bool&gt; show(BuildContext context, {required int count}) async {</span></div>
+            <div class="code-line line-del"><span class="line-num">5</span><span class="line-prefix">-</span><span>    final result = await showDialog&lt;bool&gt;(</span></div>
+            <div class="code-line line-del"><span class="line-num">6</span><span class="line-prefix">-</span><span>      context: context,</span></div>
+            <div class="code-line line-del"><span class="line-num">7</span><span class="line-prefix">-</span><span>      builder: (dialogContext) => BulkSkipDialog(count: count),</span></div>
+            <div class="code-line line-del"><span class="line-num">8</span><span class="line-prefix">-</span><span>    );</span></div>
+            <div class="code-line line-del"><span class="line-num">9</span><span class="line-prefix">-</span><span>    return result ?? false;</span></div>
+            <div class="code-line line-del"><span class="line-num">10</span><span class="line-prefix">-</span><span>  }</span></div>
+            <div class="code-line line-del"><span class="line-num">11</span><span class="line-prefix">-</span><span>  @override Widget build(BuildContext context) { ... }</span></div>
+            <div class="code-line line-del"><span class="line-num">30</span><span class="line-prefix">-</span><span>}</span></div>
+            <div class="code-line line-add"><span class="line-num">1</span><span class="line-prefix">+</span><span>Future&lt;bool&gt; showBulkSkipDialog(</span></div>
+            <div class="code-line line-add"><span class="line-num">2</span><span class="line-prefix">+</span><span>  BuildContext context, {</span></div>
+            <div class="code-line line-add"><span class="line-num">3</span><span class="line-prefix">+</span><span>  required int count,</span></div>
+            <div class="code-line line-add"><span class="line-num">4</span><span class="line-prefix">+</span><span>}) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">5</span><span class="line-prefix">+</span><span>  final l10n = AppLocalizations.of(context);</span></div>
+            <div class="code-line line-add"><span class="line-num">6</span><span class="line-prefix">+</span><span>  return AppDialog.confirm(</span></div>
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>    context,</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>    title: l10n.houseworkAssignBulkSkipDialogTitle,</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>    message: l10n.houseworkAssignBulkSkipDialogBody(count),</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    confirmLabel: l10n.houseworkAssignBulkSkipButton,</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    cancelLabel: l10n.commonCancel,</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>  );</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>StatelessWidget</code> クラスから関数に変更した。クラス自体が不要になったため、ウィジェットテストも関数呼び出し形式に書き直した。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">bulk_purchase_dialog.dart の showDialog() 直接呼び出しが AppDialog に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>showBulkPurchaseDialog()</code> と <code>showDeleteConfirmDialog()</code> の2関数にあった <code>showDialog&lt;bool&gt;</code> を <code>AppDialog.confirm()</code> に置き換えた。
+        削除確認ダイアログは <code>isDanger: true</code> を指定して赤テキストのスタイルを維持。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/shopping/presentation/widgets/bulk_purchase_dialog.dart</span>
+            <span class="diff-stat">+12 / -38</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">3</span><span class="line-prefix">-</span><span>Future&lt;bool&gt; showBulkPurchaseDialog(BuildContext context) async {</span></div>
+            <div class="code-line line-del"><span class="line-num">4</span><span class="line-prefix">-</span><span>  final result = await showDialog&lt;bool&gt;(</span></div>
+            <div class="code-line line-del"><span class="line-num">5</span><span class="line-prefix">-</span><span>    context: context,</span></div>
+            <div class="code-line line-del"><span class="line-num">6</span><span class="line-prefix">-</span><span>    builder: (ctx) =&gt; AlertDialog(</span></div>
+            <div class="code-line line-del"><span class="line-num">7</span><span class="line-prefix">-</span><span>      title: Text(l10n.shoppingBulkPurchaseConfirmTitle),</span></div>
+            <div class="code-line line-del"><span class="line-num">8</span><span class="line-prefix">-</span><span>      // ...</span></div>
+            <div class="code-line line-del"><span class="line-num">16</span><span class="line-prefix">-</span><span>  );</span></div>
+            <div class="code-line line-del"><span class="line-num">17</span><span class="line-prefix">-</span><span>  return result ?? false;</span></div>
+            <div class="code-line line-del"><span class="line-num">18</span><span class="line-prefix">-</span><span>}</span></div>
+            <div class="code-line line-add"><span class="line-num">3</span><span class="line-prefix">+</span><span>Future&lt;bool&gt; showBulkPurchaseDialog(BuildContext context) {</span></div>
+            <div class="code-line line-add"><span class="line-num">4</span><span class="line-prefix">+</span><span>  final l10n = AppLocalizations.of(context);</span></div>
+            <div class="code-line line-add"><span class="line-num">5</span><span class="line-prefix">+</span><span>  return AppDialog.confirm(</span></div>
+            <div class="code-line line-add"><span class="line-num">6</span><span class="line-prefix">+</span><span>    context,</span></div>
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>    title: l10n.shoppingBulkPurchaseConfirmTitle,</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>    message: l10n.shoppingBulkPurchaseConfirmMessage,</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>    confirmLabel: l10n.shoppingBulkPurchaseButton,</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    cancelLabel: l10n.commonCancel,</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>  );</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>}</span></div>
+            <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>（showDeleteConfirmDialog も同様のパターンで isDanger: true を指定）</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">inquiry_detail_page.dart の showDialog() 直接呼び出しが AppDialog に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>inquiry_detail_page.dart</code> の「解決済みにする」と「エスカレーション」の確認ダイアログ2箇所を <code>AppDialog.confirm()</code> に置き換えた。
+        元の実装は <code>dialogContext</code> を使って go_router 環境でのページ誤ポップを防いでいたが、<code>AppDialog</code> は内部で <code>ctx</code> を正しく管理しているためこの心配が不要になった。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_page.dart</span>
+            <span class="diff-stat">+14 / -49</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">283</span><span class="line-prefix">-</span><span>    final confirmed = await showDialog&lt;bool&gt;(</span></div>
+            <div class="code-line line-del"><span class="line-num">284</span><span class="line-prefix">-</span><span>      context: context,</span></div>
+            <div class="code-line line-del"><span class="line-num">285</span><span class="line-prefix">-</span><span>      builder: (dialogContext) =&gt; AlertDialog(</span></div>
+            <div class="code-line line-del"><span class="line-num">286</span><span class="line-prefix">-</span><span>        title: Text(l10n.inquiryDetailCloseConfirmTitle),</span></div>
+            <div class="code-line line-del"><span class="line-num">287</span><span class="line-prefix">-</span><span>        content: Text(l10n.inquiryDetailCloseConfirmBody),</span></div>
+            <div class="code-line line-del"><span class="line-num">288</span><span class="line-prefix">-</span><span>        actions: [</span></div>
+            <div class="code-line line-del"><span class="line-num">289</span><span class="line-prefix">-</span><span>          TextButton( key: const Key('closeConfirmButton'), ... ),</span></div>
+            <div class="code-line line-del"><span class="line-num">296</span><span class="line-prefix">-</span><span>        ],</span></div>
+            <div class="code-line line-del"><span class="line-num">297</span><span class="line-prefix">-</span><span>      ),</span></div>
+            <div class="code-line line-del"><span class="line-num">298</span><span class="line-prefix">-</span><span>    );</span></div>
+            <div class="code-line line-del"><span class="line-num">299</span><span class="line-prefix">-</span><span>    if (confirmed == true) { ... }</span></div>
+            <div class="code-line line-add"><span class="line-num">283</span><span class="line-prefix">+</span><span>    final confirmed = await AppDialog.confirm(</span></div>
+            <div class="code-line line-add"><span class="line-num">284</span><span class="line-prefix">+</span><span>      context,</span></div>
+            <div class="code-line line-add"><span class="line-num">285</span><span class="line-prefix">+</span><span>      title: l10n.inquiryDetailCloseConfirmTitle,</span></div>
+            <div class="code-line line-add"><span class="line-num">286</span><span class="line-prefix">+</span><span>      message: l10n.inquiryDetailCloseConfirmBody,</span></div>
+            <div class="code-line line-add"><span class="line-num">287</span><span class="line-prefix">+</span><span>      confirmLabel: l10n.inquiryDetailResolvedButton,</span></div>
+            <div class="code-line line-add"><span class="line-num">288</span><span class="line-prefix">+</span><span>      cancelLabel: l10n.commonCancel,</span></div>
+            <div class="code-line line-add"><span class="line-num">289</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-add"><span class="line-num">290</span><span class="line-prefix">+</span><span>    if (confirmed) { ... }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>元の実装が <code>confirmed == true</code> で比較していたが、<code>AppDialog.confirm()</code> は <code>Future&lt;bool&gt;</code>（null なし）を返すため <code>if (confirmed)</code> に簡略化できた。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">その他 showDialog() を直接呼び出しているファイルが AppDialog に置き換わる</div>
+      </div>
+      <div class="ac-body">
+        <p>grep で全ファイルを調査した結果、以下の5ファイルに残存を確認し、すべて置き換えた。</p>
+        <div class="file-list" style="margin-bottom:16px;">
+          <div class="file-list-item"><span class="dot-orange"></span>account_settings/widgets/danger_zone_section.dart（アカウント削除確認 1箇所、isDanger: true）</div>
+          <div class="file-list-item"><span class="dot-orange"></span>household_settings/widgets/danger_zone_section.dart（世帯削除確認 1箇所、isDanger: true）</div>
+          <div class="file-list-item"><span class="dot-orange"></span>household_settings/widgets/invitation_section.dart（招待取り消し確認 1箇所）</div>
+          <div class="file-list-item"><span class="dot-orange"></span>household_settings/widgets/members_section.dart（メンバー削除・OWNER譲渡・脱退確認 3箇所）</div>
+          <div class="file-list-item"><span class="dot-orange"></span>core/ui/header_user_icon.dart（ログアウト確認 1箇所）</div>
+          <div class="file-list-item"><span class="dot-orange"></span>shopping_item_detail_page.dart（削除・添付画像削除確認 2箇所、isDanger: true）</div>
+        </div>
+        <div class="excluded-box">
+          <div class="excluded-title">置き換え対象外にした箇所（理由あり）</div>
+          <div class="excluded-item"><code>notification_popover.dart</code>: ポップオーバー UI 全体を <code>showDialog</code> で実装しているため、AppDialog.confirm の置き換え対象ではない</div>
+          <div class="excluded-item"><code>household_list_section.dart</code>: TextField を含む入力ダイアログのため AppDialog.confirm では代替不可</div>
+          <div class="excluded-item"><code>bulk_complete_dialog.dart</code>: 独立した StatefulWidget 本体（UI コンポーネント自体）であり、AppDialog.confirm に置き換えるべき「呼び出し側」ではない</div>
+        </div>
+        <p style="font-size:13px;color:#4b5563;margin-top:16px;margin-bottom:12px;">household_settings の members_section.dart では、コールバック型の変更も必要だった：</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/members_section.dart（抜粋）</span>
+            <span class="diff-stat">+14 / -62</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">155</span><span class="line-prefix"> </span><span>class _MemberCard extends StatelessWidget {</span></div>
+            <div class="code-line line-del"><span class="line-num">160</span><span class="line-prefix">-</span><span>  final VoidCallback onRemove;</span></div>
+            <div class="code-line line-del"><span class="line-num">161</span><span class="line-prefix">-</span><span>  final VoidCallback onTransferOwner;</span></div>
+            <div class="code-line line-add"><span class="line-num">160</span><span class="line-prefix">+</span><span>  final Future&lt;void&gt; Function() onRemove;</span></div>
+            <div class="code-line line-add"><span class="line-num">161</span><span class="line-prefix">+</span><span>  final Future&lt;void&gt; Function() onTransferOwner;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>AppDialog.confirm()</code> は <code>Future&lt;bool&gt;</code> を返すため、コールバックを <code>await</code> する必要がある。<code>VoidCallback</code>（同期）から <code>Future&lt;void&gt; Function()</code>（非同期）に変更した。<code>_InvitationRow</code> の <code>onRevoke</code> も同様。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation notes -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="memo-box">
+      <div class="memo-item"><code>AppDialog.confirm</code> は <code>title</code> パラメータが必須。元のダイアログが title なし（content のみ）だった箇所では <code>title: ''</code> を渡した（空文字列はウィジェット上で表示されない）。</div>
+      <div class="memo-item"><code>bulk_skip_dialog.dart</code> は <code>StatelessWidget</code> クラスから <code>showBulkSkipDialog(BuildContext, {required int count})</code> 関数に変更した。クラス自体が不要になったためウィジェットテストも関数呼び出し形式に書き直した。</div>
+      <div class="memo-item">置き換え対象外にした箇所: <code>notification_popover.dart</code>（ポップオーバー UI 全体が showDialog）、<code>household_list_section.dart</code>（TextField を含む入力ダイアログ）、<code>bulk_complete_dialog.dart</code>（UI コンポーネント本体）。</div>
+      <div class="memo-item"><code>_MemberCard</code> / <code>_InvitationRow</code> の <code>onRemove</code> / <code>onTransferOwner</code> / <code>onLeave</code> / <code>onRevoke</code> コールバック型を <code>VoidCallback</code> から <code>Future&lt;void&gt; Function()</code> に変更した（AppDialog.confirm が <code>Future&lt;bool&gt;</code> を返すため await が必要になったことに対応）。</div>
+      <div class="memo-item"><code>header_user_icon_test.dart</code> のログアウトダイアログ確認をキー（<code>Key('logoutConfirmDialog')</code> 等）からタイプ（<code>find.byType(AlertDialog)</code> / <code>find.byType(TextButton), findsNWidgets(2)</code>）ベースに変更した（AppDialog は Key を付与しないため）。</div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>家事割り当て画面で一括スキップの確認ダイアログが表示されること</strong>
+          <span>「スキップ」ボタン押下後にダイアログが表示され、「確認」で実行・「キャンセル」で閉じること。統一スタイル（角丸・AppColorScheme に準拠）になっていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>買い物リストのかごタブで一括購入済み確認ダイアログが表示されること</strong>
+          <span>「一括購入済みにする」ボタン押下後にダイアログが表示され、「確認」で実行・「キャンセル」で閉じること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>お問い合わせ詳細の「解決済みにする」「エスカレーション」確認ダイアログが表示されること</strong>
+          <span>それぞれのボタン押下後にダイアログが表示され、確認で処理が実行されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>世帯設定のメンバー削除・OWNER譲渡・脱退の確認ダイアログが表示されること</strong>
+          <span>各操作のボタン押下後にダイアログが表示されること。削除・脱退確認では赤テキストで危険アクションであることが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>ヘッダーのユーザーアイコンからログアウト確認ダイアログが表示されること</strong>
+          <span>アイコン → 「ログアウト」選択後にダイアログが表示され、「はい」でログアウト・「キャンセル」で閉じること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>bulk_skip_dialog.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>BulkSkipDialog クラスを廃止 → showBulkSkipDialog() 関数に変更</td>
+      </tr>
+      <tr>
+        <td><code>bulk_purchase_dialog.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>showBulkPurchaseDialog / showDeleteConfirmDialog を AppDialog.confirm に変更</td>
+      </tr>
+      <tr>
+        <td><code>inquiry_detail_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>解決済み・エスカレーション確認ダイアログ2箇所を AppDialog.confirm に変更</td>
+      </tr>
+      <tr>
+        <td><code>shopping_item_detail_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>アイテム削除・画像削除確認ダイアログ2箇所を AppDialog.confirm に変更（isDanger: true）</td>
+      </tr>
+      <tr>
+        <td><code>account_settings/widgets/danger_zone_section.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>アカウント削除確認を AppDialog.confirm に変更（isDanger: true）</td>
+      </tr>
+      <tr>
+        <td><code>household_settings/widgets/danger_zone_section.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>世帯削除確認を AppDialog.confirm に変更（isDanger: true）</td>
+      </tr>
+      <tr>
+        <td><code>household_settings/widgets/invitation_section.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>招待取り消し確認を AppDialog.confirm に変更。onRevoke コールバック型を Future&lt;void&gt; Function() に変更</td>
+      </tr>
+      <tr>
+        <td><code>household_settings/widgets/members_section.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>メンバー削除・OWNER譲渡・脱退確認を AppDialog.confirm に変更。コールバック型を VoidCallback から Future&lt;void&gt; Function() に変更</td>
+      </tr>
+      <tr>
+        <td><code>core/ui/header_user_icon.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ログアウト確認を AppDialog.confirm に変更</td>
+      </tr>
+      <tr>
+        <td><code>test/core/ui/header_user_icon_test.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ログアウトダイアログ検証をキーベースからタイプベース（find.byType(AlertDialog)）に変更</td>
+      </tr>
+      <tr>
+        <td><code>test/.../bulk_skip_dialog_test.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>BulkSkipDialog.show() → showBulkSkipDialog() 関数呼び出しに変更</td>
+      </tr>
+      <tr>
+        <td><code>core/ui/app_dialog.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>AppDialog の実装自体は変更なし（既存の共通実装をそのまま使用）</td>
+      </tr>
+      <tr>
+        <td><code>notification_popover.dart</code>、<code>household_list_section.dart</code>、<code>bulk_complete_dialog.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>AppDialog.confirm に置き換えられない用途のため対象外</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

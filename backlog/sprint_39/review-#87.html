@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 39 Review — #87 [mobile] 家事分担画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #eff6ff; color: #1d4ed8; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Intro box */
+  .intro-box { background: #f0fdf4; border-left: 3px solid #22c55e; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .intro-box .label { font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .intro-box p { color: #14532d; font-size: 13px; }
+
+  /* Screen mock */
+  .screen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .screen-box { background: white; border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; }
+  .screen-box .screen-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; background: #f9fafb; }
+  .phone-frame { background: #f8f7f5; padding: 12px; }
+  .phone-inner { background: white; border-radius: 8px; border: 1px solid #e5e5e5; overflow: hidden; font-size: 11px; }
+  .phone-appbar { background: #166534; color: white; padding: 8px 12px; font-size: 12px; font-weight: 600; }
+  .phone-section { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
+  .phone-section-label { font-size: 9px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .member-strip { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
+  .member-chip { background: #f3f4f6; border-radius: 12px; padding: 2px 6px; font-size: 9px; white-space: nowrap; }
+  .member-chip.highlight { background: #dcfce7; border: 1px solid #22c55e; font-weight: 700; }
+  .member-chip.unassigned { background: #fef3c7; font-weight: 700; }
+  .task-card { background: #f9fafb; border-radius: 4px; padding: 6px 8px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .badge-unassigned { background: #fef3c7; color: #b45309; font-size: 8px; font-weight: 700; border-radius: 8px; padding: 1px 4px; white-space: nowrap; }
+  .badge-assigned { background: #dcfce7; color: #166534; font-size: 8px; font-weight: 700; border-radius: 8px; padding: 1px 4px; white-space: nowrap; }
+  .task-info { flex: 1; }
+  .task-name { font-size: 10px; font-weight: 600; }
+  .task-date { font-size: 9px; color: #6b7280; }
+  .swipe-hint { display: flex; justify-content: space-between; font-size: 8px; color: #9ca3af; margin-top: 2px; }
+  .swipe-btn-row { display: flex; gap: 4px; padding: 6px 8px; }
+  .swipe-btn { background: #166534; color: white; font-size: 8px; font-weight: 600; border-radius: 4px; padding: 4px 6px; flex: 1; text-align: center; }
+  .swipe-btn.disabled { background: #d1d5db; color: #6b7280; }
+  .filter-row { display: flex; gap: 3px; padding: 4px 6px; }
+  .filter-chip { font-size: 8px; padding: 2px 5px; border-radius: 10px; border: 1px solid #d1d5db; }
+  .filter-chip.active { background: #166534; color: white; border-color: #166534; }
+
+  /* Swipe mode mock */
+  .swipe-mode-inner { background: white; border-radius: 8px; border: 1px solid #e5e5e5; overflow: hidden; font-size: 11px; }
+  .swipe-appbar { background: #166534; color: white; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+  .swipe-progress { font-size: 10px; color: #86efac; }
+  .swipe-card-area { padding: 16px 10px; display: flex; justify-content: center; }
+  .swipe-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 16px; width: 100%; }
+  .swipe-card-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .swipe-card-meta { font-size: 10px; color: #6b7280; margin-bottom: 8px; }
+  .swipe-card-assignee { font-size: 10px; color: #374151; }
+  .swipe-actions { display: flex; justify-content: space-between; padding: 6px 10px 10px; font-size: 9px; color: #6b7280; }
+  .swipe-action-left { display: flex; align-items: center; gap: 2px; color: #0ea5e9; font-weight: 600; }
+  .swipe-action-right { display: flex; align-items: center; gap: 2px; color: #9ca3af; }
+
+  /* Architecture boxes */
+  .arch-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+  .feature-overview { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 20px; }
+  .feature-overview .feat-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 8px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-green { background: #22c55e; }
+  .dot-blue { background: #3b82f6; }
+  .dot-amber { background: #f59e0b; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+  .annotation-blue { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .stat-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; }
+  .stat-box .label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .stat-box .count { font-size: 30px; font-weight: 700; line-height: 1; color: #166534; }
+  .stat-box .sublabel { font-size: 11px; color: #888; margin-top: 4px; }
+
+  /* Highlight boxes */
+  .highlight-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+  .highlight-box .hl-title { font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .highlight-box p { font-size: 12px; color: #14532d; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 39 Review</div>
+  <h1>#87 — [mobile] 家事分担画面を実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 39</span>
+    <span class="badge badge-issue">#87</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Overview -->
+  <section>
+    <h2>なぜこの機能が必要だったか</h2>
+    <div class="intro-box">
+      <div class="label">背景</div>
+      <p>世帯の家事タスクは登録済みだが、誰が担当するかを手軽に調整する画面がモバイルになかった。特に「隙間時間にサクッと家事の担当を振り分けたい」というユーザーニーズに応えるため、スワイプ操作に特化した家事分担画面を新規実装した。</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="label">新規作成ファイル</div>
+        <div class="count">12</div>
+        <div class="sublabel">feature/housework_assign 配下</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">テストケース</div>
+        <div class="count">35</div>
+        <div class="sublabel">Repository 10件 / Notifier 14件 / Page 11件</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">i18nキー追加</div>
+        <div class="count">19</div>
+        <div class="sublabel">ja / en / es 各19キー</div>
+      </div>
+    </div>
+
+    <div class="feature-overview">
+      <div class="feat-title">実装した2つのモード</div>
+      <div class="flow-item"><span class="dot dot-green"></span><strong>通常リストモード</strong>: 全タスクをリスト表示。左スワイプで自分に割り当て・右スワイプでメンバー選択モーダルを起動。フィルタ（すべて / 未割当 / 自分+未割当）で絞り込み可能</div>
+      <div class="flow-item"><span class="dot dot-blue"></span><strong>スワイプモード</strong>: タスクを1枚ずつTinder風に表示。左スワイプで自分に割り当て・右スワイプでスキップ。全カード消化後は最新データを再取得してリストモードに戻る</div>
+      <div class="flow-item"><span class="dot dot-amber"></span><strong>一括スキップ</strong>: 過去日付の未割当タスクが存在する場合のみボタンを表示し、確認ダイアログ後に一括スキップ</div>
+    </div>
+
+    <!-- Screen mockups -->
+    <div class="screen-grid">
+      <div class="screen-box">
+        <div class="screen-title">通常リストモード</div>
+        <div class="phone-frame">
+          <div class="phone-inner">
+            <div class="phone-appbar">家事割り当て</div>
+            <div class="phone-section">
+              <div class="phone-section-label">メンバー別件数</div>
+              <div class="member-strip">
+                <span class="member-chip unassigned">未割当 40</span>
+                <span class="member-chip highlight">自分 5</span>
+                <span class="member-chip">お兄 0</span>
+                <span class="member-chip">父 5</span>
+                <span class="member-chip">母 8</span>
+              </div>
+            </div>
+            <div class="phone-section">
+              <div style="font-size:9px;color:#374151;">未対応タスク 56件（未割当: 40件）</div>
+              <div style="font-size:9px;color:#ef4444;margin-top:2px;">過去の未割当: 31件</div>
+              <div style="font-size:8px;background:#f3f4f6;border-radius:3px;padding:2px 6px;margin-top:3px;display:inline-block;">過去の未割当をスキップ</div>
+            </div>
+            <div class="phone-section">
+              <div class="filter-row">
+                <span class="filter-chip active">すべて</span>
+                <span class="filter-chip">未割当</span>
+                <span class="filter-chip">自分+未</span>
+              </div>
+            </div>
+            <div class="phone-section">
+              <div class="task-card">
+                <span class="badge-unassigned">未割当</span>
+                <div class="task-info">
+                  <div class="task-name">猫砂補充</div>
+                  <div class="task-date">実施日: 2026-04-20</div>
+                  <div class="swipe-hint"><span>← 自分に</span><span>メンバー選択 →</span></div>
+                </div>
+              </div>
+              <div class="task-card">
+                <span class="badge-assigned">お母</span>
+                <div class="task-info">
+                  <div class="task-name">トイレ掃除</div>
+                  <div class="task-date">実施日: 2026-04-20</div>
+                  <div class="swipe-hint"><span>← 自分に</span><span>メンバー選択 →</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="swipe-btn-row">
+              <div class="swipe-btn">未割当を自分に ▶</div>
+            </div>
+            <div class="swipe-btn-row">
+              <div class="swipe-btn">他メンバーのタスクを奪う ▶</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen-box">
+        <div class="screen-title">スワイプモード</div>
+        <div class="phone-frame">
+          <div class="swipe-mode-inner">
+            <div class="swipe-appbar">
+              <span style="font-size:12px;font-weight:600;">← 自分に割り当てる</span>
+              <span class="swipe-progress">3 / 40</span>
+            </div>
+            <div class="swipe-card-area">
+              <div class="swipe-card">
+                <div class="swipe-card-title">猫砂補充</div>
+                <div class="swipe-card-meta">実施日: 2026-04-20</div>
+                <div class="swipe-card-assignee">現在の担当: 未割当</div>
+              </div>
+            </div>
+            <div class="swipe-actions">
+              <div class="swipe-action-left">&#8592; 自分にする</div>
+              <div class="swipe-action-right">次へ &#8594;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">メンバー別未対応件数サマリを横スクロールで表示。「未割当」先頭固定・ログインユーザーをハイライト表示</div>
+      </div>
+      <div class="ac-body">
+        <p><code>MemberSummaryStrip</code> ウィジェットで横スクロールリストを実装。「未割当」チップは先頭に固定し、ログインユーザーのチップは <code>primaryContainer</code> 背景 + プライマリカラーのボーダーでハイライト。</p>
+        <p>パフォーマンス最適化として、<code>MemberSummaryStrip.build()</code> 内で O(メンバー数 × タスク数) のループを毎フレーム実行するのを避けるため、<code>HouseworkAssignNotifier</code> 側で <code>Map&lt;int, int&gt; memberTaskCounts</code>（userId → タスク件数）を事前計算して state に持たせ、ウィジェットはマップ参照のみに変更した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/housework_assign_notifier.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>  /// userId → 未対応タスク件数マップを一括計算する（O(タスク数)）</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>  Map&lt;int, int&gt; _computeMemberTaskCounts(List&lt;HouseworkTaskDto&gt; tasks) {</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>    final counts = &lt;int, int&gt;{};</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>    for (final t in tasks) {</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>      final uid = t.assigneeUserId;</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>      if (uid != null) {</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>        counts[uid] = (counts[uid] ?? 0) + 1;</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>      }</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>    return counts;</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>Notifier 側で集計することで MemberSummaryStrip の build() は単純なマップ参照のみになり、リビルド時のコストが O(1) になる。割り当て変更のたびに <code>_computeMemberTaskCounts</code> が再実行され、常に最新の件数が表示される。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/widgets/member_summary_strip.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>          ...members.map((m) {</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>            final count = memberTaskCounts[m.userId] ?? 0;</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>            return _SummaryChip(</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>              key: ValueKey(m.userId),</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>              label: m.displayName,</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>              count: count,</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>              isHighlighted: m.userId == currentUserId,</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>            );</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>          }),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">フィルタ（すべて / 未割当のみ / 自分+未割当）でフロント側絞り込みができる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>AssignFilter</code> enum と <code>AssignFilterChips</code> ウィジェットで実装。フィルタ処理は <code>_ListModePage._filteredTasks()</code> 内でフロント側のみで実施（APIの再呼び出しなし）。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/housework_assign_page.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">218</span><span class="line-prefix">+</span><span>  List&lt;HouseworkTaskDto&gt; _filteredTasks(</span></div>
+            <div class="code-line line-add"><span class="line-num">219</span><span class="line-prefix">+</span><span>    HouseworkAssignState state,</span></div>
+            <div class="code-line line-add"><span class="line-num">220</span><span class="line-prefix">+</span><span>    int currentUserId,</span></div>
+            <div class="code-line line-add"><span class="line-num">221</span><span class="line-prefix">+</span><span>  ) {</span></div>
+            <div class="code-line line-add"><span class="line-num">222</span><span class="line-prefix">+</span><span>    switch (state.filter) {</span></div>
+            <div class="code-line line-add"><span class="line-num">223</span><span class="line-prefix">+</span><span>      case AssignFilter.all:</span></div>
+            <div class="code-line line-add"><span class="line-num">224</span><span class="line-prefix">+</span><span>        return state.tasks;</span></div>
+            <div class="code-line line-add"><span class="line-num">225</span><span class="line-prefix">+</span><span>      case AssignFilter.unassignedOnly:</span></div>
+            <div class="code-line line-add"><span class="line-num">226</span><span class="line-prefix">+</span><span>        return state.tasks.where((t) =&gt; t.assigneeUserId == null).toList();</span></div>
+            <div class="code-line line-add"><span class="line-num">227</span><span class="line-prefix">+</span><span>      case AssignFilter.meAndUnassigned:</span></div>
+            <div class="code-line line-add"><span class="line-num">228</span><span class="line-prefix">+</span><span>        return state.tasks</span></div>
+            <div class="code-line line-add"><span class="line-num">229</span><span class="line-prefix">+</span><span>            .where((t) =&gt; t.assigneeUserId == null || t.assigneeUserId == currentUserId)</span></div>
+            <div class="code-line line-add"><span class="line-num">230</span><span class="line-prefix">+</span><span>            .toList();</span></div>
+            <div class="code-line line-add"><span class="line-num">231</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">232</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">タスクカードに担当バッジ・家事名・実施日を表示する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>AssignableTaskCard</code> ウィジェットで実装。担当バッジは未割当/担当済みで背景色（amber-50 / green-50）・テキスト色を切り替える <code>_AssigneeBadge</code> を使用。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/widgets/assignable_task_card.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">116</span><span class="line-prefix">+</span><span>    final assigneeLabel = task.assigneeUserId == null</span></div>
+            <div class="code-line line-add"><span class="line-num">117</span><span class="line-prefix">+</span><span>        ? l10n.houseworkAssignAssigneeUnassigned</span></div>
+            <div class="code-line line-add"><span class="line-num">118</span><span class="line-prefix">+</span><span>        : (task.assigneeNickname ?? task.assigneeUserId.toString());</span></div>
+            <div class="code-line line-add"><span class="line-num">119</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">120</span><span class="line-prefix">+</span><span>    return Container(</span></div>
+            <div class="code-line line-add"><span class="line-num">121</span><span class="line-prefix">+</span><span>      width: double.infinity,</span></div>
+            <div class="code-line line-add"><span class="line-num">122</span><span class="line-prefix">+</span><span>      color: Theme.of(context).colorScheme.surface,</span></div>
+            <div class="code-line line-add"><span class="line-num">123</span><span class="line-prefix">+</span><span>      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),</span></div>
+            <div class="code-line line-add"><span class="line-num">124</span><span class="line-prefix">+</span><span>      child: Row(children: [</span></div>
+            <div class="code-line line-add"><span class="line-num">125</span><span class="line-prefix">+</span><span>        _AssigneeBadge(label: assigneeLabel, isUnassigned: task.assigneeUserId == null),</span></div>
+            <div class="code-line line-add"><span class="line-num">126</span><span class="line-prefix">+</span><span>        // ... 家事名・実施日</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>カード全体に <code>width: double.infinity</code> を明示指定している。Flutter の <code>Container</code> はデフォルトでコンテンツサイズになるため、省略すると家事名の文字数でカード幅がバラバラになる（Sprint 31 で学習済みのパターン）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 & AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4 / AC5</div>
+        <div class="ac-text">左スワイプで自分に割り当て（sky-500背景）、右スワイプでメンバー選択モーダル起動（amber-500背景）</div>
+      </div>
+      <div class="ac-body">
+        <p>Flutter 標準の <code>Dismissible</code> ウィジェットで実装。<code>confirmDismiss</code> コールバック内でスワイプ方向を判定し、左スワイプは <code>notifier.assignToMe()</code>、右スワイプは <code>MemberPickerBottomSheet.show()</code> を呼び出す。右スワイプはモーダルで選択するため <code>return false</code> で dismiss はしない。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/widgets/assignable_task_card.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>      background: _SwipeBackground(</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>        alignment: Alignment.centerLeft,</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>        color: colorScheme?.swipeSelf ?? const Color(0xFF0EA5E9),  // sky-500</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>        label: l10n.houseworkAssignSwipeMakeMineLabel,</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>        icon: Icons.person,</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>      ),</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>      secondaryBackground: _SwipeBackground(</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>        alignment: Alignment.centerRight,</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>        color: colorScheme?.swipeMembers ?? const Color(0xFFF59E0B),  // amber-500</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>        label: l10n.houseworkAssignSwipePickMemberLabel,</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>        icon: Icons.group,</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>      ),</span></div>
+            <div class="code-line line-add"><span class="line-num">62</span><span class="line-prefix">+</span><span>      confirmDismiss: (direction) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>        if (direction == DismissDirection.startToEnd) {</span></div>
+            <div class="code-line line-add"><span class="line-num">64</span><span class="line-prefix">+</span><span>          return await onAssignToMe();  // API成功でtrue → カード消える</span></div>
+            <div class="code-line line-add"><span class="line-num">65</span><span class="line-prefix">+</span><span>        } else {</span></div>
+            <div class="code-line line-add"><span class="line-num">66</span><span class="line-prefix">+</span><span>          onPickMember();</span></div>
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>          return false; // モーダルで選択するため dismiss はしない</span></div>
+            <div class="code-line line-add"><span class="line-num">68</span><span class="line-prefix">+</span><span>        }</span></div>
+            <div class="code-line line-add"><span class="line-num">69</span><span class="line-prefix">+</span><span>      },</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>左スワイプは <code>assignToMe()</code> の戻り値（bool）をそのまま <code>confirmDismiss</code> の戻り値にしている。API成功時は <code>true</code>（カードが消える）、失敗時は <code>false</code>（カードが元の位置に戻る）という自然なUXになる。</span>
+          </div>
+        </div>
+        <div class="annotation annotation-blue" style="margin-top:8px;">
+          <span class="annotation-icon">&#128204;</span>
+          <span>右スワイプの <code>MemberPickerBottomSheet</code> は「未割当に戻す」オプションも先頭に固定表示。<code>assigneeUserId: null</code> を渡すことでAPIを通して担当なし状態に戻すことができる（AC5の「未割当に戻すことも可」に対応）。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">過去の未割当が存在する場合のみ「スキップ」ボタンを表示し、確認ダイアログ後に一括スキップ</div>
+      </div>
+      <div class="ac-body">
+        <p>過去日付（今日より前）かつ未割当のタスクを <code>DateTime</code> 比較でフィルタし、1件以上ある場合のみボタンを表示。<code>BulkSkipDialog.show()</code> で確認後、<code>PATCH /api/housework-tasks/bulk-status</code> を呼び出す。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/housework_assign_notifier.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">201</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; bulkSkipPastUnassigned() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">206</span><span class="line-prefix">+</span><span>    final now = DateTime.now();</span></div>
+            <div class="code-line line-add"><span class="line-num">207</span><span class="line-prefix">+</span><span>    final today = DateTime(now.year, now.month, now.day);</span></div>
+            <div class="code-line line-add"><span class="line-num">208</span><span class="line-prefix">+</span><span>    final pastUnassigned = current.tasks.where((t) {</span></div>
+            <div class="code-line line-add"><span class="line-num">209</span><span class="line-prefix">+</span><span>      if (t.assigneeUserId != null) return false;</span></div>
+            <div class="code-line line-add"><span class="line-num">210</span><span class="line-prefix">+</span><span>      final date = DateTime.tryParse(t.targetDate);</span></div>
+            <div class="code-line line-add"><span class="line-num">213</span><span class="line-prefix">+</span><span>      return taskDate.isBefore(today);</span></div>
+            <div class="code-line line-add"><span class="line-num">214</span><span class="line-prefix">+</span><span>    }).toList();</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC7 & AC8 & AC9 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC7 / AC8 / AC9</div>
+        <div class="ac-text">スワイプモード起動・操作・全消化後の完了メッセージとリストモード復帰</div>
+      </div>
+      <div class="ac-body">
+        <p>AC7: 0件の場合はボタンが <code>onPressed: null</code>（非活性グレーアウト）。<br>
+        AC8: <code>_SwipeModePage</code> で <code>SwipeModeCard</code> を1枚ずつ表示し、進捗を AppBar 右端に表示。<br>
+        AC9: <code>swipeIndex &gt;= swipeTaskCount</code> 時に完了メッセージを表示し、自動的に最新データを再取得してリストモードへ。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/housework_assign_notifier.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>  void startSwipeMode(SwipeTarget target) {</span></div>
+            <div class="code-line line-add"><span class="line-num">64</span><span class="line-prefix">+</span><span>    final count = _swipeTargetTasksFor(current.tasks, target).length;</span></div>
+            <div class="code-line line-add"><span class="line-num">65</span><span class="line-prefix">+</span><span>    state = AsyncData(current.copyWith(</span></div>
+            <div class="code-line line-add"><span class="line-num">66</span><span class="line-prefix">+</span><span>      mode: AssignMode.swipe,</span></div>
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>      swipeTarget: target,</span></div>
+            <div class="code-line line-add"><span class="line-num">68</span><span class="line-prefix">+</span><span>      swipeIndex: 0,</span></div>
+            <div class="code-line line-add"><span class="line-num">69</span><span class="line-prefix">+</span><span>      swipeTaskCount: count,  // スナップショット保持</span></div>
+            <div class="code-line line-add"><span class="line-num">70</span><span class="line-prefix">+</span><span>    ));</span></div>
+            <div class="code-line line-add"><span class="line-num">71</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>swipeTaskCount</code> はスワイプモード開始時のスナップショット。割り当て操作によってリスト内のタスク数が動的に変わっても（未割当が減っても）、スナップショットと比較することでスワイプモードが途中で早期終了しない設計になっている。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC10 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC10</div>
+        <div class="ac-text">スワイプ操作はカードがドラッグに追従し、カード幅30%超えでアクション確定</div>
+      </div>
+      <div class="ac-body">
+        <p>Flutter 標準の <code>Dismissible</code> に <code>dismissThresholds</code> を設定することでドラッグ追従としきい値を実現。カスタムのジェスチャー実装は不要だった。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/widgets/swipe_mode_card.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>      dismissThresholds: const {</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>        DismissDirection.startToEnd: 0.3,  // カード幅30%でアクション確定</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>        DismissDirection.endToStart: 0.3,</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>      },</span></div>
+            <div class="code-line line-add"><span class="line-num">62</span><span class="line-prefix">+</span><span>      confirmDismiss: (direction) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>        if (direction == DismissDirection.startToEnd) {</span></div>
+            <div class="code-line line-add"><span class="line-num">64</span><span class="line-prefix">+</span><span>          onAssignToMe();</span></div>
+            <div class="code-line line-add"><span class="line-num">65</span><span class="line-prefix">+</span><span>        } else {</span></div>
+            <div class="code-line line-add"><span class="line-num">66</span><span class="line-prefix">+</span><span>          onNext();</span></div>
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>        }</span></div>
+            <div class="code-line line-add"><span class="line-num">68</span><span class="line-prefix">+</span><span>        return false; // Notifierがstate更新して次カードを差し替えるためdismissしない</span></div>
+            <div class="code-line line-add"><span class="line-num">69</span><span class="line-prefix">+</span><span>      },</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC11 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC11</div>
+        <div class="ac-text">複数世帯所属時は世帯インジケーターバーを表示し、タップで世帯切り替え</div>
+      </div>
+      <div class="ac-body">
+        <p>ホーム画面（#66）で実装済みの <code>HouseholdIndicatorBar</code> を再利用。<code>HouseworkAssignNotifier.build()</code> で <code>ref.watch(householdNotifierProvider.future)</code> を使うことで、世帯切り替え時に Notifier が自動的に再実行されてデータが更新される。</p>
+        <div class="annotation annotation-blue">
+          <span class="annotation-icon">&#128204;</span>
+          <span><code>AsyncNotifier.build()</code> 内で <code>ref.watch</code> を使うことで、世帯切り替えが発生すると自動的に build() が再実行されデータが再取得される。<code>invalidate</code> 不要。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC12 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC12</div>
+        <div class="ac-text">画面表示時・世帯切り替え時にAPIからデータを取得し、ローディング中はインジケーターを表示</div>
+      </div>
+      <div class="ac-body">
+        <p>タスク一覧と世帯メンバーを <code>Future.wait()</code> で並列取得し、<code>async.when(loading: ...)` でローディングインジケーターを表示。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/data/housework_assign_repository.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>  Future&lt;List&lt;HouseworkTaskDto&gt;&gt; fetchTasks({required int householdId}) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>      final response = await _dio.get&lt;dynamic&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>        '/api/housework-tasks',</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>        queryParameters: {</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>          'householdId': householdId,</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>          'status': TaskStatus.notDone.code,</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>        },</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>      );</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC13 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC13</div>
+        <div class="ac-text">テストカバレッジ 95%以上（Notifier・ウィジェットテスト）</div>
+      </div>
+      <div class="ac-body">
+        <p>合計35件のテストを実装し、すべてパス。</p>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="label">Repository</div>
+            <div class="count">10</div>
+            <div class="sublabel">fetchTasks / fetchMembers / updateAssignee / bulkSkip 各成功・DioException</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Notifier</div>
+            <div class="count">14</div>
+            <div class="sublabel">フィルタ / スワイプモード / 割り当て / スキップ / エラー状態遷移</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Page</div>
+            <div class="count">11</div>
+            <div class="sublabel">初期表示 / フィルタ切り替え / スワイプモード起動 / 完了表示</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>家事分担画面が表示され、メンバー別件数サマリが横スクロールで見えること</strong>
+          <span>BottomNavigationBar の家事タブをタップ。自分のチップがハイライト（緑の枠付き背景）、「未割当」が先頭に表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>タスクカードを左スワイプすると自分に割り当てられること</strong>
+          <span>sky-500（青）の背景が現れ、スワイプ確定後に担当バッジが自分の名前に変わること。メンバー別件数サマリの数値も更新されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>右スワイプでメンバー選択モーダルが開き、任意のメンバーに割り当てられること</strong>
+          <span>amber-500（橙）の背景が現れ、モーダルが起動すること。「未割当に戻す」オプションも表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>過去の未割当タスクがある場合のみ「スキップ」ボタンが表示されること</strong>
+          <span>過去日付の未割当タスクが0件の場合はボタンが消えること。ボタンタップで確認ダイアログが表示され、スキップ後にリストから消えること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>[未割当を自分に割り当てる] ボタンからスワイプモードが起動すること</strong>
+          <span>未割当タスクが0件のとき、ボタンがグレーアウト（タップ不可）になること。1件以上あれば起動でき、1枚ずつカードが表示されること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>スワイプモードで進捗（N / 全件）が更新されること</strong>
+          <span>左スワイプで割り当てると次のカードに進み、AppBar 右端の進捗数字が増えること。全件消化後は完了メッセージが表示され通常リストに戻ること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">7</div>
+        <div class="verify-content">
+          <strong>世帯インジケーターバーをタップして世帯を切り替えると、タスクが再取得されること</strong>
+          <span>複数世帯に所属している場合に確認。切り替え後のローディングインジケーター → 新しい世帯のタスク表示の流れが自然であること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">8</div>
+        <div class="verify-content">
+          <strong>フィルタが正しく動作すること</strong>
+          <span>「未割当のみ」で担当者ありのタスクが消えること。「自分+未割当」で他メンバー担当タスクが消えること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/data/housework_assign_repository.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>Repository interface + impl（fetchTasks / fetchMembers / updateAssignee / bulkSkip）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/housework_assign_providers.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>houseworkAssignRepositoryProvider 定義</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/housework_assign_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>HouseworkAssignNotifier（AutoDisposeAsyncNotifier）+ houseworkAssignNotifierProvider</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/housework_assign_state.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>HouseworkAssignState + AssignFilter / AssignMode / SwipeTarget enum</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/housework_assign_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>HouseworkAssignPage（通常リストモード / スワイプモード in-page 切り替え）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/widgets/assign_filter_chips.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>AssignFilterChips ウィジェット（フィルタ選択チップ群）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/widgets/assignable_task_card.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>AssignableTaskCard（Dismissible + 担当バッジ + 家事名 + 実施日）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/widgets/bulk_skip_dialog.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>BulkSkipDialog（一括スキップ確認ダイアログ）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/widgets/member_picker_bottom_sheet.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>MemberPickerBottomSheet（メンバー選択モーダル + 未割当に戻すオプション）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/widgets/member_summary_strip.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>MemberSummaryStrip（横スクロールのメンバー別件数サマリ）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/housework_assign/presentation/widgets/swipe_mode_card.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>SwipeModeCard（スワイプモード用 Tinder風カード）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/tasks/data/models/housework_task_dto.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>copyWith()</code> メソッドを追加。nullable フィールドを null に上書きするため番兵オブジェクトパターンを採用</td>
+      </tr>
+      <tr>
+        <td><code>lib/app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>housework ルートのビルダーを仮プレースホルダーから <code>HouseworkAssignPage()</code> に差し替え</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>19キー追加（タイトル / メンバーサマリ / フィルタ / スワイプラベル / エラーメッセージ等）</td>
+      </tr>
+      <tr>
+        <td>バックエンド / DB / フロントエンド</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>既存 API をそのまま利用。バックエンド・フロントエンド側の変更なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

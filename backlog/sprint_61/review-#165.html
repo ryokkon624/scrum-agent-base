@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 61 Review — #165 [mobile] 家事割り当て画面の「他メンバーのタスクを奪う」スワイプモードに自身のタスクが表示される</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  /* Swipe mode mock UI */
+  .swipe-screen { background: #f3f4f6; border-radius: 8px; padding: 12px; }
+  .swipe-screen-title { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-bottom: 8px; }
+  .swipe-card { border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+  .swipe-card-bad { background: white; border: 2px solid #fca5a5; }
+  .swipe-card-good { background: white; border: 2px solid #86efac; }
+  .swipe-card-task { font-size: 12px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .swipe-card-assignee { font-size: 11px; }
+  .assignee-self { color: #b91c1c; background: #fef2f2; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+  .assignee-other { color: #166534; background: #dcfce7; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+  .assignee-none { color: #6b7280; }
+  .swipe-warning { font-size: 10px; color: #b91c1c; background: #fef2f2; border-radius: 4px; padding: 4px 8px; margin-top: 4px; text-align: center; }
+  .swipe-ok { font-size: 10px; color: #166534; background: #dcfce7; border-radius: 4px; padding: 4px 8px; margin-top: 4px; text-align: center; }
+  .swipe-progress { font-size: 11px; color: #6b7280; text-align: center; margin-top: 6px; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .mismatch-table .bug-row { background: #fef2f2; }
+  .mismatch-table .fix-row { background: #f0fdf4; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* Impl notes */
+  .impl-notes-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .impl-note-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+  .impl-note-item:last-child { border-bottom: none; }
+  .note-label { font-size: 11px; font-weight: 700; color: #7e22ce; background: #fdf4ff; padding: 2px 6px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  .note-text { color: #4b5563; flex: 1; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 61 Review · Bug Fix</div>
+  <h1>#165 — [mobile] 家事割り当て画面の「他メンバーのタスクを奪う」<br>スワイプモードに自身のタスクが表示される</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 61</span>
+    <span class="badge badge-issue">#165</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="swipe-screen">
+          <div class="swipe-screen-title">「他メンバーのタスクを奪う」モード</div>
+          <div class="swipe-card swipe-card-bad">
+            <div class="swipe-card-task">皿洗い（3/15）</div>
+            <div class="swipe-card-assignee">担当: <span class="assignee-self">自分</span></div>
+          </div>
+          <div class="swipe-warning">本来は表示されるべきでない（自分のタスク）</div>
+          <div class="swipe-card swipe-card-bad">
+            <div class="swipe-card-task">洗濯（3/15）</div>
+            <div class="swipe-card-assignee">担当: <span class="assignee-other">Bさん</span></div>
+          </div>
+          <div class="swipe-progress">カード 1 / 3（自分のタスクも含まれてしまう）</div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="swipe-screen">
+          <div class="swipe-screen-title">「他メンバーのタスクを奪う」モード</div>
+          <div class="swipe-card swipe-card-good">
+            <div class="swipe-card-task">洗濯（3/15）</div>
+            <div class="swipe-card-assignee">担当: <span class="assignee-other">Bさん</span></div>
+          </div>
+          <div class="swipe-card swipe-card-good">
+            <div class="swipe-card-task">掃除機がけ（3/15）</div>
+            <div class="swipe-card-assignee">担当: <span class="assignee-other">Cさん</span></div>
+          </div>
+          <div class="swipe-ok">自分のタスクは表示されない</div>
+          <div class="swipe-progress">カード 1 / 2（他メンバー分のみ）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">_swipeTargetTasksFor() の others フィルタに「自分除外」条件がなかった</span>
+      </div>
+      <div class="cause-body">
+        <p><code>_swipeTargetTasksFor()</code> の <code>SwipeTarget.others</code> ブランチは「担当者ありのタスク全て」を返していた。担当者ありには自分のタスクも含まれるため、「他メンバーのタスクを奪う」モードで自身のタスクも表示されてしまっていた。</p>
+        <table class="mismatch-table">
+          <tr>
+            <th>SwipeTarget</th>
+            <th>修正前のフィルタ条件</th>
+            <th>修正後のフィルタ条件</th>
+          </tr>
+          <tr>
+            <td>unassigned</td>
+            <td class="code fix-row">assigneeUserId == null（変更なし）</td>
+            <td class="code fix-row">assigneeUserId == null</td>
+          </tr>
+          <tr>
+            <td>others</td>
+            <td class="code bug-row">assigneeUserId != null<br>（自分のタスクも含む）</td>
+            <td class="code fix-row">assigneeUserId != null<br>&& assigneeUserId != currentUserId<br>（自分を除外）</td>
+          </tr>
+        </table>
+        <p>同じフィルタロジックが3箇所に存在しており、全箇所の修正が必要だった：</p>
+        <ol style="font-size:13px; color:#4b5563; padding-left: 20px; margin-top: 8px;">
+          <li style="margin-bottom:4px;"><code>_swipeTargetTasksFor()</code>（Notifier 共通ヘルパー）</li>
+          <li style="margin-bottom:4px;"><code>_ListModePage.build()</code>（スワイプボタンの有効化判定・件数表示）</li>
+          <li style="margin-bottom:4px;"><code>_SwipeModePage.build()</code>（スワイプ中の現在カード取得）</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <!-- 修正箇所1: _swipeTargetTasksFor -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/housework_assign_notifier.dart</span>
+        <span class="diff-stat">+11 / -4</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">256</span><span class="line-prefix"> </span><span>  List&lt;HouseworkTaskDto&gt; _swipeTargetTasksFor(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">257</span><span class="line-prefix"> </span><span>    List&lt;HouseworkTaskDto&gt; tasks,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">258</span><span class="line-prefix"> </span><span>    SwipeTarget target,</span></div>
+        <div class="code-line line-add"><span class="line-num">259</span><span class="line-prefix">+</span><span>    int currentUserId,</span></div>
+        <div class="code-line line-ctx"><span class="line-num">260</span><span class="line-prefix"> </span><span>  ) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">261</span><span class="line-prefix"> </span><span>    if (target == SwipeTarget.unassigned) {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">262</span><span class="line-prefix"> </span><span>      return tasks.where((t) =&gt; t.assigneeUserId == null).toList();</span></div>
+        <div class="code-line line-ctx"><span class="line-num">263</span><span class="line-prefix"> </span><span>    } else {</span></div>
+        <div class="code-line line-del"><span class="line-num">264</span><span class="line-prefix">-</span><span>      // others: 担当者ありのタスク</span></div>
+        <div class="code-line line-del"><span class="line-num">265</span><span class="line-prefix">-</span><span>      return tasks.where((t) =&gt; t.assigneeUserId != null).toList();</span></div>
+        <div class="code-line line-add"><span class="line-num">264</span><span class="line-prefix">+</span><span>      // others: 担当者ありかつ自分以外のタスク（自分のタスクは除外）</span></div>
+        <div class="code-line line-add"><span class="line-num">265</span><span class="line-prefix">+</span><span>      return tasks</span></div>
+        <div class="code-line line-add"><span class="line-num">266</span><span class="line-prefix">+</span><span>          .where(</span></div>
+        <div class="code-line line-add"><span class="line-num">267</span><span class="line-prefix">+</span><span>            (t) =&gt;</span></div>
+        <div class="code-line line-add"><span class="line-num">268</span><span class="line-prefix">+</span><span>                t.assigneeUserId != null &amp;&amp; t.assigneeUserId != currentUserId,</span></div>
+        <div class="code-line line-add"><span class="line-num">269</span><span class="line-prefix">+</span><span>          )</span></div>
+        <div class="code-line line-add"><span class="line-num">270</span><span class="line-prefix">+</span><span>          .toList();</span></div>
+        <div class="code-line line-ctx"><span class="line-num">271</span><span class="line-prefix"> </span><span>    }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">272</span><span class="line-prefix"> </span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>共通ヘルパーに <code>currentUserId</code> を追加。<code>startSwipeMode()</code>・<code>swipeAssignToMe()</code> の呼び出し元も同様に <code>currentUserId</code> を渡すよう修正（シグネチャ変更）。</span>
+      </div>
+    </div>
+
+    <!-- 修正箇所2: _ListModePage -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/housework_assign_page.dart（_ListModePage）</span>
+        <span class="diff-stat">+10 / -4</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">71</span><span class="line-prefix"> </span><span>    // #165: others は自分以外の担当者ありタスクのみ（自分のタスクを除外）</span></div>
+        <div class="code-line line-del"><span class="line-num">72</span><span class="line-prefix">-</span><span>    final othersForSwipe = state.tasks</span></div>
+        <div class="code-line line-del"><span class="line-num">73</span><span class="line-prefix">-</span><span>        .where((t) =&gt; t.assigneeUserId != null)</span></div>
+        <div class="code-line line-del"><span class="line-num">74</span><span class="line-prefix">-</span><span>        .toList();</span></div>
+        <div class="code-line line-add"><span class="line-num">72</span><span class="line-prefix">+</span><span>    final othersForSwipe = state.tasks</span></div>
+        <div class="code-line line-add"><span class="line-num">73</span><span class="line-prefix">+</span><span>        .where(</span></div>
+        <div class="code-line line-add"><span class="line-num">74</span><span class="line-prefix">+</span><span>          (t) =&gt; t.assigneeUserId != null &amp;&amp; t.assigneeUserId != currentUserId,</span></div>
+        <div class="code-line line-add"><span class="line-num">75</span><span class="line-prefix">+</span><span>        )</span></div>
+        <div class="code-line line-add"><span class="line-num">76</span><span class="line-prefix">+</span><span>        .toList();</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>「他メンバーのタスクを奪う」ボタンの有効/無効切り替え判定と件数表示に使用する <code>othersForSwipe</code> リストも同様に自分除外フィルタを追加。自分のタスクしかない場合はボタンが無効化される。</span>
+      </div>
+    </div>
+
+    <!-- 修正箇所3: _SwipeModePage -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_assign/presentation/housework_assign_page.dart（_SwipeModePage）</span>
+        <span class="diff-stat">+12 / -3</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">252</span><span class="line-prefix"> </span><span>    // 現在ログインユーザーIDを取得（SwipeTarget.others フィルタに使用）</span></div>
+        <div class="code-line line-ctx"><span class="line-num">253</span><span class="line-prefix"> </span><span>    final authAsync = ref.watch(authNotifierProvider);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">254</span><span class="line-prefix"> </span><span>    final currentUserId = authAsync.valueOrNull is AuthAuthenticated</span></div>
+        <div class="code-line line-ctx"><span class="line-num">255</span><span class="line-prefix"> </span><span>        ? (authAsync.valueOrNull! as AuthAuthenticated).user.userId</span></div>
+        <div class="code-line line-ctx"><span class="line-num">256</span><span class="line-prefix"> </span><span>        : -1;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">258</span><span class="line-prefix"> </span><span>    // スワイプ対象タスク（スナップショット時点のリストから現在 index のタスクを取得）</span></div>
+        <div class="code-line line-ctx"><span class="line-num">259</span><span class="line-prefix"> </span><span>    // #165: others は自分以外の担当者ありタスクのみ（自分のタスクを除外）</span></div>
+        <div class="code-line line-ctx"><span class="line-num">260</span><span class="line-prefix"> </span><span>    final swipeTasks = state.swipeTarget == SwipeTarget.unassigned</span></div>
+        <div class="code-line line-ctx"><span class="line-num">261</span><span class="line-prefix"> </span><span>        ? state.tasks.where((t) =&gt; t.assigneeUserId == null).toList()</span></div>
+        <div class="code-line line-del"><span class="line-num">262</span><span class="line-prefix">-</span><span>        : state.tasks.where((t) =&gt; t.assigneeUserId != null).toList();</span></div>
+        <div class="code-line line-add"><span class="line-num">262</span><span class="line-prefix">+</span><span>        : state.tasks</span></div>
+        <div class="code-line line-add"><span class="line-num">263</span><span class="line-prefix">+</span><span>              .where(</span></div>
+        <div class="code-line line-add"><span class="line-num">264</span><span class="line-prefix">+</span><span>                (t) =&gt;</span></div>
+        <div class="code-line line-add"><span class="line-num">265</span><span class="line-prefix">+</span><span>                    t.assigneeUserId != null &amp;&amp;</span></div>
+        <div class="code-line line-add"><span class="line-num">266</span><span class="line-prefix">+</span><span>                    t.assigneeUserId != currentUserId,</span></div>
+        <div class="code-line line-add"><span class="line-num">267</span><span class="line-prefix">+</span><span>              )</span></div>
+        <div class="code-line line-add"><span class="line-num">268</span><span class="line-prefix">+</span><span>              .toList();</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>スワイプ中に現在のカードを取得するロジックも同様に自分除外フィルタを追加。スワイプモードに入った後も自分のタスクが表示されないことを保証する。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-notes-box">
+      <div class="impl-note-item">
+        <span class="note-label">シグネチャ変更</span>
+        <span class="note-text"><code>startSwipeMode(SwipeTarget)</code> → <code>startSwipeMode(SwipeTarget, int currentUserId)</code> に変更。Page から currentUserId を渡す設計にすることで、Notifier が authNotifierProvider に依存する箇所を1箇所（<code>swipeAssignToMe</code> 内）に抑えた。</span>
+      </div>
+      <div class="impl-note-item">
+        <span class="note-label">swipeAssignToMe の取得方法</span>
+        <span class="note-text"><code>swipeAssignToMe</code> 内での currentUserId は <code>authNotifierProvider.future</code> から毎回取得する形を採用（シグネチャには含めない）。スワイプ中に currentUserId は変化しない前提のため問題なし。既存の <code>assignToMe</code> と一貫したパターン。</span>
+      </div>
+      <div class="impl-note-item">
+        <span class="note-label">既存テスト修正</span>
+        <span class="note-text"><code>startSwipeMode(others)</code> の既存テストケースは currentUserId=10 でタスクの assignee=10（自分のみ）という構成だったため、修正後は swipeTaskCount=0 になった。タスク id=3（assignee=20、他人）を追加してテスト意図を明確化した。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">「他メンバーのタスクを奪う」スワイプモードに自身のタスクが表示されない</div>
+      </div>
+      <div class="ac-body"><code>_swipeTargetTasksFor()</code> の others ブランチに <code>&amp;&amp; t.assigneeUserId != currentUserId</code> を追加し、自身のタスクを除外。Notifier・Page（リストモード・スワイプモード）の3箇所全てに修正を適用した。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">「他メンバーのタスクを奪う」スワイプモードに未割当タスクと自身を除く他メンバーのタスクが表示される</div>
+      </div>
+      <div class="ac-body">
+        <ul style="font-size:13px; padding-left:18px;">
+          <li>未割当タスク（<code>assigneeUserId == null</code>）: 「未割当タスクを自分にアサイン」モード（<code>SwipeTarget.unassigned</code>）で表示。others モードには表示されない</li>
+          <li>他メンバーのタスク（<code>assigneeUserId != null &amp;&amp; != currentUserId</code>）: 「他メンバーのタスクを奪う」モード（<code>SwipeTarget.others</code>）で表示</li>
+          <li>自分のタスク（<code>assigneeUserId == currentUserId</code>）: どちらのモードにも表示されない</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>「他メンバーのタスクを奪う」ボタンを押したとき、自分のタスクが表示されないこと</strong>
+          <span>自分に割り当て済みのタスクがある状態で「他メンバーのタスクを奪う」スワイプモードに入り、自分のタスクがリストに出ないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「他メンバーのタスクを奪う」ボタンが、他メンバーのタスクが1件もない場合に無効化されること</strong>
+          <span>全タスクが自分のタスクまたは未割当だけの場合、「他メンバーのタスクを奪う」ボタンがグレーアウトしていることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>「未割当タスクを自分にアサイン」スワイプモードは引き続き正常動作すること</strong>
+          <span>未割当タスクが正しく表示され、スワイプ操作で自分に割り当てられることを確認（今回の修正の影響範囲外だが、デグレ確認）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>他メンバーのタスクを奪うスワイプを完了したとき、リストモードに正常に戻ること</strong>
+          <span>全カードを消化した後、「完了」表示になり、リロード後にリストモードに戻ることを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>今回の根本原因は「others フィルタに自分除外条件を追加し忘れた」こと。同種のバグを防ぐためにテストを追加・修正した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">housework_assign_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;"><code>startSwipeMode(others)</code> で currentUserId=10 の自分のタスクが除外され、他メンバー（assignee=20）のタスクのみが swipeTaskCount に含まれることを確認するテストを追加・修正</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">housework_assign_page_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">「他メンバーのタスクを奪う」ボタンに他メンバータスクがない場合（自分のタスクのみ）に無効化されることを確認するウィジェットテストを追加</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

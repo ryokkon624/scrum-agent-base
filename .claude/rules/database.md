@@ -82,6 +82,27 @@ ALTER TABLE m_user MODIFY COLUMN theme_code VARCHAR(10) NOT NULL;
 
 `ADD COLUMN col VARCHAR(10) NOT NULL DEFAULT 'VALUE'` は既存行に DEFAULT が埋まるため1行で完結できる。
 
+### カラムの追加位置を指定する場合（AFTER 句）
+
+`ADD COLUMN` のデフォルト動作はテーブルの末尾にカラムを追加する。DB設計上カラムの順序（配置）が重要な場合は `AFTER 既存カラム名` を必ず指定すること。
+
+```sql
+-- NG: AFTER 句なし → カラムが末尾に追加される
+ALTER TABLE t_inquiry
+  ADD COLUMN ui_client VARCHAR(10) NULL;
+
+-- OK: AFTER 句で配置位置を指定
+ALTER TABLE t_inquiry
+  ADD COLUMN ui_client VARCHAR(10) NULL AFTER user_id;
+```
+
+注意:
+- テーブル定義コメント（`-- カラム定義`）や ER 図でカラム順が決まっている場合は必ず `AFTER` 句を使う
+- NOT NULL カラムを段階的に追加する場合（3ステップ）でも、`ADD COLUMN` の段階で `AFTER` 句を指定しておくこと
+- カラム位置を後から変更するには `MODIFY COLUMN ... AFTER ...` が必要になり、追加のマイグレーションファイルが必要になる
+
+> **背景（Sprint 63 Sprint Review 指摘）**: t_inquiry への `ui_client/ui_version/api_version` カラム追加時に `AFTER` 句を省略したため、カラムが末尾に追加された。user_id と category の間に配置すべき設計だったため、別途 `AFTER` 句付きのマイグレーションで修正が必要になった。
+
 ### カラム削除・型変更の場合
 
 データ損失リスクがあるため、影響範囲を確認してからりょこさんに相談すること。

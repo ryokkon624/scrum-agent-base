@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 46 Review — #122 世帯設定画面を実装する（画面#19）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #eff6ff; color: #1d4ed8; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Screen mockup */
+  .screen-mockup { background: #1a1a2e; border-radius: 24px; padding: 16px; max-width: 320px; margin: 0 auto 16px; }
+  .screen-inner { background: #f8f7f5; border-radius: 16px; overflow: hidden; }
+  .screen-appbar { background: white; padding: 12px 16px; font-weight: 700; font-size: 15px; border-bottom: 1px solid #e5e5e5; }
+  .screen-section { background: white; margin: 8px; border-radius: 12px; border: 1px solid #e5e5e5; padding: 12px; }
+  .screen-section-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .screen-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
+  .screen-row:last-child { border-bottom: none; }
+  .screen-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-gray { background: #f3f4f6; color: #6b7280; }
+  .screen-danger { background: white; margin: 8px; border-radius: 12px; border: 1px solid #fca5a5; padding: 12px; }
+  .screen-danger-title { font-size: 12px; font-weight: 700; color: #dc2626; margin-bottom: 8px; }
+  .screen-delete-btn { background: transparent; border: 1px solid #dc2626; color: #dc2626; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; width: 100%; text-align: center; }
+  .screen-input { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 8px; font-size: 12px; color: #6b7280; width: 100%; margin-bottom: 6px; }
+  .screen-save-btn { background: #16a34a; color: white; padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 600; float: right; }
+  .screen-clearfix { clear: both; }
+  .screen-avatar { width: 28px; height: 28px; border-radius: 50%; background: #d1fae5; color: #065f46; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .screen-btn-row { display: flex; gap: 6px; margin-top: 4px; }
+  .screen-btn-outline { border: 1px solid #d1d5db; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; flex: 1; text-align: center; }
+  .screen-btn-outline.red { border-color: #fca5a5; color: #dc2626; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Info box */
+  .info-box { background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 12px; font-size: 13px; color: #1e40af; }
+
+  /* Perf note */
+  .perf-note { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-top: 12px; font-size: 12px; color: #166534; }
+
+  code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #374151; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 46 Review</div>
+  <h1>#122 — 世帯設定画面を実装する（画面#19）</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 46</span>
+    <span class="badge badge-issue">#122</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem / Background -->
+  <section>
+    <h2>なぜこの実装が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>設定トップ（#17）から遷移する「世帯設定」画面が未実装だった。世帯の切り替え・新規作成・メンバー管理・招待・世帯削除など、世帯運営に必要なすべての操作をアプリ上で完結できるようにする必要があった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>設定トップ → 「世帯設定」タップ → プレースホルダー画面（<code>_P('世帯設定')</code>）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>世帯の切り替えはヘッダーのみ</div>
+        <div class="flow-item"><span class="dot dot-red"></span>メンバー招待・管理・OWNER譲渡操作はアプリ上で不可</div>
+        <div class="flow-item"><span class="dot dot-red"></span>世帯削除・離脱もアプリ上で不可</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>設定トップ → 「世帯設定」→ HouseholdSettingsPage（10AC完全実装）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>世帯一覧表示・タップで切り替え・新規世帯作成</div>
+        <div class="flow-item"><span class="dot dot-green"></span>メールで招待送信・招待リンクを share_plus でOS共有シート共有</div>
+        <div class="flow-item"><span class="dot dot-green"></span>OWNER操作（外す・OWNER譲渡）・非OWNERの離脱・世帯削除</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen mockup overview -->
+  <section>
+    <h2>実装画面のイメージ</h2>
+    <div class="screen-mockup">
+      <div class="screen-inner">
+        <div class="screen-appbar">世帯設定</div>
+
+        <!-- Household list section -->
+        <div class="screen-section">
+          <div class="screen-section-title">所属しているおうち</div>
+          <div class="screen-row">
+            <span style="flex:1;font-size:12px;">山田家</span>
+            <span class="screen-badge badge-green">現在のおうち</span>
+          </div>
+          <div class="screen-row">
+            <span style="flex:1;font-size:12px;">実家</span>
+            <span class="screen-badge badge-blue" style="cursor:pointer;">切り替え</span>
+          </div>
+          <div class="screen-row" style="color:#16a34a;font-size:12px;font-weight:600;padding:8px 0 4px;">
+            + 新しいおうちを追加
+          </div>
+        </div>
+
+        <!-- Household name section -->
+        <div class="screen-section">
+          <div class="screen-section-title">おうちの情報</div>
+          <div class="screen-input">山田家</div>
+          <div class="screen-save-btn">保存</div>
+          <div class="screen-clearfix"></div>
+        </div>
+
+        <!-- Nickname section -->
+        <div class="screen-section">
+          <div class="screen-section-title">ニックネーム設定</div>
+          <div class="screen-input" style="color:#d1d5db;">ニックネームを入力（最大50文字）</div>
+          <div style="float:right;background:#d1d5db;color:white;padding:6px 14px;border-radius:8px;font-size:11px;font-weight:600;">保存</div>
+          <div class="screen-clearfix"></div>
+        </div>
+
+        <!-- Members section -->
+        <div class="screen-section">
+          <div class="screen-section-title">メンバー</div>
+          <div class="screen-row">
+            <div class="screen-avatar">田</div>
+            <div style="flex:1;">
+              <div style="font-size:12px;">田中花子 <span class="screen-badge badge-amber" style="font-size:9px;margin-left:2px;">あなた</span></div>
+              <div><span class="screen-badge badge-green" style="font-size:9px;">ACTIVE</span> <span class="screen-badge badge-blue" style="font-size:9px;">OWNER</span></div>
+            </div>
+          </div>
+          <div class="screen-row" style="flex-direction:column;align-items:flex-start;">
+            <div style="display:flex;align-items:center;gap:8px;width:100%;padding-bottom:4px;">
+              <div class="screen-avatar">鈴</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;">鈴木太郎</div>
+                <div><span class="screen-badge badge-green" style="font-size:9px;">ACTIVE</span></div>
+              </div>
+            </div>
+            <div class="screen-btn-row">
+              <div class="screen-btn-outline">外す</div>
+              <div class="screen-btn-outline">OWNERに譲渡</div>
+            </div>
+          </div>
+          <div class="screen-row">
+            <div class="screen-avatar" style="background:#fef3c7;color:#92400e;">佐</div>
+            <div style="flex:1;">
+              <div style="font-size:12px;">佐藤一郎</div>
+              <div><span class="screen-badge badge-amber" style="font-size:9px;">INVITED</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invitation section -->
+        <div class="screen-section">
+          <div class="screen-section-title">メンバーを招待</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div class="screen-input" style="margin-bottom:0;flex:1;">friend@example.com</div>
+            <div style="background:#16a34a;color:white;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap;">招待送信</div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;">送信済み招待</div>
+          <div style="display:flex;align-items:center;gap:4px;padding:4px 0;">
+            <div style="flex:1;">
+              <div style="font-size:11px;font-weight:500;">佐藤一郎 (ichiro@example.com)</div>
+              <span class="screen-badge badge-amber" style="font-size:9px;">PENDING</span>
+              <span style="font-size:10px;color:#9ca3af;margin-left:4px;">期限: 2026-06-01</span>
+            </div>
+            <span style="font-size:16px;color:#6b7280;cursor:pointer;">&#x1F4E4;</span>
+            <span style="font-size:16px;color:#6b7280;cursor:pointer;">&#10005;</span>
+          </div>
+        </div>
+
+        <!-- Danger zone -->
+        <div class="screen-danger">
+          <div class="screen-danger-title">⚠ 危険ゾーン</div>
+          <div style="font-size:11px;color:#6b7280;margin-bottom:8px;">※ 有効メンバーが自分だけの場合に表示</div>
+          <div class="screen-delete-btn">このおうちを削除する</div>
+        </div>
+
+      </div>
+    </div>
+    <p style="font-size:12px;color:#888;text-align:center;">&#9888; 上はイメージです。実際のデザインはアプリで確認してください。</p>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">所属世帯の一覧が表示され、タップで世帯を切り替えられる（currentHouseholdId 更新）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>HouseholdListSection</code> ウィジェットが <code>householdNotifierProvider</code> を watch し、全所属世帯を一覧表示する。現在世帯には「現在のおうち」バッジを表示し、他の世帯には「切り替え」ボタンを配置。タップすると <code>householdNotifier.select()</code> を呼び <code>selectedHousehold</code> を更新する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/household_list_section.dart</span>
+            <span class="diff-stat">新規作成</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">95</span><span class="line-prefix">+</span><span>class _HouseholdRow extends ConsumerWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num">96</span><span class="line-prefix">+</span><span>  const _HouseholdRow({required this.household, required this.isCurrent});</span></div>
+            <div class="code-line line-add"><span class="line-num">103</span><span class="line-prefix">+</span><span>    return ListTile(</span></div>
+            <div class="code-line line-add"><span class="line-num">107</span><span class="line-prefix">+</span><span>      trailing: isCurrent</span></div>
+            <div class="code-line line-add"><span class="line-num">108</span><span class="line-prefix">+</span><span>          ? Chip(label: Text(l10n.householdSettingsCurrentBadge), ...)</span></div>
+            <div class="code-line line-add"><span class="line-num">113</span><span class="line-prefix">+</span><span>          : TextButton(onPressed: () {</span></div>
+            <div class="code-line line-add"><span class="line-num">114</span><span class="line-prefix">+</span><span>              ref.read(householdNotifierProvider.notifier).select(household);</span></div>
+            <div class="code-line line-add"><span class="line-num">115</span><span class="line-prefix">+</span><span>            }, child: Text(l10n.householdSettingsSwitchBadge)),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>世帯一覧は既存の <code>householdNotifierProvider</code>（グローバル世帯 Provider）を参照するだけなので、追加 API 呼び出し不要。世帯切り替えはアプリ全体に即反映される。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">「新しいおうちを追加」から世帯を新規作成できる</div>
+      </div>
+      <div class="ac-body">
+        <p>「新しいおうちを追加」ボタン（TextButton.icon）をタップするとダイアログを表示。世帯名を入力して確定すると <code>householdNotifier.addHousehold()</code> を呼ぶ。このメソッドは <code>POST /api/households</code> 後に <code>refresh()</code> して世帯一覧に即反映する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/household/household_notifier.dart</span>
+            <span class="diff-stat">+10 追加</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>  /// 新しい世帯を作成して、リストを再取得する。</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; addHousehold({required String name}) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>    final repo = ref.read(householdSettingsRepositoryProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>    await repo.createHousehold(name: name);</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>    await refresh();</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>世帯作成後の <code>refresh()</code> で <code>householdNotifierProvider</code>（グローバル Provider）が再ビルドされるため、HouseholdListSection の一覧も自動で更新される。新世帯が <code>selectedHousehold</code> として選択されるかどうかは <code>_restoreSelection()</code> のロジックに依存（既存の選択IDを優先し、なければ先頭）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">世帯名（必須・空文字不可）を変更でき、変更があるときのみ「保存」ボタンが活性になる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>HouseholdNameSection</code> は <code>ConsumerStatefulWidget</code> として実装。<code>initState</code> で現在世帯名を TextField の初期値にセット。「変更あり（trim 後の値が元の名前と異なる）かつ空文字でない」場合のみ保存ボタンを活性化する。保存後は <code>householdNotifier.refresh()</code> を呼んでアプリバー等に世帯名変更を反映。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/household_name_section.dart</span>
+            <span class="diff-stat">新規作成</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>  bool get _hasChange =&gt;</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>      _controller.text.trim().isNotEmpty &amp;&amp;</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>      _controller.text.trim() != _originalName;</span></div>
+            <div class="code-line ctx"></div>
+            <div class="code-line line-add"><span class="line-num">79</span><span class="line-prefix">+</span><span>                onPressed: _hasChange &amp;&amp; !isSaving</span></div>
+            <div class="code-line line-add"><span class="line-num">80</span><span class="line-prefix">+</span><span>                    ? () async { await notifier.saveHouseholdName(name: ...) }</span></div>
+            <div class="code-line line-add"><span class="line-num">81</span><span class="line-prefix">+</span><span>                    : null,  // null で非活性</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">ニックネーム（最大50文字）を設定でき、入力済みのときのみ「保存」ボタンが活性になる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>NicknameSection</code> ウィジェット。<code>TextField(maxLength: 50)</code> で最大50文字制限を設定。テキストが1文字以上入力されている場合のみ保存ボタンを活性化。保存成功時は <code>successMessage</code> を state にセットしてスナックバー表示。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/nickname_section.dart</span>
+            <span class="diff-stat">新規作成</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>  bool get _hasInput =&gt; _controller.text.trim().isNotEmpty;</span></div>
+            <div class="code-line ctx"></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>            TextField(</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>              controller: _controller,</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>              maxLength: 50,   // AC4: 最大50文字</span></div>
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>              onPressed: _hasInput &amp;&amp; !isSaving ? () async { ... } : null,</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">メンバー一覧が表示され、ステータス（ACTIVE/INVITED/LEFT）がバッジで確認できる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>MembersSection</code> が <code>GET /api/households/{id}/members</code> で取得したメンバー一覧を表示。<code>_StatusBadge</code> ウィジェットが <code>HouseholdMemberStatus</code> enum で ACTIVE=緑・INVITED=黄・LEFT=グレーに色分け。OWNERには追加で青い <code>_RoleBadge</code> を表示。メンバーアバターは共通ウィジェット <code>UserAvatar</code> を使用。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/members_section.dart</span>
+            <span class="diff-stat">新規作成</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">182</span><span class="line-prefix">+</span><span>          leading: UserAvatar(</span></div>
+            <div class="code-line line-add"><span class="line-num">183</span><span class="line-prefix">+</span><span>            iconUrl: member.iconUrl,</span></div>
+            <div class="code-line line-add"><span class="line-num">184</span><span class="line-prefix">+</span><span>            label: member.nickname ?? member.displayName,</span></div>
+            <div class="code-line line-add"><span class="line-num">185</span><span class="line-prefix">+</span><span>          ),</span></div>
+            <div class="code-line ctx"></div>
+            <div class="code-line line-add"><span class="line-num">271</span><span class="line-prefix">+</span><span>    final memberStatus = HouseholdMemberStatus.fromCode(status);</span></div>
+            <div class="code-line line-add"><span class="line-num">272</span><span class="line-prefix">+</span><span>    switch (memberStatus) {</span></div>
+            <div class="code-line line-add"><span class="line-num">273</span><span class="line-prefix">+</span><span>      case HouseholdMemberStatus.active:   color = Colors.green; ...</span></div>
+            <div class="code-line line-add"><span class="line-num">276</span><span class="line-prefix">+</span><span>      case HouseholdMemberStatus.invited:  color = Colors.amber; ...</span></div>
+            <div class="code-line line-add"><span class="line-num">279</span><span class="line-prefix">+</span><span>      case HouseholdMemberStatus.left:     color = Colors.grey;  ...</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>コード値（'ACTIVE', 'INVITED', 'LEFT'）は <code>lib/core/models/household_member_status.dart</code> の生成済み enum で比較。マジックストリング使用禁止ルールに従っている。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">OWNER は他の有効メンバーを「外す」・「OWNER に譲渡」できる（確認ダイアログ付き）</div>
+      </div>
+      <div class="ac-body">
+        <p>State に <code>isCurrentUserOwner</code>（事前計算済み bool）を持たせ、OWNER かつ「他のメンバー（自分以外のACTIVEメンバー）」のカードのみ「外す」「OWNERに譲渡」ボタンを表示。いずれも <code>showDialog</code>（<code>dialogContext</code> を使用）で確認後に Notifier の操作メソッドを呼ぶ。メンバー除外後はリストをローカル差分更新（全件再取得なし）して <code>isCurrentUserOwner</code> / <code>hasOtherActiveMembers</code> も再計算。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/household_settings_notifier.dart</span>
+            <span class="diff-stat">removeMember / transferOwner</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">244</span><span class="line-prefix">+</span><span>      // ローカルリストから対象メンバーを除外（全件再取得不要）</span></div>
+            <div class="code-line line-add"><span class="line-num">245</span><span class="line-prefix">+</span><span>      final updatedMembers = current.members</span></div>
+            <div class="code-line line-add"><span class="line-num">246</span><span class="line-prefix">+</span><span>          .where((m) =&gt; m.userId != userId).toList();</span></div>
+            <div class="code-line line-add"><span class="line-num">250</span><span class="line-prefix">+</span><span>        isCurrentUserOwner: _computeIsOwner(updatedMembers, loginUserId),</span></div>
+            <div class="code-line line-add"><span class="line-num">252</span><span class="line-prefix">+</span><span>        hasOtherActiveMembers: _computeHasOtherActive(updatedMembers, loginUserId),</span></div>
+          </div>
+          <div class="perf-note">
+            パフォーマンス最適化: メンバー操作後に全件再取得（API コール）を行わず、ローカルリストを差分更新して即座に UI に反映。<code>isCurrentUserOwner</code> / <code>hasOtherActiveMembers</code> は Notifier 側で事前計算しているため Widget は O(1) で参照できる。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC7 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC7</div>
+        <div class="ac-text">非 OWNER は「この世帯から離脱」できる（確認ダイアログ付き）</div>
+      </div>
+      <div class="ac-body">
+        <p>非OWNER かつ自分自身のカードにのみ「この世帯から離脱」ボタン（赤い OutlinedButton）を表示。確認ダイアログ後に <code>leaveHousehold()</code> を呼ぶ。離脱後は <code>householdNotifier.refresh()</code> で世帯一覧を再取得し、別の世帯にフォールバックする。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/members_section.dart</span>
+            <span class="diff-stat">AC7 条件分岐</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">241</span><span class="line-prefix">+</span><span>        // 非OWNERが自分のカードで表示する離脱ボタン</span></div>
+            <div class="code-line line-add"><span class="line-num">242</span><span class="line-prefix">+</span><span>        if (!isCurrentUserOwner &amp;&amp; isMe) ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">243</span><span class="line-prefix">+</span><span>          SizedBox(</span></div>
+            <div class="code-line line-add"><span class="line-num">244</span><span class="line-prefix">+</span><span>            width: double.infinity,</span></div>
+            <div class="code-line line-add"><span class="line-num">245</span><span class="line-prefix">+</span><span>            child: OutlinedButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">246</span><span class="line-prefix">+</span><span>              key: const Key('leaveButton'),</span></div>
+            <div class="code-line line-add"><span class="line-num">247</span><span class="line-prefix">+</span><span>              onPressed: onLeave,</span></div>
+            <div class="code-line line-add"><span class="line-num">248</span><span class="line-prefix">+</span><span>              style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),</span></div>
+            <div class="code-line line-add"><span class="line-num">249</span><span class="line-prefix">+</span><span>              child: Text(l10n.householdSettingsLeaveButton),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC8 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC8</div>
+        <div class="ac-text">メールアドレスでメンバーを招待でき、送信済み招待の一覧（コピー・取消）が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>InvitationSection</code>（<code>ConsumerStatefulWidget</code>）にメールアドレス入力フォームを配置。入力あり・非送信中のみ「招待送信」ボタンが活性。送信後は招待一覧に即追加（ローカル差分更新）。一覧には PENDING の招待のみシェアボタン（&#x1F4E4;）と取消ボタン（✕）を表示。招待ステータスは <code>InvitationStatus</code> enum でバッジ色分け。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/invitation_section.dart</span>
+            <span class="diff-stat">新規作成</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">170</span><span class="line-prefix">+</span><span>    final status = InvitationStatus.fromCode(invitation.status);</span></div>
+            <div class="code-line line-add"><span class="line-num">171</span><span class="line-prefix">+</span><span>    final isPending = status == InvitationStatus.pending;</span></div>
+            <div class="code-line ctx"></div>
+            <div class="code-line line-add"><span class="line-num">251</span><span class="line-prefix">+</span><span>          if (isPending) ...[</span></div>
+            <div class="code-line line-add"><span class="line-num">252</span><span class="line-prefix">+</span><span>            IconButton(key: ValueKey('shareButton_${inv.token}'), onPressed: onShare, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">258</span><span class="line-prefix">+</span><span>            IconButton(key: ValueKey('revokeButton_${inv.token}'), onPressed: onRevoke, ...),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC9 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC9</div>
+        <div class="ac-text">招待リンクのコピーは https URL を OS のシェアシートで共有できる</div>
+      </div>
+      <div class="ac-body">
+        <p>新規パッケージ <code>share_plus</code> を <code>pubspec.yaml</code> に追加。シェアボタンタップで <code>Share.share(url)</code> を呼び、OSネイティブのシェアシートを起動する。URLは <code>https://hwhub.familyapp-hwhub.com/invite/{token}</code> 形式。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>pubspec.yaml</span>
+            <span class="diff-stat">+1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>  share_plus: ^11.0.0</span></div>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/invitation_section.dart</span>
+            <span class="diff-stat">_shareLink()</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">151</span><span class="line-prefix">+</span><span>  void _shareLink(String token) {</span></div>
+            <div class="code-line line-add"><span class="line-num">152</span><span class="line-prefix">+</span><span>    final url = 'https://hwhub.familyapp-hwhub.com/invite/$token';</span></div>
+            <div class="code-line line-add"><span class="line-num">153</span><span class="line-prefix">+</span><span>    Share.share(url);</span></div>
+            <div class="code-line line-add"><span class="line-num">154</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span><code>Share.share(url)</code> は iOS では「共有メニュー」、Android では「共有シート」をOSネイティブで表示する。クリップボードコピーは OS シェアシート内のオプションとして含まれるため、アプリ側に個別実装不要。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC10 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC10</div>
+        <div class="ac-text">OWNER は有効メンバーが存在しない場合に世帯を削除でき、確認ダイアログに家事・買い物件数が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>DangerZoneSection</code> ウィジェットは OWNER のみ表示（<code>state.isCurrentUserOwner</code> で判定）。自分以外の ACTIVE メンバーが存在する場合（<code>state.hasOtherActiveMembers == true</code>）は削除ボタンを非表示にして注意文言を表示。削除ボタンタップ時は家事件数・買い物件数を API で取得（<code>fetchDeleteCounts()</code>）してから確認ダイアログを表示。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/presentation/household_settings/widgets/danger_zone_section.dart</span>
+            <span class="diff-stat">新規作成</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>        if (!state.isCurrentUserOwner) return const SizedBox.shrink();</span></div>
+            <div class="code-line ctx"></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>                if (state.hasOtherActiveMembers)</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>                  Text(l10n.householdSettingsDeleteHouseholdDisabledNote, ...)</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>                else</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>                  OutlinedButton(key: const Key('deleteHouseholdButton'), ...)</span></div>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/household_settings/data/household_settings_repository.dart</span>
+            <span class="diff-stat">fetchHouseworkCount / fetchShoppingCount</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">237</span><span class="line-prefix">+</span><span>  Future&lt;int&gt; fetchHouseworkCount({required int householdId}) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">240</span><span class="line-prefix">+</span><span>      final response = await _dio.get&lt;List&lt;dynamic&gt;&gt;('/api/houseworks', ...);</span></div>
+            <div class="code-line line-add"><span class="line-num">243</span><span class="line-prefix">+</span><span>      // リストを受け取ったら即カウントして破棄（メモリに保持しない）</span></div>
+            <div class="code-line line-add"><span class="line-num">244</span><span class="line-prefix">+</span><span>      final count = response.data!.length;</span></div>
+            <div class="code-line line-add"><span class="line-num">245</span><span class="line-prefix">+</span><span>      return count;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>世帯削除は低頻度操作のため、専用の「件数取得 API」を新設せず既存の一覧 API を利用してカウント。受け取ったリストは件数を算出した直後に破棄しメモリに保持しない設計（レビュー指摘でパフォーマンス改善済み）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Notifier architecture note -->
+  <section>
+    <h2>パフォーマンス設計（Notifier 事前計算）</h2>
+    <div class="info-box">
+      <strong>Widget の build() 内で O(n) ループを毎フレーム実行しない設計を採用</strong><br>
+      <code>isCurrentUserOwner</code> と <code>hasOtherActiveMembers</code> は、メンバー操作（fetchMembers / removeMember / transferOwner）のたびに Notifier 側で <code>_computeIsOwner()</code> / <code>_computeHasOtherActive()</code> として一度だけ計算し、State に格納する。Widget 側は <code>state.isCurrentUserOwner</code> を O(1) で参照するのみ。
+    </div>
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/household_settings/presentation/household_settings/household_settings_notifier.dart</span>
+        <span class="diff-stat">事前計算メソッド</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>  bool _computeIsOwner(List&lt;...&gt; members, int? loginUserId) {</span></div>
+        <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>    if (loginUserId == null) return false;</span></div>
+        <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>    return members.any((m) =&gt; m.userId == loginUserId &amp;&amp; m.role == 'OWNER');</span></div>
+        <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>  }</span></div>
+        <div class="code-line ctx"></div>
+        <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>  bool _computeHasOtherActive(List&lt;...&gt; members, int? loginUserId) {</span></div>
+        <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>    return members.any((m) =&gt; m.userId != loginUserId</span></div>
+        <div class="code-line line-add"><span class="line-num">64</span><span class="line-prefix">+</span><span>        &amp;&amp; HouseholdMemberStatus.fromCode(m.status) == HouseholdMemberStatus.active);</span></div>
+        <div class="code-line line-add"><span class="line-num">65</span><span class="line-prefix">+</span><span>  }</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>設定トップ → 「世帯設定」をタップして画面が開くこと</strong>
+          <span>プレースホルダー（灰色画面）から実装済み HouseholdSettingsPage への切り替えを確認。所属世帯一覧・世帯名フォーム・ニックネームフォーム・メンバー一覧・招待フォームが表示される。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>世帯切り替えが機能すること（AC1）</strong>
+          <span>複数世帯に所属している場合、一覧の「切り替え」ボタンをタップするとヘッダーの世帯名が変わり、ホーム画面などに戻ったときのデータが切り替わること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>「新しいおうちを追加」から世帯が作成できること（AC2）</strong>
+          <span>ダイアログが開き、世帯名を入力して確定すると一覧に追加されること。空文字は受け付けないこと。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>世帯名・ニックネームの保存ボタンの活性制御（AC3・AC4）</strong>
+          <span>世帯名は「元の名前と同じ」または「空文字」の場合、保存ボタンが押せない。ニックネームは未入力の場合、ボタンが押せないこと。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>メンバーのステータスバッジが正しく色分けされること（AC5）</strong>
+          <span>ACTIVE=緑、INVITED=黄、LEFT=グレー のバッジが各メンバーカードに表示されること。OWNER には追加で青い「OWNER」バッジが表示されること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>OWNER として他メンバーを外す・OWNER を譲渡できること（AC6）</strong>
+          <span>OWNERとしてログインした場合、他のACTIVEメンバーのカードに「外す」「OWNERに譲渡」ボタンが表示されること。確認ダイアログが出てから操作が実行されること。操作後にボタンが消えること（自分のカードには表示されない）。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">7</div>
+        <div class="verify-content">
+          <strong>非OWNERとして世帯から離脱できること（AC7）</strong>
+          <span>OWNERでないメンバーとしてログインした場合、自分のカードに「この世帯から離脱」ボタン（赤）が表示されること。確認後に離脱され、別世帯に切り替わること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">8</div>
+        <div class="verify-content">
+          <strong>メールアドレスで招待を送信でき、送信済み一覧に表示されること（AC8）</strong>
+          <span>メールアドレスを入力して「招待送信」をタップすると、送信済み一覧に追加されること。PENDINGの招待にのみシェアボタン・取消ボタンが表示されること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">9</div>
+        <div class="verify-content">
+          <strong>招待リンクのシェアボタンでOSシェアシートが開くこと（AC9）</strong>
+          <span>PENDING招待のシェアボタン（&#x1F4E4;）をタップすると、OSのシェアシートが開き、<code>https://hwhub.familyapp-hwhub.com/invite/...</code> のURLが共有候補として表示されること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">10</div>
+        <div class="verify-content">
+          <strong>OWNERかつ自分だけのときに「危険ゾーン」が表示されること（AC10）</strong>
+          <span>他のACTIVEメンバーがいる場合はボタンが表示されず「削除できません」旨の文言が表示されること。自分だけのときに「このおうちを削除する」ボタンが表示され、タップすると家事件数・買い物件数を含む確認ダイアログが表示されること。</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>状態</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>lib/features/household_settings/</code>（全ファイル）</td>
+        <td><span class="tag-new">新規作成</span></td>
+        <td>feature ディレクトリごと新規。data層・presentation層・providers.dart を作成</td>
+      </tr>
+      <tr>
+        <td><code>lib/core/household/household_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>addHousehold()</code> / <code>refresh()</code> メソッドを追加。世帯作成・削除・離脱後のリスト更新に使用</td>
+      </tr>
+      <tr>
+        <td><code>lib/app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>_P('世帯設定')</code>（プレースホルダー）を <code>const HouseholdSettingsPage()</code> に差し替え</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb</code> / <code>app_en.arb</code> / <code>app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>世帯設定画面のすべての文言キーを追加（<code>householdSettings*</code> プレフィックス）</td>
+      </tr>
+      <tr>
+        <td><code>pubspec.yaml</code> / <code>pubspec.lock</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>share_plus</code> パッケージを新規追加（AC9: OSシェアシート）</td>
+      </tr>
+      <tr>
+        <td><code>test/features/household_settings/</code></td>
+        <td><span class="tag-new">新規作成</span></td>
+        <td>Repository impl テスト（27件）・Notifier テスト（11件）・Page ウィジェットテスト（7件）= 計 45件</td>
+      </tr>
+      <tr>
+        <td><code>test/core/household/household_notifier_extended_test.dart</code></td>
+        <td><span class="tag-new">新規作成</span></td>
+        <td>addHousehold() のテスト（1件）</td>
+      </tr>
+      <tr>
+        <td>既存のホーム / タスク / 買い物 / 設定トップ画面</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>今回の実装スコープ外。app_router.dart の変更は世帯設定ルートの差し替えのみ</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

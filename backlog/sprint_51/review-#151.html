@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 51 Review — #151 一覧画面で下スワイプによるデータ更新が動作しない画面がある</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-screen { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+  .mock-screen-header { background: #1a1a1a; padding: 10px 14px; }
+  .mock-screen-title { color: white; font-size: 13px; font-weight: 600; text-align: center; }
+  .mock-screen-body { padding: 12px; }
+  .mock-swipe-arrow { text-align: center; font-size: 18px; color: #9ca3af; margin-bottom: 6px; }
+  .mock-item-card { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; font-size: 11px; }
+  .mock-note { font-size: 11px; text-align: center; padding: 4px; border-radius: 4px; margin-top: 4px; }
+  .mock-note-bad { background: #fef2f2; color: #b91c1c; }
+  .mock-note-good { background: #f0fdf4; color: #166534; }
+  .mock-refresh-indicator { text-align: center; font-size: 11px; color: #059669; font-weight: 600; padding: 6px; background: #f0fdf4; border-radius: 4px; margin-bottom: 6px; }
+
+  /* 対象画面リスト */
+  .screen-list { background: white; border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; }
+  .screen-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+  .screen-item:last-child { border-bottom: none; }
+  .screen-check { width: 18px; height: 18px; border-radius: 50%; background: #dcfce7; color: #166534; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .screen-name { flex: 1; color: #1a1a1a; }
+  .screen-file { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: #6b7280; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; color: #374151; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 51 Review · Bug Fix</div>
+  <h1>#151 — 一覧画面で下スワイプによるデータ更新が<br>動作しない画面がある</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 51</span>
+    <span class="badge badge-issue">#151</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-header">
+            <div class="mock-screen-title">通知センター / 家事一覧 など</div>
+          </div>
+          <div class="mock-screen-body">
+            <div class="mock-swipe-arrow">↓</div>
+            <div class="mock-item-card">通知 1</div>
+            <div class="mock-item-card">通知 2</div>
+            <div class="mock-item-card">通知 3</div>
+            <div class="mock-note mock-note-bad">下スワイプしても何も起きない（データが更新されない）</div>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-header">
+            <div class="mock-screen-title">通知センター / 家事一覧 など</div>
+          </div>
+          <div class="mock-screen-body">
+            <div class="mock-refresh-indicator">更新中...</div>
+            <div class="mock-item-card">通知 1</div>
+            <div class="mock-item-card">通知 2</div>
+            <div class="mock-item-card">通知 3</div>
+            <div class="mock-note mock-note-good">下スワイプでリフレッシュインジケーターが表示され、最新データに更新される</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">🔍</span>
+        <span class="title">RefreshIndicator と AlwaysScrollableScrollPhysics が設定されていなかった</span>
+      </div>
+      <div class="cause-body">
+        <p>pull-to-refresh を有効にするには 2 つの条件を同時に満たす必要がある。</p>
+        <p>①スクロールウィジェットを <code>RefreshIndicator</code> でラップする（onRefresh コールバックでデータ再取得を実行）<br>②スクロールウィジェットに <code>physics: const AlwaysScrollableScrollPhysics()</code> を指定する（コンテンツが少ない場合でも下スワイプを受け付けるため）</p>
+        <p>既存の各画面はこれらが未設定だったため、下スワイプをしても何も反応しなかった。買い物リスト画面（#95 で対応済み）以外のすべての一覧系画面が対象だった。</p>
+      </div>
+    </div>
+
+    <p style="font-size: 13px; color: #4b5563; margin-bottom: 12px;">対応した7画面：</p>
+    <div class="screen-list">
+      <div class="screen-item">
+        <div class="screen-check">✓</div>
+        <div class="screen-name">通知センター</div>
+        <div class="screen-file">notification_center_page.dart</div>
+      </div>
+      <div class="screen-item">
+        <div class="screen-check">✓</div>
+        <div class="screen-name">問い合わせ一覧</div>
+        <div class="screen-file">inquiry_list_page.dart</div>
+      </div>
+      <div class="screen-item">
+        <div class="screen-check">✓</div>
+        <div class="screen-name">問い合わせ詳細（AC2 必須対象）</div>
+        <div class="screen-file">inquiry_detail_page.dart</div>
+      </div>
+      <div class="screen-item">
+        <div class="screen-check">✓</div>
+        <div class="screen-name">家事設定一覧</div>
+        <div class="screen-file">housework_list_page.dart</div>
+      </div>
+      <div class="screen-item">
+        <div class="screen-check">✓</div>
+        <div class="screen-name">世帯設定（メンバーリスト含む）</div>
+        <div class="screen-file">household_settings_page.dart</div>
+      </div>
+      <div class="screen-item">
+        <div class="screen-check">✓</div>
+        <div class="screen-name">家事割り当て</div>
+        <div class="screen-file">housework_assign_page.dart</div>
+      </div>
+      <div class="screen-item">
+        <div class="screen-check">✓</div>
+        <div class="screen-name">アカウント設定</div>
+        <div class="screen-file">account_settings_page.dart</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容（代表例：家事設定一覧・問い合わせ詳細）</h2>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_settings/presentation/housework_list/housework_list_notifier.dart</span>
+        <span class="diff-stat">+6 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">48</span><span class="line-prefix"> </span><span>    if (current == null) return;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">49</span><span class="line-prefix"> </span><span>    state = AsyncData(current.copyWith(currentPage: page));</span></div>
+        <div class="code-line line-ctx"><span class="line-num">50</span><span class="line-prefix"> </span><span>  }</span></div>
+        <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>  /// 手動リロード（pull-to-refresh 用）。</span></div>
+        <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; reload() async {</span></div>
+        <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>    ref.invalidateSelf();</span></div>
+        <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>    await future;</span></div>
+        <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>  }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">57</span><span class="line-prefix"> </span><span>}</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span><code>ref.invalidateSelf()</code> でプロバイダーを無効化し、<code>await future</code> で再ビルドが完了するまで待機。リフレッシュインジケーターは <code>onRefresh</code> が完了するまで表示され続けるため、<code>await future</code> が必須。AccountSettings / HouseholdSettings / HouseworkAssign も同じパターンで実装。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/housework_settings/presentation/housework_list/housework_list_page.dart（抜粋）</span>
+        <span class="diff-stat">+7 / -1</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-del"><span class="line-num">79</span><span class="line-prefix">-</span><span>    return Column(</span></div>
+        <div class="code-line line-add"><span class="line-num">79</span><span class="line-prefix">+</span><span>    return RefreshIndicator(</span></div>
+        <div class="code-line line-add"><span class="line-num">80</span><span class="line-prefix">+</span><span>      onRefresh: () =&gt; notifier.reload(),</span></div>
+        <div class="code-line line-add"><span class="line-num">81</span><span class="line-prefix">+</span><span>      child: Column(</span></div>
+        <div class="code-line line-ctx"><span class="line-num">82</span><span class="line-prefix"> </span><span>        children: [</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>          // ListView の physics を変更:</span></div>
+        <div class="code-line line-del"><span class="line-num">...</span><span class="line-prefix">-</span><span>          ListView(</span></div>
+        <div class="code-line line-add"><span class="line-num">...</span><span class="line-prefix">+</span><span>          ListView(</span></div>
+        <div class="code-line line-add"><span class="line-num">...</span><span class="line-prefix">+</span><span>            physics: const AlwaysScrollableScrollPhysics(),</span></div>
+        <div class="code-line line-ctx"><span class="line-num">...</span><span class="line-prefix"> </span><span>            ...</span></div>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_notifier.dart</span>
+        <span class="diff-stat">+4 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">71</span><span class="line-prefix"> </span><span>    }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">72</span><span class="line-prefix"> </span><span>  }</span></div>
+        <div class="code-line line-add"><span class="line-num">73</span><span class="line-prefix">+</span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">74</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; reload() async {</span></div>
+        <div class="code-line line-add"><span class="line-num">75</span><span class="line-prefix">+</span><span>    await _fetchDetail();</span></div>
+        <div class="code-line line-add"><span class="line-num">76</span><span class="line-prefix">+</span><span>  }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">77</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">78</span><span class="line-prefix"> </span><span>  void clearReplySent() {</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>問い合わせ詳細は <code>NotifierProvider</code>（sync）形式のため <code>invalidateSelf()</code> ではなく既存の <code>_fetchDetail()</code> を直接呼ぶ実装にした。他の AsyncNotifier 系画面（AccountSettings / HouseholdSettings / HouseworkAssign / HouseworkList）は <code>ref.invalidateSelf(); await future;</code> のパターンで統一。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/inquiry/presentation/inquiry_detail/inquiry_detail_page.dart（抜粋）</span>
+        <span class="diff-stat">+16 / -10</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">148</span><span class="line-prefix"> </span><span>        // メッセージ一覧</span></div>
+        <div class="code-line line-ctx"><span class="line-num">149</span><span class="line-prefix"> </span><span>        Expanded(</span></div>
+        <div class="code-line line-del"><span class="line-num">150</span><span class="line-prefix">-</span><span>          child: detail.messages.isEmpty</span></div>
+        <div class="code-line line-del"><span class="line-num">151</span><span class="line-prefix">-</span><span>              ? Center(key: const Key('noMessages'), ...)</span></div>
+        <div class="code-line line-del"><span class="line-num">152</span><span class="line-prefix">-</span><span>              : ListView.separated(key: const Key('messageList'), ...),</span></div>
+        <div class="code-line line-add"><span class="line-num">150</span><span class="line-prefix">+</span><span>          child: RefreshIndicator(</span></div>
+        <div class="code-line line-add"><span class="line-num">151</span><span class="line-prefix">+</span><span>            onRefresh: () =&gt; ref.read(...notifier).reload(),</span></div>
+        <div class="code-line line-add"><span class="line-num">152</span><span class="line-prefix">+</span><span>            child: detail.messages.isEmpty</span></div>
+        <div class="code-line line-add"><span class="line-num">153</span><span class="line-prefix">+</span><span>                ? ListView(physics: const AlwaysScrollableScrollPhysics(), ...)</span></div>
+        <div class="code-line line-add"><span class="line-num">154</span><span class="line-prefix">+</span><span>                : ListView.separated(physics: const AlwaysScrollableScrollPhysics(), ...),</span></div>
+        <div class="code-line line-add"><span class="line-num">155</span><span class="line-prefix">+</span><span>          ),</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">💡</span>
+        <span>メッセージが 0 件の場合でも pull-to-refresh を受け付けるため、空状態も <code>ListView</code> でラップして <code>AlwaysScrollableScrollPhysics</code> を指定。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">一覧系画面すべてで下スワイプによるデータ更新（pull-to-refresh）が動作する</div>
+      </div>
+      <div class="ac-body">
+        通知センター・問い合わせ一覧・家事設定一覧・世帯設定・家事割り当て・アカウント設定の6画面すべてに <code>RefreshIndicator</code> + <code>AlwaysScrollableScrollPhysics</code> を追加。各 Notifier に <code>reload()</code> メソッドを新設してオンリフレッシュ時のデータ再取得を実装。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">問い合わせ詳細画面でも下スワイプによるデータ更新が動作する</div>
+      </div>
+      <div class="ac-body">
+        <code>InquiryDetailNotifier</code> に <code>reload()</code> メソッドを追加し、<code>inquiry_detail_page.dart</code> のメッセージリスト部分を <code>RefreshIndicator</code> でラップ。空メッセージ状態でも pull-to-refresh が動作するよう空状態を <code>ListView</code> に変換して <code>AlwaysScrollableScrollPhysics</code> を指定。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>通知センターで下スワイプするとリフレッシュインジケーターが表示され通知が更新されること</strong>
+          <span>ベル → 通知センターを開いて下スワイプして確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>設定 → お問い合わせ一覧で下スワイプするとリストが更新されること</strong>
+          <span>空の状態・データがある状態の両方で確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>問い合わせ詳細画面でも下スワイプするとメッセージが更新されること</strong>
+          <span>AC2 の必須確認。メッセージが0件のときも下スワイプができることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>設定 → 家事設定で下スワイプするとデータが更新されること</strong>
+          <span>家事が0件・複数件のどちらでも動作することを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>設定 → 世帯設定 / アカウント設定 / 家事割り当て画面でも同様に動作すること</strong>
+          <span>各画面で下スワイプ後にリフレッシュインジケーターが表示されることを確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>各 Notifier の <code>reload()</code> メソッドに単体テストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">housework_list_notifier_test.dart — reload() を呼ぶと AsyncData が取得できる</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">reload() 後も <code>hasValue: true</code> で家事データが取得できることを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">inquiry_detail_notifier_test.dart — reload() 成功時・失敗時の状態遷移</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">リロード成功時に detail が更新されること、AppException 発生時に errorMessage がセットされることを検証</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">✓</span>
+        <div>
+          <div class="test-name">account_settings_notifier_test.dart / household_settings_notifier_test.dart / housework_assign_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">各 Notifier の reload() 後に <code>hasValue: true</code> であることを検証するテストを追加</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

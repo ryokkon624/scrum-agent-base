@@ -92,8 +92,17 @@ Discord操作は `discord-operations` スキルを参照すること。
    - 計画フェーズではTaskCreateしないため、実装フェーズの最初に必ず作成する
    - Issue単位・AC単位など、作業の可視化に適した粒度で細分化する
    - 例：「#48 SwipeableTaskCard.vue 新規作成」「#49 useSwipeGesture disableRightオプション追加」など
-3. 作業開始を `#20-sprint` の作業スレッドに投稿する
-4. 各タスクを着手時に `TaskUpdate(status: in_progress)`、完了時に `TaskUpdate(status: completed)` で更新する
+3. **`backlog/sprint_XX/implementation-notes.md` を初期化する**（XX はスプリント番号）
+   - ファイルが既に存在する場合は末尾に追記する（前のIssueのメモを消さない）
+   - 初期テンプレート：
+     ```markdown
+     ## #N: [Issueタイトル]
+
+     ### 仕様外の判断・変更・妥協点
+     （実装中に随時追記）
+     ```
+4. 作業開始を `#20-sprint` の作業スレッドに投稿する
+5. 各タスクを着手時に `TaskUpdate(status: in_progress)`、完了時に `TaskUpdate(status: completed)` で更新する
 
 ### 作業中（TDD必須: RED → GREEN → REFACTOR）
 
@@ -109,21 +118,42 @@ Discord操作は `discord-operations` スキルを参照すること。
 - ACを満たすことを最優先にする
 - バックログに書いていない追加実装は自己判断でやらない（SMに相談する）
 - ブロッカーが発生したらすぐに `#20-sprint` の作業スレッドに投稿し、SendMessageでSMに連絡する（**予期せぬエラーはすべてブロッカーとして扱うこと。自己判断で回避しようとせず、必ずSMに報告してからりょこさんの判断を仰ぐ**）
-- コードはfeatureブランチで作業する
+- **複数Issue実装時は1ブランチにまとめる**（スタック型ブランチにしない）。ブランチ名はいずれかのIssueの#を使えばよい（例: `feature/148-inquiry-improvements`）。コミットはIssue単位で行い、コミットコメント末尾に `(ryokkon624/hw-hub-manage#N)` を付与する。
+
+#### implementation-notes.md への随時記録（必須）
+
+ACや仕様書に書かれていなかった判断・変更・妥協点が発生したら、そのたびに `backlog/sprint_XX/implementation-notes.md` に追記する。
+
+記録すべき内容の例：
+- ACに書かれていなかったエラーケースをどう処理したか（例：「ACにはnullの記述なし → 空リストを返すことにした」）
+- 実装中に仕様を変更・拡張した箇所と理由
+- 複数の実装案から選択した場合のトレードオフ（例：「パフォーマンスよりコードの単純さを優先した」）
+- 既存コードとの兼ね合いで妥協した点
+
+記録フォーマット：
+```markdown
+- **[判断した内容]**: [なぜそうしたか / トレードオフ]
+```
+
+> この記録はSprint ReviewのHTMLに取り込まれ、りょこさんのレビューに活用される。
 
 ### 作業完了時（初回完了）
 
 1. コミット前チェックを実施する：
    - [ ] ACをすべて満たしているか
+   - [ ] `backlog/sprint_XX/implementation-notes.md` に仕様外の判断・変更・妥協点をすべて記録したか（記録がゼロの場合は「特になし」と明記する）
    - [ ] フォーマット実行済みか（`./gradlew spotlessApply` / `npm run format` / `dart format .`）
    - [ ] 横断的リファクタリングの場合: `grep` で置き換え対象パターンの残存がないことを確認する（例: `grep -r "authentication.getName()" src/main/java`）
    - [ ] mybatisGenerator を使った場合: 実行前に `rm -rf src/main/resources/mapper/generated` を実行したことを確認する（省略すると全Mapper XMLに定義が重複してSpring Bootが起動不可になる）
+   - [ ] **ドキュメント（Markdown）編集の場合**: 凡例やラベル体系を定義したら、複数ファイルにまたがって同じ表記で統一されているか確認する（例: howto.mdで `[WEB PC]` を定義したらfaq.mdも `PC版` ではなく `WEB PC版` で統一。Sprint 66 で2回修正が必要になった）
    - [ ] **モバイルのUIに関する視覚的AC（幅・配置・レイアウト）がある場合**: シミュレーターまたはウィジェットテストで実際の見た目を確認してからコミットする（Sprint 31でカード全幅表示ACを目視未確認のまま達成と報告した）
    - [ ] **モバイルの場合 - 繰り返し指摘チェック**（`memory/dev/long_term.md` の「コミット前セルフチェック」を参照）:
      - [ ] マジックストリングがないか（区分値は `core/models/` の enum を使うこと）
      - [ ] `catch (_) {}` の握りつぶしがないか（`rethrow` または `AppException` に変換）
      - [ ] i18nハードコードがないか（ARBファイルに定義）
      - [ ] 一覧 Provider の invalidate 漏れがないか（IndexedStack 配下の詳細・作成画面）
+     - [ ] `ListView.builder` / `ListView` で生成するウィジェットに `ValueKey(item.id)` を付与したか（Sprint 38, 59 で繰り返し指摘）
+     - [ ] テストで `find.text('日本語テキスト')` を直接使っていないか（l10nキー経由 `find.text(l10n.keyName)` またはKeyベース検証を使うこと。Sprint 45, 50, 53, 59 で繰り返し指摘）
 2. **`backlog/sprint_XX/sprint_backlog.md` のACをすべて `[x]` に更新する**
 3. コミットする（`git` ルール参照）
 4. **`git push -u origin {ブランチ名}` でリモートにプッシュする**（SMのPR作成に必要）

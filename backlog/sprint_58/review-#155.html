@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 58 Review — #155 プロフィール画像変更後、ユーザアイコンが更新されない画面がある</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+
+  .mock-screen { background: #f0f4f0; border-radius: 10px; padding: 10px; }
+  .mock-screen-title { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em; }
+  .mock-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #e0e7e0; }
+  .mock-row:last-child { border-bottom: none; }
+  .mock-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+  .avatar-old { background: #e5e7eb; color: #9ca3af; border: 1px dashed #d1d5db; }
+  .avatar-new { background: linear-gradient(135deg, #4ade80, #22c55e); }
+  .mock-label { font-size: 11px; color: #374151; }
+  .mock-badge-bad { background: #fef2f2; color: #ef4444; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: auto; }
+  .mock-badge-ok { background: #f0fdf4; color: #16a34a; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: auto; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  .dual-cause { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .cause-item { background: #fafafa; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px 14px; }
+  .cause-item-title { font-size: 11px; font-weight: 700; color: #991b1b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .cause-item-body { font-size: 12px; color: #4b5563; }
+
+  .invalidate-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .invalidate-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+  .invalidate-table td { padding: 8px 12px; border: 1px solid #e5e5e5; font-size: 12px; }
+  .invalidate-table .code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .invalidate-table .bad { background: #fef2f2; }
+  .invalidate-table .good { background: #f0fdf4; }
+  .tag-bad { background: #fef2f2; color: #b91c1c; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
+  .tag-ok { background: #f0fdf4; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* Impl notes */
+  .impl-note-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .impl-note-item { padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: #4b5563; }
+  .impl-note-item:last-child { border-bottom: none; }
+  .impl-note-item strong { color: #1a1a1a; }
+
+  /* File list */
+  .scope-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .scope-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .scope-box h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .scope-changed { color: #166534; }
+  .scope-unchanged { color: #6b7280; }
+  .scope-file { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #f5f5f5; color: #374151; }
+  .scope-file:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 58 Review · Bug Fix</div>
+  <h1>#155 — プロフィール画像変更後、<br>ユーザアイコンが更新されない画面がある</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 58</span>
+    <span class="badge badge-issue">#155</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">プロフィール画像変更後</div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-new"></div>
+            <span class="mock-label">アカウント設定ヘッダー</span>
+            <span class="mock-badge-ok">反映</span>
+          </div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-old">旧</div>
+            <span class="mock-label">ホーム画面ヘッダー</span>
+            <span class="mock-badge-bad">未反映</span>
+          </div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-old">旧</div>
+            <span class="mock-label">設定画面ヘッダー</span>
+            <span class="mock-badge-bad">未反映</span>
+          </div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-old">旧</div>
+            <span class="mock-label">おうち設定メンバー一覧</span>
+            <span class="mock-badge-bad">未反映</span>
+          </div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-old">旧</div>
+            <span class="mock-label">家事割り当て画面</span>
+            <span class="mock-badge-bad">未反映</span>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-screen">
+          <div class="mock-screen-title">プロフィール画像変更後</div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-new"></div>
+            <span class="mock-label">アカウント設定ヘッダー</span>
+            <span class="mock-badge-ok">反映</span>
+          </div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-new"></div>
+            <span class="mock-label">ホーム画面ヘッダー</span>
+            <span class="mock-badge-ok">反映</span>
+          </div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-new"></div>
+            <span class="mock-label">設定画面ヘッダー</span>
+            <span class="mock-badge-ok">反映</span>
+          </div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-new"></div>
+            <span class="mock-label">おうち設定メンバー一覧</span>
+            <span class="mock-badge-ok">反映</span>
+          </div>
+          <div class="mock-row">
+            <div class="mock-avatar avatar-new"></div>
+            <span class="mock-label">家事割り当て画面</span>
+            <span class="mock-badge-ok">反映</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">2つの問題が複合して発生していた</span>
+      </div>
+      <div class="cause-body">
+        <div class="dual-cause">
+          <div class="cause-item">
+            <div class="cause-item-title">原因A: Provider の invalidate 漏れ</div>
+            <div class="cause-item-body">
+              <code>uploadIcon()</code> のStep5で <code>ref.invalidate(authNotifierProvider)</code> のみ実行。
+              <code>homeNotifierProvider</code>・<code>householdSettingsNotifierProvider</code>・<code>houseworkAssignNotifierProvider</code> への invalidate が漏れており、これらの画面はアイコンを再取得しなかった。
+            </div>
+          </div>
+          <div class="cause-item">
+            <div class="cause-item-title">原因B: Repository での URL 変換漏れ</div>
+            <div class="cause-item-body">
+              <code>HomeRepository</code>・<code>HouseholdSettingsRepository</code>・<code>HouseworkAssignRepository</code> でメンバー DTO の <code>iconUrl</code> を <code>S3UrlResolver</code> で変換していなかった。invalidate しても <code>localhost:4566</code> の URL のままで画像が表示されない。
+            </div>
+          </div>
+        </div>
+        <table class="invalidate-table">
+          <tr>
+            <th>画面</th>
+            <th>参照する Provider</th>
+            <th>修正前: invalidate</th>
+            <th>修正前: URL変換</th>
+          </tr>
+          <tr>
+            <td>ヘッダー（設定画面含む）</td>
+            <td class="code">authNotifierProvider</td>
+            <td class="good"><span class="tag-ok">あり</span></td>
+            <td class="good"><span class="tag-ok">あり (getMyProfile)</span></td>
+          </tr>
+          <tr>
+            <td>ホーム画面ヘッダー</td>
+            <td class="code">homeNotifierProvider</td>
+            <td class="bad"><span class="tag-bad">なし</span></td>
+            <td class="bad"><span class="tag-bad">なし</span></td>
+          </tr>
+          <tr>
+            <td>おうち設定・メンバー一覧</td>
+            <td class="code">householdSettingsNotifierProvider</td>
+            <td class="bad"><span class="tag-bad">なし</span></td>
+            <td class="bad"><span class="tag-bad">なし</span></td>
+          </tr>
+          <tr>
+            <td>家事割り当て画面</td>
+            <td class="code">houseworkAssignNotifierProvider</td>
+            <td class="bad"><span class="tag-bad">なし</span></td>
+            <td class="bad"><span class="tag-bad">なし</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <!-- A: uploadIcon の invalidate 追加 -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/account_settings/presentation/account_settings/account_settings_notifier.dart</span>
+        <span class="diff-stat">+6 / -1</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num">139</span><span class="line-prefix"> </span><span>      );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">140</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-del"><span class="line-num">141</span><span class="line-prefix">-</span><span>      // Step5: authNotifier を invalidate してヘッダーのアイコンを更新する（AC2）</span></div>
+        <div class="code-line line-add"><span class="line-num">141</span><span class="line-prefix">+</span><span>      // Step5: 各 Provider を invalidate してアイコンを全画面に反映する（AC2, AC3）</span></div>
+        <div class="code-line line-ctx"><span class="line-num">142</span><span class="line-prefix"> </span><span>      ref.invalidate(authNotifierProvider);</span></div>
+        <div class="code-line line-add"><span class="line-num">143</span><span class="line-prefix">+</span><span>      ref.invalidate(homeNotifierProvider);</span></div>
+        <div class="code-line line-add"><span class="line-num">144</span><span class="line-prefix">+</span><span>      ref.invalidate(householdSettingsNotifierProvider);</span></div>
+        <div class="code-line line-add"><span class="line-num">145</span><span class="line-prefix">+</span><span>      ref.invalidate(houseworkAssignNotifierProvider);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">146</span><span class="line-prefix"> </span><span>    } on AppException catch (e) {</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>プロフィール画像変更成功後に、アイコンを参照するすべての Provider を invalidate する。各 Provider は再ビルドされ、変換済み iconUrl を持つメンバー DTO を改めて取得する。</span>
+      </div>
+    </div>
+
+    <!-- B: HomeRepositoryImpl に S3UrlResolver 追加 -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/home/data/home_repository.dart</span>
+        <span class="diff-stat">+18 / -4</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-del"><span class="line-num">13</span><span class="line-prefix">-</span><span>  HomeRepositoryImpl(this._dio);</span></div>
+        <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>  HomeRepositoryImpl(this._dio, this._s3UrlResolver);</span></div>
+        <div class="code-line line-ctx"><span class="line-num">14</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">15</span><span class="line-prefix"> </span><span>  final Dio _dio;</span></div>
+        <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>  final S3UrlResolver _s3UrlResolver;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">17</span><span class="line-prefix"> </span><span></span></div>
+        <div class="code-line line-ctx"><span class="line-num">37</span><span class="line-prefix"> </span><span>      final members = (results[0].data as List&lt;dynamic&gt;)</span></div>
+        <div class="code-line line-ctx"><span class="line-num">38</span><span class="line-prefix"> </span><span>          .map((e) =&gt; HouseholdMemberDto.fromJson(e as Map&lt;String, dynamic&gt;))</span></div>
+        <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>          .map(</span></div>
+        <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>            (m) =&gt; HouseholdMemberDto(</span></div>
+        <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>              householdId: m.householdId,</span></div>
+        <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>              userId: m.userId,</span></div>
+        <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>              displayName: m.displayName,</span></div>
+        <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>              iconUrl: _s3UrlResolver.resolve(m.iconUrl),</span></div>
+        <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>              nickname: m.nickname,</span></div>
+        <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>              status: m.status,</span></div>
+        <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>              role: m.role,</span></div>
+        <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>            ),</span></div>
+        <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>          )</span></div>
+        <div class="code-line line-ctx"><span class="line-num">50</span><span class="line-prefix"> </span><span>          .toList();</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>同様の修正を <code>household_settings_repository.dart</code>（<code>.copyWith(iconUrl: ...)</code> で対応）と <code>housework_assign_repository.dart</code>（手動インスタンス再生成で対応）にも横展開している。</span>
+      </div>
+    </div>
+
+    <!-- C: providers への S3UrlResolver DI追加 -->
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/home/home_providers.dart  （household_settings / housework_assign も同様）</span>
+        <span class="diff-stat">+3 / -1 (各ファイル)</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-del"><span class="line-num">5</span><span class="line-prefix">-</span><span>final homeRepositoryProvider = Provider&lt;HomeRepository&gt;((ref) {</span></div>
+        <div class="code-line line-del"><span class="line-num">6</span><span class="line-prefix">-</span><span>  return HomeRepositoryImpl(ref.watch(dioProvider));</span></div>
+        <div class="code-line line-del"><span class="line-num">7</span><span class="line-prefix">-</span><span>});</span></div>
+        <div class="code-line line-add"><span class="line-num">5</span><span class="line-prefix">+</span><span>final homeRepositoryProvider = Provider&lt;HomeRepository&gt;((ref) {</span></div>
+        <div class="code-line line-add"><span class="line-num">6</span><span class="line-prefix">+</span><span>  return HomeRepositoryImpl(</span></div>
+        <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>    ref.watch(dioProvider),</span></div>
+        <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>    S3UrlResolver(isDebug: kDebugMode),</span></div>
+        <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>  );</span></div>
+        <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>});</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span><code>kDebugMode</code> で制御することで、リリースビルドでは URL 変換がスキップされ、本番 S3 URL をそのまま使用する。デバッグ環境（LocalStack）でのみ <code>localhost → 10.0.2.2</code> 変換が走る設計。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note-box">
+      <div class="impl-note-item">
+        <strong>HouseholdMemberDto に copyWith 未実装問題</strong>: <code>HouseholdMemberDto</code>（<code>home/data/models/</code>）は <code>@JsonSerializable()</code> 自動生成のため <code>copyWith</code> がなく、<code>HouseworkAssignRepository.fetchMembers</code> および <code>HomeRepository.loadAll</code> では手動でインスタンスを再生成して iconUrl を変換した。<code>HouseholdSettingsMemberDto</code> には <code>copyWith</code> があるため <code>.copyWith(iconUrl: ...)</code> で対応した。
+      </div>
+      <div class="impl-note-item">
+        <strong>account_settings_notifier_test.dart の Container 修正</strong>: <code>uploadIcon</code> の Step5 に <code>homeNotifierProvider</code> などへの <code>ref.invalidate</code> を追加したことで、テスト Container に <code>dioProvider</code> が未登録のまま invalidate が走り <code>ServicesBinding</code> 未初期化エラーが発生した。<code>_makeContainer</code> に <code>dioProvider.overrideWithValue(mockDio)</code> を追加して解決した。
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">プロフィール画像を変更後、ホーム画面のヘッダのユーザアイコンに新しい画像が表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>uploadIcon()</code> 成功後に <code>ref.invalidate(homeNotifierProvider)</code> を追加。<code>HomeRepositoryImpl</code> に <code>S3UrlResolver</code> を DI し、取得した iconUrl を変換するようにした。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">プロフィール画像を変更後、設定画面のヘッダのユーザアイコンに新しい画像が表示される</div>
+      </div>
+      <div class="ac-body">
+        設定画面のヘッダーは <code>authNotifierProvider</code>（<code>getMyProfile()</code> 経由）を参照。従来から <code>ref.invalidate(authNotifierProvider)</code> が実行されており、今回の修正でも引き続き対応している。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">プロフィール画像を変更後、おうち設定画面のメンバー一覧のユーザアイコンに新しい画像が表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>ref.invalidate(householdSettingsNotifierProvider)</code> を追加。<code>HouseholdSettingsRepositoryImpl</code> に <code>S3UrlResolver</code> を DI し、<code>fetchMembers()</code> の iconUrl を変換するようにした。
+      </div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">プロフィール画像を変更後、家事割り当て画面の家事カードのユーザアイコンに新しい画像が表示される</div>
+      </div>
+      <div class="ac-body">
+        <code>ref.invalidate(houseworkAssignNotifierProvider)</code> を追加。<code>HouseworkAssignRepositoryImpl</code> に <code>S3UrlResolver</code> を DI し、<code>fetchMembers()</code> の iconUrl を変換するようにした。
+      </div>
+    </div>
+  </section>
+
+  <!-- 動作確認ポイント -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>アカウント設定画面でプロフィール画像を変更し、ホーム画面に戻る</strong>
+          <span>ホーム画面のヘッダーにある自分のアイコンが新しい画像に変わっていることを確認する</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>プロフィール画像変更後、設定タブに切り替える</strong>
+          <span>設定画面のヘッダーアイコンも新しい画像に変わっていることを確認する</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>プロフィール画像変更後、おうち設定のメンバー一覧を開く</strong>
+          <span>メンバー一覧の自分のアイコンが新しい画像に変わっていることを確認する</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>プロフィール画像変更後、家事割り当て画面を開く</strong>
+          <span>家事カードに表示される自分のアイコンが新しい画像に変わっていることを確認する</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>各 Repository の iconUrl 変換と、uploadIcon 後の全 Provider invalidate を確認するテストを追加した。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/account_settings/account_settings_notifier_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;"><code>uploadIcon()</code> 成功時に <code>homeNotifierProvider</code>・<code>householdSettingsNotifierProvider</code>・<code>houseworkAssignNotifierProvider</code> が invalidate されることを確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/home/data/home_repository_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;"><code>loadAll()</code> でメンバーの iconUrl が S3UrlResolver を通じて変換されることを確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/household_settings/data/household_settings_repository_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;"><code>fetchMembers()</code> で iconUrl 変換を確認するテストを追加</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">test/features/housework_assign/data/housework_assign_repository_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;"><code>fetchMembers()</code> で iconUrl 変換を確認するテストを追加</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修スコープ確認 -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <div class="scope-grid">
+      <div class="scope-box">
+        <h3 class="scope-changed">変更したファイル</h3>
+        <div class="scope-file">lib/features/account_settings/presentation/account_settings/account_settings_notifier.dart</div>
+        <div class="scope-file">lib/features/home/data/home_repository.dart</div>
+        <div class="scope-file">lib/features/home/home_providers.dart</div>
+        <div class="scope-file">lib/features/household_settings/data/household_settings_repository.dart</div>
+        <div class="scope-file">lib/features/household_settings/household_settings_providers.dart</div>
+        <div class="scope-file">lib/features/housework_assign/data/housework_assign_repository.dart</div>
+        <div class="scope-file">lib/features/housework_assign/housework_assign_providers.dart</div>
+        <div class="scope-file">test/features/account_settings/account_settings_notifier_test.dart</div>
+        <div class="scope-file">test/features/home/data/home_repository_test.dart</div>
+        <div class="scope-file">test/features/household_settings/data/household_settings_repository_test.dart</div>
+        <div class="scope-file">test/features/housework_assign/data/housework_assign_repository_test.dart</div>
+      </div>
+      <div class="scope-box">
+        <h3 class="scope-unchanged">変更していないファイル</h3>
+        <div class="scope-file">lib/core/auth/auth_notifier.dart（#158 の変更は含む）</div>
+        <div class="scope-file">lib/features/auth/data/auth_repository.dart（#156 の変更は含む）</div>
+        <div class="scope-file">lib/core/network/s3_url_resolver.dart（既存ロジックを再利用）</div>
+        <div class="scope-file">lib/features/account_settings/data/account_settings_repository.dart（変更なし）</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

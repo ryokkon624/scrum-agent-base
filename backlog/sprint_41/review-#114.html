@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 41 Review — #114 家事割り当て画面のスワイプモードのUXを改善する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #e0f2fe; color: #0369a1; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 40px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Screen layout mock */
+  .screen-mock-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+  .screen-mock-wrap { }
+  .screen-mock-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .screen-mock { border: 2px solid #e5e5e5; border-radius: 12px; overflow: hidden; font-size: 12px; background: white; max-width: 200px; margin: 0 auto; }
+  .screen-mock.before-mock { border-color: #fca5a5; }
+  .screen-mock.after-mock { border-color: #86efac; }
+  .mock-appbar { background: #1d6de3; color: white; padding: 10px 12px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .mock-back { font-size: 14px; }
+  .mock-progress-small { margin-left: auto; font-size: 10px; background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; }
+  .mock-body-section { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; font-size: 11px; }
+  .mock-body-section:last-child { border-bottom: none; }
+  .mock-section-label { font-size: 9px; font-weight: 700; color: #9ca3af; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+  .mock-progress-large { text-align: center; font-size: 18px; font-weight: 700; color: #1a1a1a; padding: 8px 0; }
+  .mock-calendar-box { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px; text-align: center; }
+  .mock-calendar-header { font-size: 10px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+  .mock-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; font-size: 9px; color: #6b7280; }
+  .mock-calendar-day { text-align: center; padding: 2px; }
+  .mock-calendar-day.highlight { background: #1d6de3; color: white; border-radius: 50%; font-weight: 700; }
+  .mock-card { background: white; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; margin: 4px 0; }
+  .mock-card-title { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+  .mock-card-date { font-size: 10px; color: #6b7280; margin-top: 2px; }
+  .mock-exit-btn { border: 1px solid #6b7280; color: #374151; border-radius: 6px; padding: 6px 10px; text-align: center; font-size: 11px; margin: 8px 10px; }
+  .mock-arrow { font-size: 10px; color: #9ca3af; }
+  .screen-arrow { font-size: 24px; color: #888; text-align: center; padding-top: 80px; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; align-items: center; }
+  .file-badge-new { font-size: 10px; font-weight: 600; background: #dcfce7; color: #166534; padding: 1px 6px; border-radius: 3px; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 32px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 41 Review</div>
+  <h1>#114 — 家事割り当て画面のスワイプモードのUXを改善する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 41</span>
+    <span class="badge badge-issue">#114</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの改修が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">問題（Sprint 39 Sprint Review 指摘）</div>
+      <p>スワイプモード（Tinder風カード画面）で、<strong>3つのUX課題</strong>があった。① 進捗が右上に小さく表示されていて全体の残り件数が掴みにくい。② 中断するには画面左上の「&#8592;」ボタンしかなく、直感的でない。③ 各カードの実施日がテキストだけで、カレンダーで視覚的に確認できない。</p>
+    </div>
+
+    <div class="screen-mock-grid">
+      <div class="screen-mock-wrap">
+        <div class="screen-mock-title">改修前</div>
+        <div class="screen-mock before-mock">
+          <div class="mock-appbar">
+            <span class="mock-back">&#8592;</span>
+            <span>割り当て中</span>
+            <span class="mock-progress-small">1 / 5</span>
+          </div>
+          <div class="mock-body-section">
+            <div class="mock-section-label" style="color:#ef4444;">進捗: AppBarに小さく</div>
+          </div>
+          <div class="mock-body-section">
+            <div class="mock-section-label" style="color:#ef4444;">カレンダーなし</div>
+            <div style="font-size:11px; color:#9ca3af; text-align:center; padding: 8px 0;">（実施日テキストのみ）</div>
+          </div>
+          <div class="mock-body-section">
+            <div class="mock-card">
+              <div class="mock-card-title">トイレ掃除</div>
+              <div class="mock-card-date">実施日: 2026-05-20</div>
+            </div>
+          </div>
+          <div class="mock-body-section">
+            <div style="font-size:10px; color:#ef4444; text-align:center;">中断: ← ボタンのみ</div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-arrow">&#8594;</div>
+      <div class="screen-mock-wrap">
+        <div class="screen-mock-title">改修後</div>
+        <div class="screen-mock after-mock">
+          <div class="mock-appbar">
+            <span>割り当て中</span>
+          </div>
+          <div class="mock-body-section">
+            <div class="mock-section-label" style="color:#166534;">進捗: 大きく中央に (AC1)</div>
+            <div class="mock-progress-large">1 / 5</div>
+          </div>
+          <div class="mock-body-section">
+            <div class="mock-section-label" style="color:#166534;">カレンダー表示 (AC3)</div>
+            <div class="mock-calendar-box">
+              <div class="mock-calendar-header">2026年 5月</div>
+              <div class="mock-calendar-grid">
+                <div class="mock-calendar-day">日</div><div class="mock-calendar-day">月</div><div class="mock-calendar-day">火</div><div class="mock-calendar-day">水</div><div class="mock-calendar-day">木</div><div class="mock-calendar-day">金</div><div class="mock-calendar-day">土</div>
+                <div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day">1</div>
+                <div class="mock-calendar-day">...</div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div>
+                <div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div><div class="mock-calendar-day">20</div><div class="mock-calendar-day highlight">20</div><div class="mock-calendar-day"></div><div class="mock-calendar-day"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mock-body-section">
+            <div class="mock-card">
+              <div class="mock-card-title">トイレ掃除</div>
+              <div class="mock-card-date">実施日: 2026-05-20</div>
+            </div>
+          </div>
+          <div class="mock-body-section">
+            <div class="mock-exit-btn">割り当てを中断する (AC2)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">進捗（何件中の何件を処理しているか）を画面上部中央に大きめに表示する</div>
+      </div>
+      <div class="ac-body">
+        <p>AppBar の actions から進捗表示を削除し、新規ウィジェット <code>SwipeProgressHeader</code> を body 最上部に配置した。テキストスタイルを <code>bodyMedium</code> から <code>headlineSmall</code>（約24sp）に変更し、中央寄せで表示する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/widgets/swipe_progress_header.dart</span>
+            <span class="file-badge-new">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> 5</span><span class="line-prefix">+</span><span>class SwipeProgressHeader extends StatelessWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>  const SwipeProgressHeader({super.key, required this.current, required this.total});</span></div>
+            <div class="code-line line-add"><span class="line-num"> 7</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span>  final int current;</span></div>
+            <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>  final int total;</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>    return Padding(</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>      padding: const EdgeInsets.symmetric(vertical: 12),</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>      child: Center(</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>        child: Text(</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>          l10n.houseworkAssignSwipeProgressLabel(current, total),</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>          style: Theme.of(context).textTheme.headlineSmall, // 約24sp</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>          textAlign: TextAlign.center,</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>        ),</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>      ),</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>    );</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>既存の <code>houseworkAssignSwipeProgressLabel(current, total)</code> i18nキーをそのまま流用。文言変更なし・サイズ・位置のみ変更。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/housework_assign_page.dart</span>
+            <span class="diff-stat">AppBar actions 削除 / body に SwipeProgressHeader 追加</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">252</span><span class="line-prefix"> </span><span>    return Scaffold(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">253</span><span class="line-prefix"> </span><span>      // AC2: AppBar の BackButton を削除</span></div>
+            <div class="code-line line-ctx"><span class="line-num">254</span><span class="line-prefix"> </span><span>      appBar: AppBar(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">255</span><span class="line-prefix"> </span><span>        title: Text(l10n.houseworkAssignSwipeModeTitle),</span></div>
+            <div class="code-line line-del"><span class="line-num">256</span><span class="line-prefix">-</span><span>        leading: BackButton(onPressed: () =&gt; notifier.exitSwipeMode()),</span></div>
+            <div class="code-line line-del"><span class="line-num">257</span><span class="line-prefix">-</span><span>        actions: [ if (!isFinished) Padding( ... Text(progressLabel, style: bodyMedium) ...) ],</span></div>
+            <div class="code-line line-add"><span class="line-num">256</span><span class="line-prefix">+</span><span>        automaticallyImplyLeading: false,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">257</span><span class="line-prefix"> </span><span>      ),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">     </span><span class="line-prefix"> </span><span>      ...</span></div>
+            <div class="code-line line-add"><span class="line-num">268</span><span class="line-prefix">+</span><span>          : Column(</span></div>
+            <div class="code-line line-add"><span class="line-num">269</span><span class="line-prefix">+</span><span>              children: [</span></div>
+            <div class="code-line line-add"><span class="line-num">270</span><span class="line-prefix">+</span><span>                // AC1: 進捗を body 最上部に headlineSmall で中央寄せ表示</span></div>
+            <div class="code-line line-add"><span class="line-num">271</span><span class="line-prefix">+</span><span>                SwipeProgressHeader(current: state.swipeIndex + 1, total: state.swipeTaskCount),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">画面下部に「割り当てを中断する」ボタンを配置する（AppBar の ← ボタンを削除）</div>
+      </div>
+      <div class="ac-body">
+        <p>AppBar の <code>BackButton</code> を削除し（<code>automaticallyImplyLeading: false</code>）、body 下部に <code>OutlinedButton</code> を追加した。i18n キー <code>houseworkAssignSwipeExitButton</code> を ja/en/es の3言語で新規追加した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/housework_assign_page.dart</span>
+            <span class="diff-stat">下部ボタン追加</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">289</span><span class="line-prefix">+</span><span>                // AC2: 画面下部に「割り当てを中断する」ボタン</span></div>
+            <div class="code-line line-add"><span class="line-num">290</span><span class="line-prefix">+</span><span>                SafeArea(</span></div>
+            <div class="code-line line-add"><span class="line-num">291</span><span class="line-prefix">+</span><span>                  child: Padding(</span></div>
+            <div class="code-line line-add"><span class="line-num">292</span><span class="line-prefix">+</span><span>                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),</span></div>
+            <div class="code-line line-add"><span class="line-num">293</span><span class="line-prefix">+</span><span>                    child: OutlinedButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">294</span><span class="line-prefix">+</span><span>                      onPressed: () =&gt; notifier.exitSwipeMode(),</span></div>
+            <div class="code-line line-add"><span class="line-num">295</span><span class="line-prefix">+</span><span>                      child: Text(l10n.houseworkAssignSwipeExitButton),</span></div>
+            <div class="code-line line-add"><span class="line-num">296</span><span class="line-prefix">+</span><span>                    ),</span></div>
+            <div class="code-line line-add"><span class="line-num">297</span><span class="line-prefix">+</span><span>                  ),</span></div>
+            <div class="code-line line-add"><span class="line-num">298</span><span class="line-prefix">+</span><span>                ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>押下時の処理は既存の <code>notifier.exitSwipeMode()</code> を再利用。<code>SafeArea</code> で iOS ホームインジケーター領域を避ける。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/l10n/app_ja.arb / app_en.arb / app_es.arb</span>
+            <span class="diff-stat">+1 キー（3言語）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">457</span><span class="line-prefix"> </span><span>  "houseworkAssignSwipeNextLabel": "次へ",</span></div>
+            <div class="code-line line-add"><span class="line-num">458</span><span class="line-prefix">+</span><span>  "houseworkAssignSwipeExitButton": "割り当てを中断する",</span></div>
+            <div class="code-line line-ctx"><span class="line-num">459</span><span class="line-prefix"> </span><span>  "houseworkAssignSwipeFinishedMessage": "お疲れさまでした！",</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>en: "Stop assigning" / es: "Detener asignaci&#xf3;n" として3言語対応。ハードコード文字列は使用していない。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">カードの上部にカレンダーを配置し、カードが変わるとそのカードの実施日がカレンダー上にプロットされる</div>
+      </div>
+      <div class="ac-body">
+        <p><code>table_calendar</code> パッケージを採用し、新規ウィジェット <code>SwipeDateCalendar</code> を実装した。<code>targetDate</code> プロパティで受け取った日付を月カレンダー上でハイライト表示する。カードが変わると <code>targetDate</code> が更新され、カレンダーの表示月とハイライト位置が自動で切り替わる。読み取り専用（タップ・スワイプ無効）で実装している。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/widgets/swipe_date_calendar.dart</span>
+            <span class="file-badge-new">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span>class SwipeDateCalendar extends StatelessWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>  const SwipeDateCalendar({super.key, required this.targetDate});</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>  /// ISO 8601 形式の日付文字列。null の場合は今日を表示。</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>  final String? targetDate;</span></div>
+            <div class="code-line line-add"><span class="line-num">   </span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>    return TableCalendar(</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>      firstDay: DateTime(2000),</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>      lastDay: DateTime(2100),</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>      focusedDay: _parseDate(targetDate) ?? DateTime.now(),</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>      selectedDayPredicate: selectedDay != null ? (day) =&gt; _isSameDay(day, selectedDay) : null,</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      headerStyle: const HeaderStyle(</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>        formatButtonVisible: false,</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>        leftChevronVisible: false,   // 読み取り専用: 月移動ボタン非表示</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>        rightChevronVisible: false,  // 読み取り専用: 月移動ボタン非表示</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>      ),</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>      availableGestures: AvailableGestures.none,  // タップ・スワイプ無効</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>StatelessWidget</code> で実装。<code>targetDate</code> が変わると Flutter が再描画するため <code>StatefulWidget</code> は不要。カードが変わるたびに <code>focusedDay</code> と <code>selectedDayPredicate</code> が自動更新される。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>pubspec.yaml</span>
+            <span class="diff-stat">+1 依存</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">63</span><span class="line-prefix">+</span><span>  # Calendar</span></div>
+            <div class="code-line line-add"><span class="line-num">64</span><span class="line-prefix">+</span><span>  table_calendar: ^3.1.2</span></div>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>housework_assign_page.dart（_SwipeModePage body）</span>
+            <span class="diff-stat">SwipeDateCalendar 組み込み</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">274</span><span class="line-prefix">+</span><span>                // AC3: カレンダー表示（targetDate でハイライト）</span></div>
+            <div class="code-line line-add"><span class="line-num">275</span><span class="line-prefix">+</span><span>                SwipeDateCalendar(targetDate: currentTask.targetDate),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>スワイプモード開始時に進捗が画面中央の大きいテキストで表示されること</strong>
+          <span>「1 / 5」のような進捗テキストが、AppBar の右上ではなく body 最上部に headlineSmall（24sp 程度）のサイズで中央に表示されていること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>カードが変わるたびに進捗カウントが更新されること</strong>
+          <span>「2 / 5」→「3 / 5」と進捗が正しくカウントアップされること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>画面下部に「割り当てを中断する」ボタンが表示されること</strong>
+          <span>AppBar に ← ボタンがなく、代わりに画面下部に OutlinedButton スタイルの「割り当てを中断する」ボタンがあること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>「割り当てを中断する」ボタンを押すとリスト画面に戻ること</strong>
+          <span>ボタン押下でスワイプモードが終了し、割り当て一覧画面に戻ること</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>カレンダーが表示され、現在のカードの実施日がハイライトされること</strong>
+          <span>カードの上部に月カレンダーが表示され、そのカードの実施日（例: 5月20日）が青丸でハイライトされていること。カレンダーはタップしても操作できないこと（読み取り専用）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>カードが変わるとカレンダーの表示月・ハイライト日も切り替わること</strong>
+          <span>例: 5月20日のカード → 6月15日のカードに進んだとき、カレンダーが6月に切り替わり、15日がハイライトされること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>housework_assign_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>_SwipeModePage の AppBar 変更（BackButton 削除・automaticallyImplyLeading: false）、body を Column に変更して SwipeProgressHeader・SwipeDateCalendar・中断ボタンを組み込み</td>
+      </tr>
+      <tr>
+        <td><code>widgets/swipe_progress_header.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>headlineSmall で進捗を中央表示するウィジェット（AC1）</td>
+      </tr>
+      <tr>
+        <td><code>widgets/swipe_date_calendar.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>table_calendar を使った読み取り専用月カレンダーウィジェット（AC3）</td>
+      </tr>
+      <tr>
+        <td><code>app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>houseworkAssignSwipeExitButton キーを3言語で追加（AC2）</td>
+      </tr>
+      <tr>
+        <td><code>pubspec.yaml / pubspec.lock</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>table_calendar: ^3.1.2 を追加</td>
+      </tr>
+      <tr>
+        <td><code>test/features/housework_assign/presentation/</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>housework_assign_page_test.dart・swipe_date_calendar_test.dart でAC1〜AC3のウィジェットテストを追加</td>
+      </tr>
+      <tr>
+        <td>Notifier・State・Repository</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>UIの再構成のみ。ロジック変更なし</td>
+      </tr>
+      <tr>
+        <td>widgets/swipe_mode_card.dart</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>カードウィジェット自体は変更なし</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

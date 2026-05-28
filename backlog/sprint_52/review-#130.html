@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 52 Review — #130 アカウント設定画面に外観設定セクションを追加する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #f0fdf4; color: #166534; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Mock UI for appearance */
+  .mock-settings-wrap { background: #f7f8f6; border-radius: 10px; padding: 12px; border: 1px solid #e5e5e5; }
+  .mock-appbar { background: #1a2e1a; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .mock-appbar-title { color: white; font-size: 12px; font-weight: 700; }
+  .mock-section-group { background: white; border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; }
+  .mock-section-title { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .mock-segment-bar { display: flex; border: 1px solid #10b981; border-radius: 8px; overflow: hidden; }
+  .mock-segment { flex: 1; padding: 5px 8px; text-align: center; font-size: 11px; font-weight: 600; cursor: default; }
+  .mock-segment.selected { background: #10b981; color: white; }
+  .mock-segment.unselected { background: white; color: #374151; }
+  .mock-section-divider { height: 4px; }
+  .mock-profile-row { display: flex; align-items: center; gap: 8px; }
+  .mock-avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: #d1d5db; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 12px; font-weight: 700; }
+  .mock-text-sm { font-size: 11px; color: #374151; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #ede9fe; color: #7c3aed; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Implementation notes */
+  .impl-note { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
+  .impl-note-label { font-size: 11px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .impl-note p { font-size: 13px; color: #1e3a5f; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 52 Review · Feature</div>
+  <h1>#130 — アカウント設定画面に外観設定セクション<br>（システム連動/ライト/ダーク）を追加する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 52</span>
+    <span class="badge badge-issue">#130</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- なぜこの改修が必要だったか -->
+  <section>
+    <h2>なぜこの機能が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>Sprint 45 Sprint ReviewでWEB版アカウント設定画面の外観設定（ライト/ダーク/システム連動）がモバイルには未実装であることが指摘された。
+      モバイルはOSのシステム設定に強制連動するのみで、ユーザーが個別にアプリの外観を変えることができない状態だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">改修前</div>
+        <div class="flow-item"><span class="dot dot-red"></span><code>MaterialApp.router themeMode: ThemeMode.system</code> 固定</div>
+        <div class="flow-item"><span class="dot dot-red"></span>OSのシステム設定にのみ追従（変更不可）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>アカウント設定画面に外観設定なし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>WEB版と外観設定が非同期</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">改修後</div>
+        <div class="flow-item"><span class="dot dot-green"></span><code>themeModeNotifierProvider</code> を watch → 即時反映</div>
+        <div class="flow-item"><span class="dot dot-green"></span>システム連動/ライト/ダークの3択をユーザーが選択</div>
+        <div class="flow-item"><span class="dot dot-green"></span>アカウント設定画面にAppearanceSection追加</div>
+        <div class="flow-item"><span class="dot dot-green"></span>SharedPreferencesに保存 → 再起動後も保持</div>
+        <div class="flow-item"><span class="dot dot-green"></span>バックエンド（m_user.theme）とも同期（AC5）</div>
+      </div>
+    </div>
+
+    <!-- モックUI -->
+    <div style="margin-top:16px;">
+      <div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:600;">追加後のアカウント設定画面（モック）</div>
+      <div class="mock-settings-wrap">
+        <div class="mock-appbar">
+          <span class="mock-appbar-title">アカウント設定</span>
+        </div>
+        <div class="mock-section-group">
+          <div class="mock-section-title">プロフィール設定</div>
+          <div class="mock-profile-row">
+            <div class="mock-avatar-sm">た</div>
+            <div class="mock-text-sm">田中 太郎 / tanaka@example.com</div>
+          </div>
+        </div>
+        <div class="mock-section-group" style="border: 2px solid #10b981;">
+          <div class="mock-section-title" style="color: #059669;">外観 ← ここに追加（AC1）</div>
+          <div class="mock-segment-bar">
+            <div class="mock-segment selected">システム連動</div>
+            <div class="mock-segment unselected">ライト</div>
+            <div class="mock-segment unselected">ダーク</div>
+          </div>
+        </div>
+        <div class="mock-section-group">
+          <div class="mock-section-title">プロフィール画像</div>
+          <div class="mock-text-sm">アイコン画像セクション...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC別実装内容 -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">プロフィール設定セクションとプロフィール画像セクションの間に外観セクションを配置する（WEB版と同様の配置）</div>
+      </div>
+      <div class="ac-body">
+        <p>新規作成した <code>AppearanceSection</code> ウィジェットを <code>account_settings_page.dart</code> のProfileSectionとIconSectionの間に配置した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/account_settings_page.dart</span>
+            <span class="diff-stat">+4 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">122</span><span class="line-prefix"> </span><span>            const SizedBox(height: 20),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">123</span><span class="line-prefix"> </span><span>            // プロフィール設定セクション（表示名・言語）</span></div>
+            <div class="code-line line-ctx"><span class="line-num">124</span><span class="line-prefix"> </span><span>            AccountInfoSection(...),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">125</span><span class="line-prefix"> </span><span>            const SizedBox(height: 20),</span></div>
+            <div class="code-line line-add"><span class="line-num">126</span><span class="line-prefix">+</span><span>            // 外観設定（AC1: ProfileSection と IconSection の間）</span></div>
+            <div class="code-line line-add"><span class="line-num">127</span><span class="line-prefix">+</span><span>            const AppearanceSection(),</span></div>
+            <div class="code-line line-add"><span class="line-num">128</span><span class="line-prefix">+</span><span>            const SizedBox(height: 20),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">129</span><span class="line-prefix"> </span><span>            // AC4: プロフィール画像</span></div>
+            <div class="code-line line-ctx"><span class="line-num">130</span><span class="line-prefix"> </span><span>            IconSection(...),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">システム連動・ライト・ダークの3択から選択できる</div>
+      </div>
+      <div class="ac-body">
+        <p>Flutter Material の <code>SegmentedButton&lt;ThemeMode&gt;</code> を使って3択UIを実装した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/widgets/appearance_section.dart（新規作成）</span>
+            <span class="diff-stat">+74 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> 1</span><span class="line-prefix">+</span><span>class AppearanceSection extends ConsumerWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num"> 2</span><span class="line-prefix">+</span><span>  const AppearanceSection({super.key});</span></div>
+            <div class="code-line line-add"><span class="line-num"> 3</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num"> 4</span><span class="line-prefix">+</span><span>  @override</span></div>
+            <div class="code-line line-add"><span class="line-num"> 5</span><span class="line-prefix">+</span><span>  Widget build(BuildContext context, WidgetRef ref) {</span></div>
+            <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>    final themeModeAsync = ref.watch(themeModeNotifierProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num"> 7</span><span class="line-prefix">+</span><span>    final currentMode = themeModeAsync.valueOrNull ?? ThemeMode.system;</span></div>
+            <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span>    return Column(</span></div>
+            <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>      key: const Key('appearanceSection'),</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>      children: [</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>        Text(l10n.accountSettingsAppearanceSection),</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>        SegmentedButton&lt;ThemeMode&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>          segments: [</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>            ButtonSegment(value: ThemeMode.system, label: Text(l10n.accountSettingsAppearanceSystem)),</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>            ButtonSegment(value: ThemeMode.light, label: Text(l10n.accountSettingsAppearanceLight)),</span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>            ButtonSegment(value: ThemeMode.dark, label: Text(l10n.accountSettingsAppearanceDark)),</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>          ],</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>          selected: {currentMode},</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>          onSelectionChanged: (modes) {</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>            ref.read(themeModeNotifierProvider.notifier).setThemeMode(modes.first);</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>          },</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>        ),</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>      ],</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>テキストはすべてARBキー（<code>accountSettingsAppearanceSection</code> / <code>accountSettingsAppearanceSystem</code> / <code>accountSettingsAppearanceLight</code> / <code>accountSettingsAppearanceDark</code>）を使用。ハードコードなし。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">画面内で設定値を変更した場合、即座にアプリの外観が変更される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>MaterialApp.router</code> の <code>themeMode</code> プロパティを <code>themeModeNotifierProvider</code> の state に接続することで、選択変更が即座にアプリ全体のテーマに反映される。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/main.dart</span>
+            <span class="diff-stat">+4 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">53</span><span class="line-prefix"> </span><span>    final router = ref.watch(routerProvider);</span></div>
+            <div class="code-line line-ctx"><span class="line-num">54</span><span class="line-prefix"> </span><span>    final locale = ref.watch(localeNotifierProvider).valueOrNull;</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>    // テーマモードを watch して即時反映（AC3）</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>    final themeModeAsync = ref.watch(themeModeNotifierProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>    final themeMode = themeModeAsync.valueOrNull ?? ThemeMode.system;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">58</span><span class="line-prefix"> </span><span>    return MaterialApp.router(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">59</span><span class="line-prefix"> </span><span>      theme: AppTheme.light,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">60</span><span class="line-prefix"> </span><span>      darkTheme: AppTheme.dark,</span></div>
+            <div class="code-line line-del"><span class="line-num">61</span><span class="line-prefix">-</span><span>      themeMode: ThemeMode.system,</span></div>
+            <div class="code-line line-add"><span class="line-num">61</span><span class="line-prefix">+</span><span>      themeMode: themeMode,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">62</span><span class="line-prefix"> </span><span>      ...,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">63</span><span class="line-prefix"> </span><span>    );</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span><code>themeModeAsync.valueOrNull ?? ThemeMode.system</code> とすることで、初期化中（SharedPreferences読み込み前）も <code>ThemeMode.system</code> が適用され、読み込み完了後に選択済みの値に自動更新される。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">アプリを再起動しても選択した外観設定が保持される（デバイスローカルに保存）</div>
+      </div>
+      <div class="ac-body">
+        <p>新規作成した <code>ThemeModeNotifier</code>（AsyncNotifier）が SharedPreferences への読み書きを担当する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/theme/theme_mode_notifier.dart（新規作成）</span>
+            <span class="diff-stat">+61 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> 1</span><span class="line-prefix">+</span><span>class ThemeModeNotifier extends AsyncNotifier&lt;material.ThemeMode&gt; {</span></div>
+            <div class="code-line line-add"><span class="line-num"> 2</span><span class="line-prefix">+</span><span>  @override</span></div>
+            <div class="code-line line-add"><span class="line-num"> 3</span><span class="line-prefix">+</span><span>  Future&lt;material.ThemeMode&gt; build() async {</span></div>
+            <div class="code-line line-add"><span class="line-num"> 4</span><span class="line-prefix">+</span><span>    final prefs = await SharedPreferences.getInstance();</span></div>
+            <div class="code-line line-add"><span class="line-num"> 5</span><span class="line-prefix">+</span><span>    final code = prefs.getString('app_theme_mode');</span></div>
+            <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>    return _fromCode(code); // 未設定・不明値は ThemeMode.system</span></div>
+            <div class="code-line line-add"><span class="line-num"> 7</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; setThemeMode(material.ThemeMode mode) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    final prefs = await SharedPreferences.getInstance();</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    await prefs.setString('app_theme_mode', _toCode(mode));</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>    state = AsyncData(mode);</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>}</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>final themeModeNotifierProvider =</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>    AsyncNotifierProvider&lt;ThemeModeNotifier, material.ThemeMode&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>      ThemeModeNotifier.new,</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>    );</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>コード値（SYSTEM / LIGHT / DARK）は <code>lib/core/models/theme_mode.dart</code> の HwHub 生成済み enum を使用。Flutter material の <code>ThemeMode</code> と名前が衝突するため、<code>import ... as hw</code> / <code>import ... as material</code> エイリアスで解決した。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5（Nice to Have）</div>
+        <div class="ac-text">m_userの外観設定カラムと連動し、WEB版の設定と同期される</div>
+      </div>
+      <div class="ac-body">
+        <p>既存バックエンドAPI <code>PATCH /api/users/me/theme</code> を使って外観設定を同期する。
+        <code>AccountSettingsNotifier.updateThemeMode()</code> を追加し、<code>AppearanceSection</code> の選択変更時に呼び出す。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/account_settings/presentation/account_settings/account_settings_notifier.dart</span>
+            <span class="diff-stat">+11 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">280</span><span class="line-prefix">+</span><span>  /// テーマモードをバックエンドに同期する（AC5: Nice to Have）。</span></div>
+            <div class="code-line line-add"><span class="line-num">281</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; updateThemeMode({required String themeMode}) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">282</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">283</span><span class="line-prefix">+</span><span>      await _repo.updateThemeMode(themeMode: themeMode);</span></div>
+            <div class="code-line line-add"><span class="line-num">284</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">285</span><span class="line-prefix">+</span><span>      // AC5 は Nice to Have のため、バックエンド同期失敗は UI に表示しない</span></div>
+            <div class="code-line line-add"><span class="line-num">286</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">287</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>AC5は "Nice to Have" であり、バックエンド同期失敗をユーザーに通知することが逆にUXを悪化させるため、例外的に <code>catch (_) {}</code>（サイレント無視）を採用した。デバイスローカルの設定（SharedPreferences）は常に更新されるため、端末上の体験には影響しない。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note">
+      <div class="impl-note-label">判断1（名前衝突の解決）</div>
+      <p><strong>Flutter material の <code>ThemeMode</code> と HwHub 生成済み enum <code>ThemeMode</code> の名前衝突</strong><br>
+      <code>lib/core/models/theme_mode.dart</code> に HwHub 独自の <code>ThemeMode</code> enum が存在し、Flutter material の <code>ThemeMode</code> と名前が衝突する。
+      <code>import 'package:flutter/material.dart' as material;</code> と <code>import '../models/theme_mode.dart' as hw;</code> のエイリアスを使って解決した。</p>
+    </div>
+    <div class="impl-note">
+      <div class="impl-note-label">判断2（ThemeModeNotifier を AsyncNotifier で実装）</div>
+      <p><strong>SharedPreferences の読み取りは非同期のため <code>AsyncNotifier&lt;material.ThemeMode&gt;</code> を採用</strong><br>
+      <code>main.dart</code> では <code>AsyncData</code> の <code>valueOrNull ?? ThemeMode.system</code> でフォールバックを設定している（初期化中も <code>ThemeMode.system</code> が適用される）。</p>
+    </div>
+    <div class="impl-note">
+      <div class="impl-note-label">判断3（AC5 の例外処理）</div>
+      <p><strong>バックエンド同期失敗を UI に表示しないために例外的に <code>catch (_) {}</code> を採用</strong><br>
+      通常 <code>catch (_) {}</code>（握りつぶし）は禁止だが、AC5 は明示的に "Nice to Have" であり、失敗通知がむしろユーザー体験を悪化させる。デバイスローカルの設定（ThemeModeNotifier）は常に成功するため、実害はない。</p>
+    </div>
+    <div class="impl-note">
+      <div class="impl-note-label">判断4（AppearanceSection のウィジェットテスト追加）</div>
+      <p><strong>convention-reviewerの指摘を受けて <code>AppearanceSection</code> のウィジェットテストを追加した</strong><br>
+      SegmentedButton の初期選択確認・onSelectionChanged からの <code>setThemeMode()</code> 呼び出し確認・選択後の state 更新を検証するテストを追加した。<code>_FakeThemeModeNotifier</code> を使って capturedMode で呼び出し確認を行う設計。</p>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>アカウント設定画面を開くと「外観」セクションが「プロフィール設定」と「プロフィール画像」の間に表示されること</strong>
+          <span>システム連動・ライト・ダークの3択SegmentedButtonが表示されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>「ライト」を選択した瞬間にアプリ全体がライトテーマに切り替わること</strong>
+          <span>SegmentedButtonを押した瞬間（保存ボタン押下なし）に即時反映されるか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>「ダーク」を選択した後にアプリを完全に終了・再起動しても「ダーク」が選択されたままになること</strong>
+          <span>SharedPreferencesへの永続化が機能しているか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>「システム連動」を選択したとき、OS設定に追従してテーマが切り替わること</strong>
+          <span>OSのダーク/ライト設定を変えてアプリが連動するか確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>（AC5）WEB版のアカウント設定で外観を「ダーク」に変更し、モバイルでも「ダーク」が同期されること</strong>
+          <span>モバイルアプリを再ログイン（またはアプリ再起動後のバックエンド同期）後に設定値が揃うか確認</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 改修スコープ確認 -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>lib/core/theme/theme_mode_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ThemeModeNotifier（AsyncNotifier）新規作成。SharedPreferences への読み書き管理</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/account_settings/presentation/account_settings/widgets/appearance_section.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>AppearanceSection ウィジェット新規作成。SegmentedButton 3択UI</td>
+      </tr>
+      <tr>
+        <td><code>lib/main.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>MaterialApp.router の themeMode を themeModeNotifierProvider に接続（AC3 即時反映）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/account_settings/presentation/account_settings/account_settings_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>AppearanceSection の配置追加（ProfileSection と IconSection の間）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/account_settings/presentation/account_settings/account_settings_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>updateThemeMode() メソッド追加（AC5 バックエンド同期）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/account_settings/data/account_settings_repository.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>updateThemeMode() メソッド追加（PATCH /api/users/me/theme）</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb</code> / <code>app_en.arb</code> / <code>app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>accountSettingsAppearanceSection / System / Light / Dark の4キーを追加（ja/en/es）</td>
+      </tr>
+      <tr>
+        <td><code>lib/core/models/theme_mode.dart</code></td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>HwHub 生成済み enum（SYSTEM/LIGHT/DARK）。既存のまま使用</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/account_settings/presentation/account_settings/widgets/</code>（他ウィジェット）</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>icon_section / account_info_section 等は変更なし。配置順のみ page.dart で調整</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

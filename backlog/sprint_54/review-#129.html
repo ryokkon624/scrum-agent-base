@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 54 Review — #129 アカウント設定画面でGoogle連携後にm_userのauth_providerが更新されない</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #fef2f2; color: #991b1b; }
+  .badge-bug { background: #fef2f2; color: #b91c1c; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* 発生事象 */
+  .symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .symptom-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; }
+  .symptom-box .sym-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .sym-label-bad { color: #b91c1c; }
+  .sym-label-good { color: #166534; }
+  .mock-card { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .mock-card-title { font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-section { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+  .mock-section:last-child { border-bottom: none; }
+  .mock-section-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px; }
+  .mock-section-bad { display: inline-block; background: #fef2f2; color: #b91c1c; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 3px; margin: 2px 0; }
+  .mock-section-good { display: inline-block; background: #f0fdf4; color: #166534; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 3px; margin: 2px 0; }
+  .mock-section-neutral { display: inline-block; background: #f3f4f6; color: #6b7280; font-size: 11px; padding: 2px 8px; border-radius: 3px; margin: 2px 0; }
+
+  /* 原因分析 */
+  .cause-box { background: white; border: 1px solid #fca5a5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .cause-header { background: #fef2f2; padding: 12px 18px; display: flex; align-items: center; gap: 8px; }
+  .cause-header .icon { font-size: 16px; }
+  .cause-header .title { font-size: 13px; font-weight: 700; color: #991b1b; }
+  .cause-body { padding: 16px 18px; }
+  .cause-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .cause-body ul { font-size: 13px; color: #4b5563; padding-left: 20px; margin-bottom: 12px; }
+  .cause-body li { margin-bottom: 6px; }
+
+  .mismatch-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  .mismatch-table th { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mismatch-table td { padding: 8px 12px; border: 1px solid #e5e5e5; }
+  .mismatch-table .code { font-family: 'SF Mono', 'Fira Code', monospace; }
+  .mismatch-table .issue { background: #fef2f2; }
+  .mismatch-table .fix { background: #f0fdf4; }
+  .arrow-cell { text-align: center; color: #22c55e; font-weight: 700; }
+
+  /* Code blocks */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; flex: 1; }
+  .ac-body { padding: 14px 18px; font-size: 13px; color: #4b5563; }
+
+  /* Verify */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Regression */
+  .regression-box { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .regression-box p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+  .test-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; align-items: flex-start; }
+  .test-item:last-child { border-bottom: none; }
+  .test-icon { color: #22c55e; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .test-name { color: #374151; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+  /* impl notes */
+  .impl-note { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px 18px; }
+  .impl-note-item { padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: #4b5563; }
+  .impl-note-item:last-child { border-bottom: none; }
+  .impl-note-item strong { color: #1a1a1a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 54 Review · Bug Fix</div>
+  <h1>#129 — アカウント設定画面でGoogle連携後に<br>m_userのauth_providerが更新されない</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 54</span>
+    <span class="badge badge-issue">#129</span>
+    <span class="badge badge-bug">bug</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- 発生事象 -->
+  <section>
+    <h2>発生事象</h2>
+    <div class="symptom-grid">
+      <div class="symptom-box">
+        <div class="sym-label sym-label-bad">修正前（バグあり）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">アカウント設定（Google連携後）</div>
+          <div class="mock-section">
+            <div class="mock-section-title">パスワード変更</div>
+            <span class="mock-section-bad">引き続き表示される（非表示になるはず）</span>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-title">Google連携</div>
+            <span class="mock-section-bad">「連携する」ボタンのまま（連携済みに切り替わらない）</span>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-title">DB (m_user)</div>
+            <span class="mock-section-bad">auth_provider が未更新のまま</span>
+          </div>
+        </div>
+      </div>
+      <div class="symptom-box">
+        <div class="sym-label sym-label-good">修正後（正常）</div>
+        <div class="mock-card">
+          <div class="mock-card-title">アカウント設定（Google連携後）</div>
+          <div class="mock-section">
+            <div class="mock-section-title">パスワード変更</div>
+            <span class="mock-section-good">非表示（Google専用アカウントのため）</span>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-title">Google連携</div>
+            <span class="mock-section-good">「連携済み」バッジに即座に切り替わる</span>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-title">DB (m_user)</div>
+            <span class="mock-section-good">auth_provider / auth_provider_id が正しく更新される</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原因分析 -->
+  <section>
+    <h2>原因分析</h2>
+    <div class="cause-box">
+      <div class="cause-header">
+        <span class="icon">&#128269;</span>
+        <span class="title">GoogleSignIn の serverClientId 未設定 + エラー握りつぶし</span>
+      </div>
+      <div class="cause-body">
+        <p><code>google_link_section.dart</code> の <code>_handleLink</code> で <code>GoogleSignIn</code> を初期化する際、<code>serverClientId</code>（バックエンドのGoogle Web Client ID）が指定されていなかった。google_sign_in v6 系では <code>serverClientId</code> を渡さないと、取得される <code>idToken</code> の <code>aud</code> がモバイルアプリのクライアントIDになり、バックエンドの <code>tokeninfo</code> 検証で期待する sub と一致しないため Google 連携 API が失敗する。</p>
+        <p>さらに <code>on Exception catch (_)</code> でエラーを握りつぶしていたため、ユーザーには成功したように見えてしまい、結果として <code>m_user.auth_provider</code> が更新されないまま画面のセクション表示も切り替わらなかった。</p>
+        <table class="mismatch-table">
+          <tr>
+            <th>問題箇所</th>
+            <th>修正前（問題のある実装）</th>
+            <th></th>
+            <th>修正後（正しい実装）</th>
+          </tr>
+          <tr>
+            <td>GoogleSignIn の初期化</td>
+            <td class="code issue">serverClientId 未指定<br>→ idToken.aud がモバイルID</td>
+            <td class="arrow-cell">&#8594;</td>
+            <td class="code fix">AppConfig.googleServerClientId を設定<br>→ バックエンドで検証可能な idToken</td>
+          </tr>
+          <tr>
+            <td>エラーハンドリング</td>
+            <td class="code issue">on Exception catch (_) {}<br>→ エラーを握りつぶし</td>
+            <td class="arrow-cell">&#8594;</td>
+            <td class="code fix">AppException → AppSnackBar 表示<br>予期しないエラー → 汎用エラー通知</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改修内容 -->
+  <section>
+    <h2>改修内容</h2>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/core/config/app_config.dart</span>
+        <span class="diff-stat">+7 / -0</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num"> 7</span><span class="line-prefix"> </span><span>  static const String baseUrl = String.fromEnvironment(</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 8</span><span class="line-prefix"> </span><span>    'BASE_URL',</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 9</span><span class="line-prefix"> </span><span>    defaultValue: 'http://10.0.2.2:8080',</span></div>
+        <div class="code-line line-ctx"><span class="line-num">10</span><span class="line-prefix"> </span><span>  );</span></div>
+        <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span></span></div>
+        <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>  // flutter run --dart-define=GOOGLE_SERVER_CLIENT_ID=xxx で設定する</span></div>
+        <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>  // Google Cloud Console の OAuth 2.0 Web クライアントID（バックエンド検証に使用）</span></div>
+        <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>  static const String googleServerClientId = String.fromEnvironment(</span></div>
+        <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>    'GOOGLE_SERVER_CLIENT_ID',</span></div>
+        <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>    defaultValue: '',</span></div>
+        <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>  );</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span><code>dart-define</code> 経由で実機ビルド時に設定する。空の場合は <code>null</code> を渡してデフォルト動作にフォールバック。</span>
+      </div>
+    </div>
+
+    <div class="file-change">
+      <div class="file-name">
+        <span>lib/features/account_settings/presentation/account_settings/widgets/google_link_section.dart</span>
+        <span class="diff-stat">+29 / -12</span>
+      </div>
+      <div class="code-block">
+        <div class="code-line line-ctx"><span class="line-num"> 1</span><span class="line-prefix"> </span><span>/// AC6: Google アカウント連携セクション（@gmail.com のみ表示）</span></div>
+        <div class="code-line line-del"><span class="line-num"> 2</span><span class="line-prefix">-</span><span>class GoogleLinkSection extends StatelessWidget {</span></div>
+        <div class="code-line line-add"><span class="line-num"> 2</span><span class="line-prefix">+</span><span>class GoogleLinkSection extends StatefulWidget {</span></div>
+        <div class="code-line line-ctx"><span class="line-num"> 3</span><span class="line-prefix"> </span><span>  ...</span></div>
+        <div class="code-line line-add"><span class="line-num"> 4</span><span class="line-prefix">+</span><span>  @override</span></div>
+        <div class="code-line line-add"><span class="line-num"> 5</span><span class="line-prefix">+</span><span>  State&lt;GoogleLinkSection&gt; createState() =&gt; _GoogleLinkSectionState();</span></div>
+        <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>}</span></div>
+        <div class="code-line line-add"><span class="line-num"> 7</span><span class="line-prefix">+</span><span></span></div>
+        <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span>class _GoogleLinkSectionState extends State&lt;GoogleLinkSection&gt; {</span></div>
+        <div class="code-line line-del"><span class="line-num"> 9</span><span class="line-prefix">-</span><span>  Future&lt;void&gt; _handleLink(BuildContext context) async {</span></div>
+        <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; _handleLink() async {</span></div>
+        <div class="code-line line-ctx"><span class="line-num">10</span><span class="line-prefix"> </span><span>    try {</span></div>
+        <div class="code-line line-del"><span class="line-num">11</span><span class="line-prefix">-</span><span>      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);</span></div>
+        <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>      final googleSignIn = GoogleSignIn(</span></div>
+        <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>        scopes: ['email', 'profile'],</span></div>
+        <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>        serverClientId: AppConfig.googleServerClientId.isEmpty</span></div>
+        <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>            ? null</span></div>
+        <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>            : AppConfig.googleServerClientId,</span></div>
+        <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>      );</span></div>
+        <div class="code-line line-ctx"><span class="line-num">17</span><span class="line-prefix"> </span><span>      final account = await googleSignIn.signIn();</span></div>
+        <div class="code-line line-ctx"><span class="line-num">18</span><span class="line-prefix"> </span><span>      if (account == null) return; // キャンセル</span></div>
+        <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>      final auth = await account.authentication;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">20</span><span class="line-prefix"> </span><span>      final idToken = auth.idToken;</span></div>
+        <div class="code-line line-ctx"><span class="line-num">21</span><span class="line-prefix"> </span><span>      if (idToken == null) { debugPrint('Google sign-in: idToken was null'); return; }</span></div>
+        <div class="code-line line-del"><span class="line-num">22</span><span class="line-prefix">-</span><span>      await onLink(idToken);</span></div>
+        <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>      await widget.onLink(idToken);</span></div>
+        <div class="code-line line-del"><span class="line-num">23</span><span class="line-prefix">-</span><span>    } on Exception catch (_) {</span></div>
+        <div class="code-line line-del"><span class="line-num">24</span><span class="line-prefix">-</span><span>      debugPrint('Google Sign-In error occurred');</span></div>
+        <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>    } on AppException catch (e) {</span></div>
+        <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>      AppSnackBar.showError(e.message);</span></div>
+        <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+        <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>      debugPrint('Google sign-in failed');</span></div>
+        <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      if (mounted) {</span></div>
+        <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>        final l10n = AppLocalizations.of(context);</span></div>
+        <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>        AppSnackBar.showError(l10n.errorUnexpected);</span></div>
+        <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>      }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">31</span><span class="line-prefix"> </span><span>    }</span></div>
+        <div class="code-line line-ctx"><span class="line-num">32</span><span class="line-prefix"> </span><span>  }</span></div>
+      </div>
+      <div class="annotation">
+        <span class="annotation-icon">&#128161;</span>
+        <span>エラーハンドリングを mobile-conventions の StatefulWidget event handler パターンに準拠させた。<code>AppException</code>（業務エラー）はメッセージをそのまま表示、予期しない例外は <code>errorUnexpected</code> の汎用メッセージを表示。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実装メモ -->
+  <section>
+    <h2>実装メモ（仕様外の判断・変更・妥協点）</h2>
+    <div class="impl-note">
+      <div class="impl-note-item">
+        <strong>AppConfig.googleServerClientId のデフォルト値を空文字列に設定</strong>: 開発環境では <code>flutter run --dart-define=GOOGLE_SERVER_CLIENT_ID=xxx</code> で設定する想定。空の場合は <code>null</code> を渡して従来通りの動作にフォールバックする設計にした。
+      </div>
+      <div class="impl-note-item">
+        <strong>GoogleLinkSection を StatefulWidget に変換</strong>: エラーハンドリングで <code>mounted</code> チェックと <code>context</code> 参照が必要なため StatefulWidget が必要。<code>_errorMessage</code> などの State 管理は不要で、AppSnackBar でエラー表示するためシンプルなまま。
+      </div>
+      <div class="impl-note-item">
+        <strong>GoogleSignIn の _handleLink のウィジェットテスト</strong>: Google sign-in 自体はプラットフォームプラグインのためウィジェットテストでは直接検証できない。既存テスト（表示確認）は引き続き通ることを確認した。
+      </div>
+    </div>
+  </section>
+
+  <!-- AC確認 -->
+  <section>
+    <h2>AC確認</h2>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">Google連携後にm_user.auth_provider / auth_provider_id が正しく更新される</div>
+      </div>
+      <div class="ac-body"><code>serverClientId</code> を設定したことで、バックエンドの <code>tokeninfo</code> 検証が成功し、<code>POST /api/users/me/google/link/mobile</code> が正常に処理されて DB が更新されるようになった。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">Google連携完了時に即座にパスワード変更セクションが非表示になる</div>
+      </div>
+      <div class="ac-body">API が成功すると Notifier が <code>state</code> を更新し（<code>isLinked: true</code>）、パスワード変更セクションの表示条件（<code>!state.isGoogleLinked</code>）を満たさなくなるため非表示に切り替わる。</div>
+    </div>
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">&#10003;</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">Google連携完了時に即座にGoogle連携セクションが「連携済み」表示に切り替わる</div>
+      </div>
+      <div class="ac-body"><code>GoogleLinkSection</code> の <code>widget.isLinked</code> が <code>true</code> になると <code>_buildLinked()</code> が呼ばれ、「連携済み」バッジが表示される。Notifier の state 更新と連動して即座に反映される。</div>
+    </div>
+  </section>
+
+  <!-- 動作確認 -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>アカウント設定画面でGoogle連携ボタンを押下し、Google認証を完了する</strong>
+          <span>連携後に「連携済み」バッジが表示され、パスワード変更セクションが非表示になることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>DB で m_user.auth_provider / auth_provider_id が更新されていること</strong>
+          <span>Google連携後に管理コンソール等でユーザーレコードを確認し、auth_provider が更新されていることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>連携失敗時（例: 通信エラー）にスナックバーでエラーメッセージが表示されること</strong>
+          <span>エラーが握りつぶされず、ユーザーに失敗が通知されることを確認（機内モード等で再現可能）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 再発防止 -->
+  <section>
+    <h2>再発防止</h2>
+    <div class="regression-box">
+      <p>根本原因は「Google認証の設定不足（serverClientId 未指定）」と「エラーの握りつぶし」の2点。StatefulWidget event handler パターンを適用してエラーを適切にユーザーに通知するようにした。</p>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">google_link_section_test.dart</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">GoogleLinkSection が StatefulWidget に変換された後も既存の表示確認テスト（isLinked: true/false のバッジ・ボタン表示）が引き続き通ることを確認</div>
+        </div>
+      </div>
+      <div class="test-item">
+        <span class="test-icon">&#10003;</span>
+        <div>
+          <div class="test-name">mobile-conventions（エラーハンドリングルール）</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px;">StatefulWidget event handler 内での <code>on AppException</code> / 汎用エラー <code>catch (_)</code> パターンが long_term.md に記録済みのため、以後同じ実装ミスを防ぐ</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

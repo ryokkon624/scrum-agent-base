@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 44 Review — #123 共通ヘッダーのユーザーアイコンを実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #ecfdf5; color: #065f46; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Screen mock */
+  .screen-mock { display: inline-flex; flex-direction: column; width: 280px; border: 1.5px solid #e5e5e5; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .mock-appbar { background: white; border-bottom: 1px solid #f0f0f0; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .mock-title { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+  .mock-actions { display: flex; align-items: center; gap: 8px; }
+  .mock-bell { width: 24px; height: 24px; background: #f0fdf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .mock-avatar { width: 28px; height: 28px; background: #065f46; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
+  .mock-avatar.photo { background: linear-gradient(135deg, #86efac, #22c55e); }
+  .mock-body { padding: 16px; background: #f8f7f5; min-height: 80px; font-size: 12px; color: #6b7280; }
+  .mock-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .mock-grid { display: flex; gap: 16px; justify-content: center; margin: 16px 0; }
+
+  /* Popup mock */
+  .mock-popup { background: white; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); width: 140px; position: relative; margin: 8px auto; }
+  .mock-popup-item { padding: 10px 16px; font-size: 13px; color: #1a1a1a; border-bottom: 1px solid #f0f0f0; }
+  .mock-popup-item:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 44 Review</div>
+  <h1>#123 — 共通ヘッダーのユーザーアイコンを実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 44</span>
+    <span class="badge badge-issue">#123</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>なぜこの実装が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">課題</div>
+      <p>各メイン画面のヘッダーにユーザーアイコンがなく、設定・ログアウトへの導線がなかった。ホーム画面は <code>HomeAppBar</code> に <code>Icons.account_circle_outlined</code> のプレースホルダを置いてタップで SnackBar を出すだけ、他画面は標準 <code>AppBar</code> でアイコン未配置だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>ホーム: <code>HomeAppBar</code>（プレースホルダのみ）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>家事分担・My Tasks・買い物・通知: 標準 AppBar（アイコンなし）</div>
+        <div class="flow-item"><span class="dot dot-red"></span><code>AuthUser</code> は iconUrl を持たない</div>
+        <div class="flow-item"><span class="dot dot-red"></span>画面ごとに AppBar の実装が個別</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>全メイン画面: <code>MainAppBar</code>（共通・タイトル可変）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>右端: 通知ベル + <code>HeaderUserIcon</code>（タップでポップオーバー）</div>
+        <div class="flow-item"><span class="dot dot-green"></span><code>AuthUser</code> に <code>iconUrl</code> 追加・<code>fromJson</code> 対応</div>
+        <div class="flow-item"><span class="dot dot-green"></span>設定・ログアウトへの素早いアクセスが可能</div>
+      </div>
+    </div>
+
+    <!-- Screen mock -->
+    <div style="margin-top: 20px; text-align: center;">
+      <div class="mock-label">実装後のヘッダーイメージ（6画面共通）</div>
+      <div class="mock-grid">
+        <div>
+          <div style="font-size: 10px; color: #888; margin-bottom: 6px;">プロフィール画像あり</div>
+          <div class="screen-mock">
+            <div class="mock-appbar">
+              <div class="mock-title">ホーム</div>
+              <div class="mock-actions">
+                <div class="mock-bell">&#128276;</div>
+                <div class="mock-avatar photo"></div>
+              </div>
+            </div>
+            <div class="mock-body">
+              <div style="text-align: center; color: #aaa; padding: 12px 0; font-size: 11px;">画面コンテンツ</div>
+            </div>
+          </div>
+          <div class="mock-popup" style="margin-top: 4px;">
+            <div class="mock-popup-item">設定</div>
+            <div class="mock-popup-item">ログアウト</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 10px; color: #888; margin-bottom: 6px;">プロフィール画像なし（イニシャル）</div>
+          <div class="screen-mock">
+            <div class="mock-appbar">
+              <div class="mock-title">My Tasks</div>
+              <div class="mock-actions">
+                <div class="mock-bell">&#128276;</div>
+                <div class="mock-avatar">田中</div>
+              </div>
+            </div>
+            <div class="mock-body">
+              <div style="text-align: center; color: #aaa; padding: 12px 0; font-size: 11px;">画面コンテンツ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">メイン画面（#10〜#13・#16・#17）のヘッダー右端にユーザーアイコンが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>MainAppBar</code>（<code>lib/core/ui/main_app_bar.dart</code>）を新規作成し、<code>actions</code> に <code>NotificationBell</code> と <code>HeaderUserIcon</code> を配置。ホーム・家事分担・My Tasks・買い物・通知センターの5画面で <code>AppBar</code> を <code>MainAppBar</code> に差し替え。設定トップ（#17）は #120 で新規作成時に採用。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/ui/main_app_bar.dart</span>
+            <span class="diff-stat">+35 新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> 1</span><span class="line-prefix">+</span><span>class MainAppBar extends StatelessWidget implements PreferredSizeWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num"> 2</span><span class="line-prefix">+</span><span>  const MainAppBar({super.key, required this.title});</span></div>
+            <div class="code-line line-add"><span class="line-num"> 3</span><span class="line-prefix">+</span><span>  final String title;</span></div>
+            <div class="code-line line-add"><span class="line-num"> 4</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num"> 5</span><span class="line-prefix">+</span><span>  @override</span></div>
+            <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>  Size get preferredSize => const Size.fromHeight(kToolbarHeight);</span></div>
+            <div class="code-line line-add"><span class="line-num"> 7</span><span class="line-prefix">+</span><span></span></div>
+            <div class="code-line line-add"><span class="line-num"> 8</span><span class="line-prefix">+</span><span>  @override</span></div>
+            <div class="code-line line-add"><span class="line-num"> 9</span><span class="line-prefix">+</span><span>  Widget build(BuildContext context) {</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    final colors = Theme.of(context).extension&lt;AppColorScheme&gt;()!;</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    return AppBar(</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>      backgroundColor: colors.surfaceCard,</span></div>
+            <div class="code-line line-add"><span class="line-num">13</span><span class="line-prefix">+</span><span>      elevation: 0,</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>      title: Text(title, style: ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">15</span><span class="line-prefix">+</span><span>      actions: const [NotificationBell(), HeaderUserIcon()],</span></div>
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>}</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>PreferredSizeWidget</code> を実装することで <code>Scaffold.appBar</code> に型安全に渡せる。タイトル文字列だけ可変にし、右端の actions は全画面統一にすることで追加・変更が一箇所で済む設計。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/home/presentation/home_page.dart（代表例）</span>
+            <span class="diff-stat">+1 / -2</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">27</span><span class="line-prefix">-</span><span>      appBar: const HomeAppBar(),</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      appBar: MainAppBar(title: l10n.pageTitleHome),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>家事分担・My Tasks・買い物・通知センターの4画面も同様に差し替え済み。すべてタイトルだけ変えて <code>MainAppBar</code> を使う形。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">アイコンは現在ログイン中のユーザーのプロフィール画像を円形表示し、未設定の場合は m_user.display_name の先頭2文字を表示する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>AuthUser</code> に <code>iconUrl</code> フィールドを追加し、<code>fromJson</code> でバックエンドの <code>/me</code> レスポンスからパース。<code>HeaderUserIcon</code> では既存の <code>UserAvatar</code> ウィジェットを再利用。<code>iconUrl</code> があれば画像表示、<code>null</code> ならイニシャル（先頭2文字まで）表示のロジックは <code>UserAvatar</code> 実装済みのため追加コード不要。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/models/auth_user.dart</span>
+            <span class="diff-stat">+4 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num"> 2</span><span class="line-prefix"> </span><span>  const AuthUser({</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> 3</span><span class="line-prefix"> </span><span>    required this.userId,</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> 4</span><span class="line-prefix"> </span><span>    required this.email,</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> 5</span><span class="line-prefix"> </span><span>    required this.displayName,</span></div>
+            <div class="code-line line-add"><span class="line-num"> 6</span><span class="line-prefix">+</span><span>    this.iconUrl,</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> 7</span><span class="line-prefix"> </span><span>  });</span></div>
+            <div class="code-line line-ctx"><span class="line-num"> 8</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-ctx"><span class="line-num"> 9</span><span class="line-prefix"> </span><span>  final int userId;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">10</span><span class="line-prefix"> </span><span>  final String email;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">11</span><span class="line-prefix"> </span><span>  final String displayName;</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>  final String? iconUrl;</span></div>
+            <div class="code-line line-ctx"><span class="line-num">13</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-ctx"><span class="line-num">14</span><span class="line-prefix"> </span><span>  factory AuthUser.fromJson(Map&lt;String, dynamic&gt; json) =&gt; AuthUser(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">15</span><span class="line-prefix"> </span><span>    userId: json['userId'] as int,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">16</span><span class="line-prefix"> </span><span>    email: json['email'] as String,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">17</span><span class="line-prefix"> </span><span>    displayName: json['displayName'] as String,</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>    iconUrl: json['iconUrl'] as String?,</span></div>
+            <div class="code-line line-ctx"><span class="line-num">19</span><span class="line-prefix"> </span><span>  );</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>バックエンドの <code>UserProfileResponse.iconUrl</code> は nullable。Flutter 側も <code>String?</code> で受けることで、未設定ユーザーでも自然に <code>UserAvatar</code> のイニシャル表示にフォールバックする。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">タップで「設定」「ログアウト」のポップオーバーメニューが表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>HeaderUserIcon</code> ウィジェットを新規作成。<code>GestureDetector.onTapUp</code> でタップ位置（<code>globalPosition</code>）を取得し、Material 標準の <code>showMenu()</code> でポップオーバーを表示。タップ位置を <code>RelativeRect</code> に変換することでアイコンの右下に自然に表示される。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/ui/header_user_icon.dart（抜粋）</span>
+            <span class="diff-stat">+118 新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; _showMenu(BuildContext context, WidgetRef ref,</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>      Offset position, AppLocalizations l10n) async {</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>    final RelativeRect relativeRect = RelativeRect.fromRect(</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>      Rect.fromPoints(position, position),</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>      Offset.zero &amp; overlay.size,</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>    final selected = await showMenu&lt;_MenuAction&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>      context: context, position: relativeRect,</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>      items: [</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>        PopupMenuItem(value: _MenuAction.settings,</span></div>
+            <div class="code-line line-add"><span class="line-num">55</span><span class="line-prefix">+</span><span>            child: Text(l10n.headerUserIconMenuSettings)),</span></div>
+            <div class="code-line line-add"><span class="line-num">56</span><span class="line-prefix">+</span><span>        PopupMenuItem(value: _MenuAction.logout,</span></div>
+            <div class="code-line line-add"><span class="line-num">57</span><span class="line-prefix">+</span><span>            child: Text(l10n.headerUserIconMenuLogout)),</span></div>
+            <div class="code-line line-add"><span class="line-num">58</span><span class="line-prefix">+</span><span>      ],</span></div>
+            <div class="code-line line-add"><span class="line-num">59</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-add"><span class="line-num">60</span><span class="line-prefix">+</span><span>    if (!context.mounted) return;</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>Material 標準の <code>showMenu()</code>（<code>PopupMenuButton</code> が内部で使っているのと同じ実装）を採用。影・アニメーション・バリア（タップ外で閉じる）がすべて組み込み済みのため追加実装不要。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">「設定」タップで #18 アカウント設定に遷移する（→ 設定トップ #17 への遷移）</div>
+      </div>
+      <div class="ac-body">
+        <p>ポップオーバーで「設定」が選択されたとき <code>context.go(AppRoutes.settings)</code> を呼び出す。これにより設定トップ画面（#17）に遷移する。設定トップは #120 で実装済み。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/ui/header_user_icon.dart（switch文部分）</span>
+            <span class="diff-stat"></span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">79</span><span class="line-prefix">+</span><span>    switch (selected) {</span></div>
+            <div class="code-line line-add"><span class="line-num">80</span><span class="line-prefix">+</span><span>      case _MenuAction.settings:</span></div>
+            <div class="code-line line-add"><span class="line-num">81</span><span class="line-prefix">+</span><span>        context.go(AppRoutes.settings);</span></div>
+            <div class="code-line line-add"><span class="line-num">82</span><span class="line-prefix">+</span><span>      case _MenuAction.logout:</span></div>
+            <div class="code-line line-add"><span class="line-num">83</span><span class="line-prefix">+</span><span>        await _confirmLogout(context, ref, l10n);</span></div>
+            <div class="code-line line-add"><span class="line-num">84</span><span class="line-prefix">+</span><span>      case null:</span></div>
+            <div class="code-line line-add"><span class="line-num">85</span><span class="line-prefix">+</span><span>        break;</span></div>
+            <div class="code-line line-add"><span class="line-num">86</span><span class="line-prefix">+</span><span>    }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">「ログアウト」タップで確認ダイアログを表示し、確認後にローカルの認証情報を削除してログイン画面（#1）に遷移する</div>
+      </div>
+      <div class="ac-body">
+        <p>「ログアウト」選択で <code>_confirmLogout()</code> を呼び出し、<code>AlertDialog</code> を表示。「はい」タップで <code>AuthNotifier.logout()</code> を呼び出すとトークン削除・<code>AuthUnauthenticated</code> への切り替えが行われ、既存の go_router redirect が <code>/login</code> に自動的に誘導する。ダイアログは <code>builder: (dialogContext)</code> で明示的に受け取り <code>Navigator.pop(dialogContext)</code> を使うことで go_router 環境でページが意図せず閉じる問題を回避。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/core/ui/header_user_icon.dart（_confirmLogout メソッド）</span>
+            <span class="diff-stat"></span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> 94</span><span class="line-prefix">+</span><span>    final confirmed = await showDialog&lt;bool&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num"> 95</span><span class="line-prefix">+</span><span>      context: context,</span></div>
+            <div class="code-line line-add"><span class="line-num"> 96</span><span class="line-prefix">+</span><span>      builder: (dialogContext) =&gt; AlertDialog(</span></div>
+            <div class="code-line line-add"><span class="line-num"> 97</span><span class="line-prefix">+</span><span>        title: Text(l10n.headerUserIconLogoutConfirmTitle),</span></div>
+            <div class="code-line line-add"><span class="line-num"> 98</span><span class="line-prefix">+</span><span>        content: Text(l10n.headerUserIconLogoutConfirmMessage),</span></div>
+            <div class="code-line line-add"><span class="line-num"> 99</span><span class="line-prefix">+</span><span>        actions: [</span></div>
+            <div class="code-line line-add"><span class="line-num">100</span><span class="line-prefix">+</span><span>          TextButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">101</span><span class="line-prefix">+</span><span>            onPressed: () =&gt; Navigator.pop(dialogContext, false),</span></div>
+            <div class="code-line line-add"><span class="line-num">102</span><span class="line-prefix">+</span><span>            child: Text(l10n.commonCancel)),</span></div>
+            <div class="code-line line-add"><span class="line-num">103</span><span class="line-prefix">+</span><span>          TextButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">104</span><span class="line-prefix">+</span><span>            onPressed: () =&gt; Navigator.pop(dialogContext, true),</span></div>
+            <div class="code-line line-add"><span class="line-num">105</span><span class="line-prefix">+</span><span>            child: Text(l10n.commonYes)),</span></div>
+            <div class="code-line line-add"><span class="line-num">106</span><span class="line-prefix">+</span><span>        ],</span></div>
+            <div class="code-line line-add"><span class="line-num">107</span><span class="line-prefix">+</span><span>      ),</span></div>
+            <div class="code-line line-add"><span class="line-num">108</span><span class="line-prefix">+</span><span>    );</span></div>
+            <div class="code-line line-add"><span class="line-num">109</span><span class="line-prefix">+</span><span>    if (confirmed == true &amp;&amp; context.mounted) {</span></div>
+            <div class="code-line line-add"><span class="line-num">110</span><span class="line-prefix">+</span><span>      await ref.read(authNotifierProvider.notifier).logout();</span></div>
+            <div class="code-line line-add"><span class="line-num">111</span><span class="line-prefix">+</span><span>    }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>builder: (dialogContext)</code> で明示的にダイアログの context を受け取り <code>Navigator.pop(dialogContext)</code> を使う。<code>context</code>（外側）を使うと go_router 環境ではページごと閉じてしまうためこの書き方は必須（long_term.md のハマりポイント）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- レビュー指摘対応（パフォーマンス改善）-->
+    <div class="ac-card" style="border-color: #dbeafe;">
+      <div class="ac-header" style="background: #eff6ff;">
+        <div class="ac-check done" style="background: #dbeafe; color: #1e40af;">+</div>
+        <div class="ac-num" style="color: #3b82f6;">追加対応</div>
+        <div class="ac-text" style="color: #1e3a8a;">レビュー指摘対応: 家事分担画面の assigneeIconUrl 取得を O(n) → O(1) に改善</div>
+      </div>
+      <div class="ac-body">
+        <p>レビューで指摘された通り、リストモード・スワイプモードの両方で <code>state.members.where(...).firstOrNull?.iconUrl</code>（O(メンバー数)）をカード描画ごとに呼んでいた箇所を修正。<code>HouseworkAssignState</code> に <code>memberIconUrls: Map&lt;int, String?&gt;</code> を追加し、<code>Notifier._load()</code> で一括計算することで O(1) lookup に変更。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/housework_assign/presentation/housework_assign_page.dart（リストモード）</span>
+            <span class="diff-stat">+3 / -4</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">178</span><span class="line-prefix">-</span><span>                      assigneeIconUrl: state.members</span></div>
+            <div class="code-line line-del"><span class="line-num">179</span><span class="line-prefix">-</span><span>                          .where((m) =&gt; m.userId == task.assigneeUserId)</span></div>
+            <div class="code-line line-del"><span class="line-num">180</span><span class="line-prefix">-</span><span>                          .firstOrNull</span></div>
+            <div class="code-line line-del"><span class="line-num">181</span><span class="line-prefix">-</span><span>                          ?.iconUrl,</span></div>
+            <div class="code-line line-add"><span class="line-num">178</span><span class="line-prefix">+</span><span>                      assigneeIconUrl: task.assigneeUserId != null</span></div>
+            <div class="code-line line-add"><span class="line-num">179</span><span class="line-prefix">+</span><span>                          ? state.memberIconUrls[task.assigneeUserId]</span></div>
+            <div class="code-line line-add"><span class="line-num">180</span><span class="line-prefix">+</span><span>                          : null,</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>スワイプモードも同様に修正。<code>_computeMemberIconUrls()</code> は <code>_computeMemberTaskCounts()</code> と同じパターンで <code>members.length</code> 分だけ一度ループして Map を作る（O(メンバー数)）。カード描画時は Map 参照のみで O(1)。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>全メイン画面（ホーム・家事分担・My Tasks・買い物・通知センター）のヘッダー右端にアイコンが表示されること</strong>
+          <span>通知ベルの右隣にユーザーアイコンが並んでいること。6画面すべてで確認。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>プロフィール画像を設定しているアカウントでログインすると画像が表示されること</strong>
+          <span>円形クロップされた画像が表示される。読み込み失敗時はイニシャルにフォールバックする。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>プロフィール画像未設定のアカウントでは displayName の先頭2文字（イニシャル）が表示されること</strong>
+          <span>例: 「田中花子」→「田中」が円形アバターに表示される。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>アイコンをタップすると「設定」「ログアウト」のポップオーバーメニューが右下に表示されること</strong>
+          <span>メニュー外をタップすると閉じること。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>「設定」タップで設定トップ画面（#17）に遷移すること</strong>
+          <span>#120 で実装済みの設定トップ画面が表示される。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>「ログアウト」タップで確認ダイアログが表示され、「キャンセル」で元の画面に戻ること</strong>
+          <span>ダイアログ表示中も背景の画面はそのまま残っている。</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">7</div>
+        <div class="verify-content">
+          <strong>確認ダイアログで「はい」をタップするとログイン画面に戻ること</strong>
+          <span>SecureStorage のトークンが削除され、再ログインを求められる。</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>core/ui/main_app_bar.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>メイン画面共通 AppBar（通知ベル + ユーザーアイコン）</td>
+      </tr>
+      <tr>
+        <td><code>core/ui/header_user_icon.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>タップでポップオーバーを表示するユーザーアイコン Widget</td>
+      </tr>
+      <tr>
+        <td><code>core/models/auth_user.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>iconUrl: String?</code> フィールド追加・<code>fromJson</code> 拡張</td>
+      </tr>
+      <tr>
+        <td><code>features/home/presentation/home_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>HomeAppBar</code> → <code>MainAppBar</code> 差し替え</td>
+      </tr>
+      <tr>
+        <td><code>features/housework_assign/presentation/housework_assign_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>AppBar</code> → <code>MainAppBar</code> 差し替え・iconUrl 参照を O(1) に変更</td>
+      </tr>
+      <tr>
+        <td><code>features/tasks/presentation/my_tasks_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>AppBar</code> → <code>MainAppBar</code> 差し替え</td>
+      </tr>
+      <tr>
+        <td><code>features/shopping/presentation/shopping_list_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>AppBar</code> → <code>MainAppBar</code> 差し替え</td>
+      </tr>
+      <tr>
+        <td><code>features/notifications/presentation/notification_center/notification_center_page.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>AppBar</code>（直書き） → <code>MainAppBar</code> 差し替え（16行 → 1行）</td>
+      </tr>
+      <tr>
+        <td><code>features/housework_assign/presentation/housework_assign_state.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>memberIconUrls: Map&lt;int, String?&gt;</code> フィールド追加・<code>copyWith</code> 拡張</td>
+      </tr>
+      <tr>
+        <td><code>features/housework_assign/presentation/housework_assign_notifier.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td><code>_computeMemberIconUrls()</code> 追加・<code>_load()</code> で事前計算</td>
+      </tr>
+      <tr>
+        <td><code>l10n/app_ja.arb</code> / <code>app_en.arb</code> / <code>app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>ポップオーバーメニュー・ダイアログ・設定画面向け i18n キーを追加</td>
+      </tr>
+      <tr>
+        <td><code>test/core/ui/header_user_icon_test.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td><code>HeaderUserIcon</code> ウィジェットテスト</td>
+      </tr>
+      <tr>
+        <td><code>test/core/ui/main_app_bar_test.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td><code>MainAppBar</code> ウィジェットテスト</td>
+      </tr>
+      <tr>
+        <td><code>features/home/presentation/widgets/home_app_bar.dart</code></td>
+        <td><span class="tag-unchanged">変更なし（廃止予定）</span></td>
+        <td>ファイルは残存。<code>home_page.dart</code> からの import を削除済みで未使用。</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

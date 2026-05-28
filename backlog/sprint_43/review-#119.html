@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 43 Review — #119 通知センターを実装する（画面#16）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; padding-top: 40px; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* Feature overview */
+  .feature-overview { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .feature-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px; }
+  .feature-card .fc-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .feature-card .fc-body { font-size: 12px; color: #374151; }
+  .feature-card .fc-icon { font-size: 20px; margin-bottom: 6px; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* linkType table */
+  .link-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 12px; }
+  .link-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .link-table td { padding: 9px 12px; border: 1px solid #e5e5e5; color: #374151; }
+  .link-table tr:nth-child(even) td { background: #fafafa; }
+  .code-tag { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 2px 5px; border-radius: 3px; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* UI mock */
+  .ui-mock-container { display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+  .ui-mock { flex: 1; min-width: 240px; }
+  .ui-mock-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .phone-frame { background: white; border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .phone-appbar { background: white; padding: 12px 16px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; }
+  .phone-appbar-title { font-size: 15px; font-weight: 700; color: #111; }
+  .bell-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; cursor: pointer; }
+  .bell-icon { font-size: 20px; }
+  .bell-badge { position: absolute; top: 2px; right: 2px; background: #ef4444; color: white; font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 8px; min-width: 16px; text-align: center; }
+  .notification-item { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; display: flex; gap: 8px; align-items: flex-start; }
+  .notification-item.unread { background: #ecfdf5; }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; margin-top: 4px; flex-shrink: 0; }
+  .notif-dot-empty { width: 8px; height: 8px; margin-top: 4px; flex-shrink: 0; }
+  .notif-text { flex: 1; }
+  .notif-title { font-size: 12px; font-weight: 600; color: #111; }
+  .notif-body { font-size: 11px; color: #6b7280; }
+  .notif-time { font-size: 10px; color: #9ca3af; }
+  .notif-arrow { color: #9ca3af; font-size: 14px; padding-top: 2px; }
+  .popover-header { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e5e5; }
+  .popover-header-title { font-size: 13px; font-weight: 600; }
+  .popover-view-all { font-size: 11px; color: #10b981; font-weight: 600; }
+  .badge-count-highlight { font-size: 28px; font-weight: 700; color: #ef4444; }
+  .badge-zero { font-size: 28px; font-weight: 700; color: #22c55e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 43 Review</div>
+  <h1>#119 — [mobile] 通知センターを実装する（画面#16）</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 43</span>
+    <span class="badge badge-issue">#119</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Problem / なぜこの実装が必要だったか -->
+  <section>
+    <h2>なぜこの実装が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>モバイルアプリに通知機能のエントリーポイントが存在していなかった。ヘッダーのベルアイコンは仮実装（SnackBar表示のみ）、通知センター画面も <code>_P('通知センター')</code> というプレースホルダーのままだった。ユーザーが「誰かに招待された」「タスクが割り当てられた」といった通知を確認する手段がなく、Phase 3 Step 6 として実装が必要な状態だった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>ベルアイコンタップ → SnackBar 表示のみ</div>
+        <div class="flow-item"><span class="dot dot-red"></span>未読件数バッジ → 非表示（常に0）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>/notifications ルート → プレースホルダー画面</div>
+        <div class="flow-item"><span class="dot dot-red"></span>通知のリンク先への遷移 → 未実装</div>
+        <div class="flow-item"><span class="dot dot-red"></span>フォアグラウンド復帰時の更新 → 未実装</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>ベルアイコンタップ → ポップオーバー表示（最新20件）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>未読件数バッジ → リアルタイム表示・99+対応</div>
+        <div class="flow-item"><span class="dot dot-green"></span>/notifications ルート → 通知センター画面（最新50件）</div>
+        <div class="flow-item"><span class="dot dot-green"></span>通知タップ → linkType に応じて対応画面に遷移</div>
+        <div class="flow-item"><span class="dot dot-green"></span>フォアグラウンド復帰時 → WidgetsBindingObserver で自動更新</div>
+      </div>
+    </div>
+    <div class="feature-overview" style="margin-top:16px;">
+      <div class="feature-card">
+        <div class="fc-icon">🔔</div>
+        <div class="fc-title">ベルアイコン + ポップオーバー</div>
+        <div class="fc-body">未読バッジ・振り子アニメーション付き。タップで最新20件を表示、表示と同時に既読処理</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">📋</div>
+        <div class="fc-title">通知センター画面</div>
+        <div class="fc-body">最新50件を一覧表示。未読インジケーター・「更新」ボタン・linkType遷移対応</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🌐</div>
+        <div class="fc-title">グローバル未読件数</div>
+        <div class="fc-body">起動時・フォアグラウンド復帰時・ポップオーバー/通知センター表示後に自動更新</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">ベルアイコンタップでポップオーバーが表示され、最新20件の通知が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>NotificationBell</code> ウィジェットをヘッダーに配置し、タップで <code>showNotificationPopover()</code> を呼び出す。<code>showDialog</code> ベースのポップオーバーは右上アンカーに <code>Material(elevation: 8)</code> で表示。API は <code>limit=20&markRead=true</code> で呼び出す。</p>
+
+        <!-- ポップオーバー UI モック -->
+        <div class="ui-mock-container">
+          <div class="ui-mock">
+            <div class="ui-mock-title">ポップオーバー表示イメージ</div>
+            <div class="phone-frame">
+              <div class="phone-appbar">
+                <div class="phone-appbar-title">ホーム</div>
+                <div style="display:flex;gap:2px;align-items:center;">
+                  <div class="bell-btn">
+                    <span class="bell-icon">🔔</span>
+                    <span class="bell-badge">3</span>
+                  </div>
+                  <span style="font-size:20px;color:#9ca3af;padding:6px;">👤</span>
+                </div>
+              </div>
+              <div style="background:white;border-radius:8px;margin:4px;box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+                <div class="popover-header">
+                  <span class="popover-header-title">通知センター</span>
+                  <span class="popover-view-all">すべて見る</span>
+                </div>
+                <div class="notification-item unread">
+                  <div class="notif-dot"></div>
+                  <div class="notif-text">
+                    <div class="notif-title">タスクが割り当てられました</div>
+                    <div class="notif-body">りょこさんによってタスクが割り当てられました</div>
+                    <div class="notif-time">2026/05/18 10:30:00</div>
+                  </div>
+                  <div class="notif-arrow">›</div>
+                </div>
+                <div class="notification-item">
+                  <div class="notif-dot-empty"></div>
+                  <div class="notif-text">
+                    <div class="notif-title">招待したメンバーが参加しました</div>
+                    <div class="notif-body">おうち[テスト家]に太郎が参加しました</div>
+                    <div class="notif-time">2026/05/17 09:00:00</div>
+                  </div>
+                  <div class="notif-arrow">›</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/presentation/widgets/notification_popover.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; _load() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>      final repo = ref.read(notificationRepositoryProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>      final items = await repo.fetchNotifications(limit: 20, markRead: true);</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>      if (mounted) {</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>        setState(() {</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>          _notifications = items;</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>          _isLoading = false;</span></div>
+            <div class="code-line line-add"><span class="line-num">46</span><span class="line-prefix">+</span><span>        });</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>        ref.read(notificationGlobalNotifierProvider.notifier).resetToZero();</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>      }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span><code>showDialog</code> に <code>barrierColor: Colors.transparent</code> を指定することで、ポップオーバーの外側タップで閉じる動作を実現。<code>Align + Padding</code> でヘッダー直下の右上アンカーに固定表示している。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">ポップオーバー表示時に全件既読になる（markRead=true）</div>
+      </div>
+      <div class="ac-body">
+        <p>ポップオーバーの <code>_load()</code> で <code>fetchNotifications(limit: 20, markRead: true)</code> を呼ぶことでサーバー側で既読処理を行う。取得成功後に <code>resetToZero()</code> でバッジもリセットする。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/data/notification_repository.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>      final response = await _dio.get&lt;dynamic&gt;(</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>        '/api/notifications',</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>        queryParameters: &lt;String, dynamic&gt;{</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>          'limit': limit,</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>          'markRead': markRead,</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>        },</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>      );</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>      final data = response.data as Map&lt;String, dynamic&gt;;</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>      return (data['items'] as List&lt;dynamic&gt;)</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>          .map((e) => NotificationDto.fromJson(e as Map&lt;String, dynamic&gt;))</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>          .toList();</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>バックエンドの <code>GET /api/notifications?limit=N&markRead=true</code> が既読処理を担う。フロントは <code>markRead: true</code> を渡すだけでよい。レスポンスは <code>{"items": [...]}</code> のラッパー形式。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">ポップオーバーの「すべてみる」タップで通知センター画面に遷移する</div>
+      </div>
+      <div class="ac-body">
+        <p>ポップオーバーのヘッダー右上に「すべて見る」テキストボタンを配置。タップすると <code>Navigator.of(context).pop()</code> でポップオーバーを閉じてから <code>context.push(AppRoutes.notifications)</code> で通知センター画面に遷移する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/presentation/widgets/notification_popover.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">103</span><span class="line-prefix">+</span><span>                      TextButton(</span></div>
+            <div class="code-line line-add"><span class="line-num">104</span><span class="line-prefix">+</span><span>                        onPressed: () {</span></div>
+            <div class="code-line line-add"><span class="line-num">105</span><span class="line-prefix">+</span><span>                          Navigator.of(context).pop();</span></div>
+            <div class="code-line line-add"><span class="line-num">106</span><span class="line-prefix">+</span><span>                          context.push(AppRoutes.notifications);</span></div>
+            <div class="code-line line-add"><span class="line-num">107</span><span class="line-prefix">+</span><span>                        },</span></div>
+            <div class="code-line line-add"><span class="line-num">108</span><span class="line-prefix">+</span><span>                        child: Text(l10n.notificationsViewAll, ...),</span></div>
+            <div class="code-line line-add"><span class="line-num">109</span><span class="line-prefix">+</span><span>                      ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>go_router 環境では <code>showDialog</code> 内の <code>Navigator.pop(context)</code> を使うと外側の context が解決されてページが閉じることがある。<code>Navigator.of(context)</code> で確実にダイアログを閉じてから <code>context.push</code> を呼ぶことでポップオーバーのみ閉じて画面遷移できる。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/app_router.dart</span>
+            <span class="diff-stat">+4 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">235</span><span class="line-prefix">-</span><span>  GoRoute(path: AppRoutes.notifications, builder: (_, _) =&gt; const _P('通知センター')),</span></div>
+            <div class="code-line line-add"><span class="line-num">233</span><span class="line-prefix">+</span><span>  GoRoute(</span></div>
+            <div class="code-line line-add"><span class="line-num">234</span><span class="line-prefix">+</span><span>    path: AppRoutes.notifications,</span></div>
+            <div class="code-line line-add"><span class="line-num">235</span><span class="line-prefix">+</span><span>    builder: (_, _) =&gt; const NotificationCenterPage(),</span></div>
+            <div class="code-line line-add"><span class="line-num">236</span><span class="line-prefix">+</span><span>  ),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">通知センター画面に最新50件が表示される（取得時 markRead=true）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>NotificationCenterNotifier</code> の初期化で <code>fetchNotifications(limit: 50, markRead: true)</code> を呼ぶ。画面は <code>ConsumerWidget</code> として <code>notificationCenterNotifierProvider</code> を watch し、状態に応じてローディング・空・一覧を切り替えて表示する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/presentation/notification_center/notification_center_notifier.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">7</span><span class="line-prefix">+</span><span>class NotificationCenterNotifier extends Notifier&lt;NotificationCenterState&gt; {</span></div>
+            <div class="code-line line-add"><span class="line-num">8</span><span class="line-prefix">+</span><span>  @override</span></div>
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>  NotificationCenterState build() {</span></div>
+            <div class="code-line line-add"><span class="line-num">10</span><span class="line-prefix">+</span><span>    Future.microtask(_initialize);</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>    return const NotificationCenterState();</span></div>
+            <div class="code-line line-add"><span class="line-num">12</span><span class="line-prefix">+</span><span>  }</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>      final notifications = await repo.fetchNotifications(</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>        limit: 50,</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>        markRead: true,</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>      );</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">未読通知には●インジケーターが表示され、既読には表示されない</div>
+      </div>
+      <div class="ac-body">
+        <p><code>NotificationListItem</code> ウィジェットが <code>notification.isRead</code> の値に応じて未読インジケーター（緑の●）を <code>AnimatedOpacity</code> で表示・非表示を切り替える。未読の場合は背景色も薄い緑（<code>colors.primary50</code>）に変わり、タイトルフォントが太字になる。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/presentation/widgets/notification_list_item.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>    final isUnread = !notification.isRead;</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>      decoration: BoxDecoration(</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>        color: isUnread ? colors.primary50 : colors.surfaceCard,</span></div>
+            <div class="code-line line-add"><span class="line-num">47</span><span class="line-prefix">+</span><span>            AnimatedOpacity(</span></div>
+            <div class="code-line line-add"><span class="line-num">48</span><span class="line-prefix">+</span><span>              opacity: isUnread ? 1.0 : 0.0,</span></div>
+            <div class="code-line line-add"><span class="line-num">49</span><span class="line-prefix">+</span><span>              duration: const Duration(milliseconds: 200),</span></div>
+            <div class="code-line line-add"><span class="line-num">50</span><span class="line-prefix">+</span><span>              child: Container(</span></div>
+            <div class="code-line line-add"><span class="line-num">51</span><span class="line-prefix">+</span><span>                width: 8, height: 8,</span></div>
+            <div class="code-line line-add"><span class="line-num">52</span><span class="line-prefix">+</span><span>                decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle),</span></div>
+            <div class="code-line line-add"><span class="line-num">53</span><span class="line-prefix">+</span><span>              ),</span></div>
+            <div class="code-line line-add"><span class="line-num">54</span><span class="line-prefix">+</span><span>            ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span><code>AnimatedOpacity</code> を使うことで、既読・未読が切り替わった際にフェードアニメーションが入る。インジケーターのレイアウト幅は常に確保されているため、既読になっても他の要素がズレない。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">linkType に応じて対応画面に遷移する</div>
+      </div>
+      <div class="ac-body">
+        <p><code>NotificationLinkNavigator</code> クラスが <code>linkType</code> の <code>NotificationLinkType</code> enum 値で switch し、対応する <code>AppRoutes</code> パスに <code>context.push</code> で遷移する。linkType が NONE の場合は通知アイテムの <code>onTap</code> が <code>null</code> になり、<code>›</code> アイコンも非表示になる。</p>
+
+        <table class="link-table">
+          <tr>
+            <th>linkType</th>
+            <th>enum値</th>
+            <th>遷移先</th>
+          </tr>
+          <tr>
+            <td><span class="code-tag">NONE</span></td>
+            <td><span class="code-tag">none</span></td>
+            <td>遷移なし（onTap = null）</td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">MY_TASKS</span></td>
+            <td><span class="code-tag">myTasks</span></td>
+            <td>AppRoutes.tasks（#12 My Tasks）</td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">HOUSEHOLD</span></td>
+            <td><span class="code-tag">household</span></td>
+            <td>AppRoutes.settingsHousehold（#19 世帯設定）</td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">INVITATION</span></td>
+            <td><span class="code-tag">invitation</span></td>
+            <td>AppRoutes.settingsHousehold（#19 世帯設定）</td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">SETTINGS</span></td>
+            <td><span class="code-tag">settings</span></td>
+            <td>AppRoutes.settingsAccount（#18 アカウント設定）</td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">INQUIRY</span></td>
+            <td><span class="code-tag">inquiryDetail</span></td>
+            <td>AppRoutes.settingsInquiryDetail(linkId)（#25 問い合わせ詳細）</td>
+          </tr>
+        </table>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/presentation/widgets/notification_link_navigator.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>    switch (type) {</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>      case NotificationLinkType.myTasks:</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>        context.push(AppRoutes.tasks);</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>      case NotificationLinkType.household:</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      case NotificationLinkType.invitation:</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>        context.push(AppRoutes.settingsHousehold);</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>      case NotificationLinkType.settings:</span></div>
+            <div class="code-line line-add"><span class="line-num">30</span><span class="line-prefix">+</span><span>        context.push(AppRoutes.settingsAccount);</span></div>
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>      case NotificationLinkType.inquiryDetail:</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>        if (linkId != null) {</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>          context.push(AppRoutes.settingsInquiryDetail(linkId.toString()));</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>        }</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>      case NotificationLinkType.none: break;</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>    }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span><code>lib/core/models/notification_link_type.dart</code> に自動生成済みの enum（<code>none / myTasks / household / invitation / settings / inquiryDetail</code>）を使うことでマジックストリング比較を排除。<code>fromCode()</code> が null を返した場合も早期リターンで安全。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC7 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC7</div>
+        <div class="ac-text">ベルアイコンに未読件数バッジが表示される（0件の場合は非表示）</div>
+      </div>
+      <div class="ac-body">
+        <p><code>NotificationGlobalState</code> が <code>unreadCount</code> を保持し、<code>showBadge</code>（0件で false）と <code>badgeText</code>（99件超は "99+"）の getter を提供する。<code>NotificationBell</code> ウィジェットが <code>showBadge</code> を watch し、<code>true</code> の場合のみ赤いバッジ（<code>Positioned</code>）を表示する。</p>
+
+        <div style="display:flex;gap:24px;margin-bottom:12px;">
+          <div style="text-align:center;padding:16px;background:white;border:1px solid #e5e5e5;border-radius:8px;flex:1;">
+            <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px;">未読 3件</div>
+            <div class="bell-btn" style="margin:0 auto;width:38px;height:38px;">
+              <span class="bell-icon">🔔</span>
+              <span class="bell-badge">3</span>
+            </div>
+            <div class="badge-count-highlight" style="margin-top:8px;">3</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:white;border:1px solid #e5e5e5;border-radius:8px;flex:1;">
+            <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px;">未読 0件（バッジ非表示）</div>
+            <div class="bell-btn" style="margin:0 auto;width:38px;height:38px;">
+              <span class="bell-icon" style="color:#9ca3af;">🔔</span>
+            </div>
+            <div class="badge-zero" style="margin-top:8px;">0</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:white;border:1px solid #e5e5e5;border-radius:8px;flex:1;">
+            <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px;">未読 100件以上</div>
+            <div class="bell-btn" style="margin:0 auto;width:38px;height:38px;">
+              <span class="bell-icon">🔔</span>
+              <span class="bell-badge">99+</span>
+            </div>
+            <div class="badge-count-highlight" style="margin-top:8px;">99+</div>
+          </div>
+        </div>
+
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/presentation/notification_global_notifier.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">9</span><span class="line-prefix">+</span><span>  bool get showBadge =&gt; unreadCount &gt; 0;</span></div>
+            <div class="code-line line-add"><span class="line-num">11</span><span class="line-prefix">+</span><span>  String get badgeText =&gt; unreadCount &gt; 99 ? '99+' : unreadCount.toString();</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC8 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC8</div>
+        <div class="ac-text">バッジはアプリ起動時・フォアグラウンド復帰時・ポップオーバー/通知センター表示後に更新される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>MyApp</code>（<code>ConsumerStatefulWidget</code>）に <code>WidgetsBindingObserver</code> を mixin して3つのタイミングで更新する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/main.dart</span>
+            <span class="diff-stat">+30 / -5</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-del"><span class="line-num">14</span><span class="line-prefix">-</span><span>class MyApp extends ConsumerWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num">14</span><span class="line-prefix">+</span><span>class MyApp extends ConsumerStatefulWidget {</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>class _MyAppState extends ConsumerState&lt;MyApp&gt; with WidgetsBindingObserver {</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>    WidgetsBinding.instance.addObserver(this);  // Observer登録</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>    // アプリ起動時に未読件数を取得</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>    Future.microtask(() {</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>      ref.read(notificationGlobalNotifierProvider.notifier).refreshUnreadCount();</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>    });</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>  void didChangeAppLifecycleState(AppLifecycleState state) {</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>    if (state == AppLifecycleState.resumed) {</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>      // フォアグラウンド復帰時に未読件数を更新</span></div>
+            <div class="code-line line-add"><span class="line-num">43</span><span class="line-prefix">+</span><span>      ref.read(notificationGlobalNotifierProvider.notifier).refreshUnreadCount();</span></div>
+            <div class="code-line line-add"><span class="line-num">44</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">45</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">💡</span>
+            <span>ポップオーバー表示後は <code>resetToZero()</code>（ポップオーバー内）、通知センター表示後は <code>ref.listen</code> 内の <code>resetToZero()</code> で即座にバッジを0にリセットする。バッジ更新の失敗はサイレントフェイル（クラッシュさせない設計で、<code>refreshUnreadCount</code> 内のエラーは握りつぶす）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC9 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC9</div>
+        <div class="ac-text">「更新」ボタンで通知一覧を再取得できる</div>
+      </div>
+      <div class="ac-body">
+        <p>通知センター画面のサブタイトル行右端に「更新」テキストボタンを配置。タップすると <code>NotificationCenterNotifier.reload()</code> を呼び出し、<code>fetchNotifications(limit: 50, markRead: true)</code> を再実行する。読み込み中はボタンが <code>null</code>（無効化）になる。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/notifications/presentation/notification_center/notification_center_page.dart</span>
+            <span class="diff-stat">新規</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>                TextButton.icon(</span></div>
+            <div class="code-line line-add"><span class="line-num">68</span><span class="line-prefix">+</span><span>                  onPressed: state.isLoading</span></div>
+            <div class="code-line line-add"><span class="line-num">69</span><span class="line-prefix">+</span><span>                      ? null</span></div>
+            <div class="code-line line-add"><span class="line-num">70</span><span class="line-prefix">+</span><span>                      : () =&gt; ref</span></div>
+            <div class="code-line line-add"><span class="line-num">71</span><span class="line-prefix">+</span><span>                            .read(notificationCenterNotifierProvider.notifier)</span></div>
+            <div class="code-line line-add"><span class="line-num">72</span><span class="line-prefix">+</span><span>                            .reload(),</span></div>
+            <div class="code-line line-add"><span class="line-num">73</span><span class="line-prefix">+</span><span>                  icon: const Icon(Icons.refresh, size: 16),</span></div>
+            <div class="code-line line-add"><span class="line-num">74</span><span class="line-prefix">+</span><span>                  label: Text(l10n.notificationsReload),</span></div>
+            <div class="code-line line-add"><span class="line-num">75</span><span class="line-prefix">+</span><span>                ),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC10 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC10</div>
+        <div class="ac-text">複数世帯所属時は世帯切り替えコンポーネントが表示される（対象外: 通知センターは世帯で切り替わらないため）</div>
+      </div>
+      <div class="ac-body">
+        <p>スプリントバックログに明記の通り <strong>対象外</strong>。通知はユーザー単位で管理されており（世帯をまたいで通知が届く）、世帯切り替えコンポーネントを表示しても意味がないため実装しない。</p>
+        <div class="annotation" style="margin-top:8px;">
+          <span class="annotation-icon">ℹ️</span>
+          <span>AC10は「通知センターは世帯で切り替わらないため対象外」とバックログに明記されています。実装スコープ外として確認済みです。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>ヘッダーのベルアイコンをタップするとポップオーバーが表示されること</strong>
+          <span>ホーム画面右上のベルアイコンをタップ。右上に最新の通知一覧が表示されることを確認（未読がある場合はバッジが赤く表示されている）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>ポップオーバーの外側をタップすると閉じること</strong>
+          <span>ポップオーバーが表示された状態で、ポップオーバー外の画面部分をタップするとダイアログが閉じることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>ポップオーバーを開くとバッジが消えること（既読処理）</strong>
+          <span>未読ありの状態でベルアイコンのバッジ（赤い数字）が表示されている → ポップオーバーを開くとバッジが消え、一覧の未読インジケーター（●）も次回開いたときには表示されないことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>「すべて見る」タップで通知センター画面に遷移すること</strong>
+          <span>ポップオーバーの右上「すべて見る」をタップ → ポップオーバーが閉じて通知センター画面（最新50件）に遷移することを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>未読通知に●インジケーターと背景色があること</strong>
+          <span>未読通知の行左端に緑の●、行背景が薄緑になっていることを確認。既読通知は●なし・背景白であることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">6</div>
+        <div class="verify-content">
+          <strong>通知タップで対応画面に遷移すること（linkType別）</strong>
+          <span>タスク割り当て通知タップ → My Tasks画面に遷移。招待通知タップ → 世帯設定画面に遷移。linkType=NONEの通知はタップできない（›アイコンなし）ことを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">7</div>
+        <div class="verify-content">
+          <strong>通知センターの「更新」ボタンで一覧が再取得されること</strong>
+          <span>通知センター画面で「更新」ボタン（リフレッシュアイコン付き）をタップ → 一覧が再読み込みされることを確認。読み込み中はボタンが無効化（グレーアウト）されることを確認</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">8</div>
+        <div class="verify-content">
+          <strong>アプリを別アプリに切り替えて戻ったときにバッジが更新されること</strong>
+          <span>アプリをバックグラウンドに移してから前面に戻す → ベルアイコンのバッジが最新の未読件数に更新されることを確認（バックグラウンド中に別デバイスで通知が発生した場合に反映されるか）</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更種別</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/data/models/notification_dto.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>通知APIレスポンスのDTOクラス（fromJson）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/data/notification_repository.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>Repository interface + impl（fetchNotifications / fetchUnreadCount）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/notifications_providers.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>notificationRepositoryProvider 定義（DI配線）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/notification_global_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>グローバル未読件数管理（refreshUnreadCount / resetToZero）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/notification_center/notification_center_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>通知センター一覧ロジック（初期化・reload）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/notification_center/notification_center_state.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>通知センター状態クラス（notifications / isLoading / errorMessage）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/notification_center/notification_center_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>通知センター画面UI（50件表示・更新ボタン・linkType遷移）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/widgets/notification_bell.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ベルアイコン（バッジ・振り子アニメーション）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/widgets/notification_popover.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>ポップオーバーUI（20件表示・showDialog使用）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/widgets/notification_list_item.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>通知アイテムUI（未読インジケーター・タイトル・本文・日時・›アイコン）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/widgets/notification_link_navigator.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>linkType→AppRoutesパス変換・遷移処理</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/notifications/presentation/widgets/notification_message_renderer.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>titleKey/bodyKey → i18n文字列変換（Mapディスパッチテーブル）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/home/presentation/widgets/home_app_bar.dart</code></td>
+        <td><span class="tag-changed">変更</span></td>
+        <td>仮実装SnackBar → NotificationBell ウィジェットに差し替え</td>
+      </tr>
+      <tr>
+        <td><code>lib/app_router.dart</code></td>
+        <td><span class="tag-changed">変更</span></td>
+        <td>プレースホルダー → NotificationCenterPage に差し替え</td>
+      </tr>
+      <tr>
+        <td><code>lib/main.dart</code></td>
+        <td><span class="tag-changed">変更</span></td>
+        <td>ConsumerWidget → ConsumerStatefulWidget に変更、WidgetsBindingObserver追加</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更</span></td>
+        <td>通知系i18nキー群を3言語追加（notifications* 系 20+キー）</td>
+      </tr>
+      <tr>
+        <td>ホーム画面・タスク画面・買い物画面 など既存画面</td>
+        <td><span class="tag-unchanged">変更なし</span></td>
+        <td>今回の通知センター実装の影響を受けない</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 49 Review — #142 アプリ情報画面を実装する</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a; background: #f8f7f5; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .sprint-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .badge-sprint { background: #e8f0fe; color: #1a56db; }
+  .badge-issue { background: #f0fdf4; color: #166534; }
+  .badge-feature { background: #fdf4ff; color: #7e22ce; }
+  .badge-mobile { background: #fff7ed; color: #c2410c; }
+
+  /* Sections */
+  section { margin-bottom: 40px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+
+  /* Problem box */
+  .problem-box { background: #fff8f0; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
+  .problem-box .label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .problem-box p { color: #451a03; font-size: 13px; }
+
+  /* Architecture change */
+  .arch-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .arch-box { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .arch-box .arch-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .arch-box.before { border-color: #fca5a5; }
+  .arch-box.after { border-color: #86efac; }
+  .arch-arrow { font-size: 20px; color: #888; text-align: center; }
+  .flow-item { font-size: 12px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .flow-item .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+
+  /* AC cards */
+  .ac-card { background: white; border: 1px solid #e5e5e5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .ac-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f0f0; }
+  .ac-check { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ac-check.done { background: #dcfce7; color: #166534; }
+  .ac-num { font-size: 11px; font-weight: 700; color: #888; }
+  .ac-text { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; }
+  .ac-body { padding: 16px 18px; }
+  .ac-body p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+
+  /* File change */
+  .file-change { margin-bottom: 16px; }
+  .file-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: #f3f4f6; color: #374151; padding: 5px 10px; border-radius: 4px 4px 0 0; border: 1px solid #e5e5e5; border-bottom: none; display: flex; justify-content: space-between; }
+  .diff-stat { color: #888; }
+  .code-block { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; background: #1e1e2e; color: #cdd6f4; padding: 14px 16px; border-radius: 0 0 6px 6px; overflow-x: auto; }
+  .code-line { display: flex; }
+  .line-num { color: #45475a; min-width: 28px; user-select: none; }
+  .line-add { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
+  .line-del { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
+  .line-ctx { color: #cdd6f4; }
+  .line-prefix { min-width: 14px; }
+
+  /* Annotation */
+  .annotation { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #78350f; display: flex; gap: 8px; }
+  .annotation-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* Verify section */
+  .verify-list { list-style: none; }
+  .verify-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+  .verify-item:last-child { border-bottom: none; }
+  .verify-num { width: 22px; height: 22px; background: #e8f0fe; color: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .verify-content { flex: 1; }
+  .verify-content strong { font-size: 13px; color: #1a1a1a; display: block; margin-bottom: 3px; }
+  .verify-content span { font-size: 12px; color: #6b7280; }
+
+  /* Scope table */
+  .scope-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .scope-table th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e5e5; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scope-table td { padding: 10px 12px; border: 1px solid #e5e5e5; color: #374151; vertical-align: top; }
+  .scope-table tr:hover td { background: #f9fafb; }
+  .tag-changed { font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; }
+  .tag-new { font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; }
+  .tag-unchanged { font-size: 11px; font-weight: 600; background: #f3f4f6; color: #6b7280; padding: 2px 6px; border-radius: 3px; }
+
+  /* Screen mock */
+  .screen-mock { background: #f3f4f6; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .screen-mock .mock-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  .mock-appbar { background: #1a2e1a; color: white; padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 13px; font-weight: 600; }
+  .mock-body { background: #f7f8f6; padding: 12px; border-radius: 0 0 8px 8px; }
+  .mock-desc { font-size: 11px; color: #6b7280; margin-bottom: 10px; }
+  .mock-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+  .mock-card-title { font-size: 12px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+  .mock-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .mock-label { font-size: 11px; color: #6b7280; }
+  .mock-value { font-size: 11px; color: #1a1a1a; font-family: monospace; }
+  .mock-value-loading { font-size: 11px; color: #9ca3af; font-style: italic; }
+  .mock-link { background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+  .mock-link-label { font-size: 11px; font-weight: 600; color: #1a1a1a; }
+  .mock-link-arrow { font-size: 11px; color: #9ca3af; }
+  .mock-bullet { font-size: 11px; color: #6b7280; padding: 2px 0; }
+  .mock-note { font-size: 10px; color: #9ca3af; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sprint-label">Sprint 49 Review</div>
+  <h1>#142 — アプリ情報画面を実装する</h1>
+  <div class="meta">
+    <span class="badge badge-sprint">Sprint 49</span>
+    <span class="badge badge-issue">#142</span>
+    <span class="badge badge-feature">feature</span>
+    <span class="badge badge-mobile">mobile</span>
+  </div>
+
+  <!-- Why -->
+  <section>
+    <h2>なぜこの実装が必要だったか</h2>
+    <div class="problem-box">
+      <div class="label">背景</div>
+      <p>設定トップ画面（#120）には「アプリ情報」メニューが存在するが、遷移先が <code>_P('アプリ情報')</code> というプレースホルダーのままだった。ユーザーがバージョン情報・利用規約・開発者情報に常にアクセスできるよう、アプリ情報画面を本実装する必要があった。</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-box before">
+        <div class="arch-title">実装前</div>
+        <div class="flow-item"><span class="dot dot-red"></span>設定 → アプリ情報をタップ</div>
+        <div class="flow-item"><span class="dot dot-red"></span>プレースホルダー画面が表示（「アプリ情報」テキストのみ）</div>
+        <div class="flow-item"><span class="dot dot-red"></span>バージョン情報・規約リンクなし</div>
+        <div class="flow-item"><span class="dot dot-red"></span>API バージョン取得不可</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box after">
+        <div class="arch-title">実装後</div>
+        <div class="flow-item"><span class="dot dot-green"></span>設定 → アプリ情報をタップ</div>
+        <div class="flow-item"><span class="dot dot-green"></span>5セクション構成の情報画面を表示</div>
+        <div class="flow-item"><span class="dot dot-green"></span>UI版・API版バージョンを並べて表示</div>
+        <div class="flow-item"><span class="dot dot-green"></span>利用規約・プライバシーポリシーへの遷移リンクあり</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <div class="screen-mock">
+        <div class="mock-title">実装後の画面イメージ</div>
+        <div class="mock-appbar">アプリ情報</div>
+        <div class="mock-body">
+          <div class="mock-desc">Housework Hub のバージョンや、利用規約・プライバシー情報などを確認できます。</div>
+          <div class="mock-card">
+            <div class="mock-card-title">バージョン</div>
+            <div class="mock-row">
+              <span class="mock-label">UI</span>
+              <span class="mock-value">1.0.0</span>
+            </div>
+            <div class="mock-row">
+              <span class="mock-label">API</span>
+              <span class="mock-value-loading">取得中...</span>
+            </div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-title">利用規約・プライバシーポリシー</div>
+            <div class="mock-link">
+              <span class="mock-link-label">利用規約</span>
+              <span class="mock-link-arrow">&rsaquo;</span>
+            </div>
+            <div class="mock-link">
+              <span class="mock-link-label">プライバシーポリシー</span>
+              <span class="mock-link-arrow">&rsaquo;</span>
+            </div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-title">データとプライバシーについて</div>
+            <div class="mock-bullet">• 家事・買い物リストなどの情報は、世帯のメンバーだけが閲覧できます。</div>
+            <div class="mock-bullet">• サービス改善のために、匿名化された統計情報を利用する場合があります。</div>
+            <div class="mock-bullet">• 法令で定められている場合を除き、第三者に個人情報を販売・共有することはありません。</div>
+            <div class="mock-note">詳細は「プライバシーポリシー」をご確認ください。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AC breakdown -->
+  <section>
+    <h2>AC別 実装内容</h2>
+
+    <!-- AC1 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC1</div>
+        <div class="ac-text">フロントエンドバージョンが pubspec.yaml の値から静的表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>package_info_plus</code> パッケージを新規導入し、<code>PackageInfo.fromPlatform().version</code> で <code>pubspec.yaml</code> に定義されたバージョン文字列を取得。<code>AppInfoNotifier._fetchAppVersion()</code> で非同期取得後、<code>state.appVersion</code> に格納する。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>pubspec.yaml</span>
+            <span class="diff-stat">+3 / -0</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">63</span><span class="line-prefix"> </span><span>  # Calendar</span></div>
+            <div class="code-line line-ctx"><span class="line-num">64</span><span class="line-prefix"> </span><span>  table_calendar: ^3.1.2</span></div>
+            <div class="code-line line-ctx"><span class="line-num">65</span><span class="line-prefix"> </span><span></span></div>
+            <div class="code-line line-add"><span class="line-num">66</span><span class="line-prefix">+</span><span>  # App info（バージョン取得）</span></div>
+            <div class="code-line line-add"><span class="line-num">67</span><span class="line-prefix">+</span><span>  package_info_plus: ^8.0.0</span></div>
+            <div class="code-line line-ctx"><span class="line-num">68</span><span class="line-prefix"> </span><span></span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>package_info_plus</code> は Flutter 公式推奨の端末情報取得パッケージ。<code>PackageInfo.fromPlatform()</code> が端末依存の非同期 API なので try/catch で包み、失敗時は <code>null</code> を返す（画面上では「不明」表示）。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/app_info/presentation/app_info_notifier.dart</span>
+            <span class="diff-stat">+43 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>  Future&lt;String?&gt; _fetchAppVersion() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>      final info = await PackageInfo.fromPlatform();</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>      return info.version;</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>      return null;</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">29</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC2 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC2</div>
+        <div class="ac-text">GET /actuator/info で API バージョンを取得・表示し、取得中は「取得中...」・失敗時は「不明」が表示される</div>
+      </div>
+      <div class="ac-body">
+        <p><code>AppInfoRepository</code>（interface + impl）を新規作成。<code>GET /actuator/info</code> のレスポンス <code>{"app":{"version":"..."}}</code> から version 文字列を取得する。Notifier 側では <code>isLoadingApi</code> フラグを使って取得中/完了/失敗の3状態を管理し、ウィジェット側でそれぞれ異なる表示を行う。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/app_info/data/app_info_repository.dart</span>
+            <span class="diff-stat">+29 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">16</span><span class="line-prefix">+</span><span>  Future&lt;String?&gt; fetchApiVersion() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">17</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">18</span><span class="line-prefix">+</span><span>      final response = await _dio.get&lt;Map&lt;String, dynamic&gt;&gt;('/actuator/info');</span></div>
+            <div class="code-line line-add"><span class="line-num">19</span><span class="line-prefix">+</span><span>      final data = response.data;</span></div>
+            <div class="code-line line-add"><span class="line-num">20</span><span class="line-prefix">+</span><span>      if (data == null) return null;</span></div>
+            <div class="code-line line-add"><span class="line-num">21</span><span class="line-prefix">+</span><span>      final app = data['app'];</span></div>
+            <div class="code-line line-add"><span class="line-num">22</span><span class="line-prefix">+</span><span>      if (app == null || app is! Map) return null;</span></div>
+            <div class="code-line line-add"><span class="line-num">23</span><span class="line-prefix">+</span><span>      return app['version'] as String?;</span></div>
+            <div class="code-line line-add"><span class="line-num">24</span><span class="line-prefix">+</span><span>    } on DioException catch (e) {</span></div>
+            <div class="code-line line-add"><span class="line-num">25</span><span class="line-prefix">+</span><span>      if (e.error is AppException) throw e.error!;</span></div>
+            <div class="code-line line-add"><span class="line-num">26</span><span class="line-prefix">+</span><span>      throw NetworkException(e.message ?? 'Network error');</span></div>
+            <div class="code-line line-add"><span class="line-num">27</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">28</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span><code>isLoadingApi</code> フラグで「取得中（true）」「取得完了（false + apiVersion非null）」「失敗（false + apiVersionがnull）」の3状態を区別している。ウィジェット側では <code>Key</code> を付与した3種のウィジェット（<code>apiVersionLoading</code>・<code>apiVersionValue</code>・<code>apiVersionUnknown</code>）を条件分岐で切り替える。</span>
+          </div>
+        </div>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/app_info/presentation/app_info_notifier.dart</span>
+            <span class="diff-stat">+43 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">31</span><span class="line-prefix">+</span><span>  Future&lt;void&gt; _fetchApiVersion() async {</span></div>
+            <div class="code-line line-add"><span class="line-num">32</span><span class="line-prefix">+</span><span>    state = state.copyWith(isLoadingApi: true);</span></div>
+            <div class="code-line line-add"><span class="line-num">33</span><span class="line-prefix">+</span><span>    try {</span></div>
+            <div class="code-line line-add"><span class="line-num">34</span><span class="line-prefix">+</span><span>      final repo = ref.read(appInfoRepositoryProvider);</span></div>
+            <div class="code-line line-add"><span class="line-num">35</span><span class="line-prefix">+</span><span>      final version = await repo.fetchApiVersion();</span></div>
+            <div class="code-line line-add"><span class="line-num">36</span><span class="line-prefix">+</span><span>      state = state.copyWith(apiVersion: version, isLoadingApi: false);</span></div>
+            <div class="code-line line-add"><span class="line-num">37</span><span class="line-prefix">+</span><span>    } on AppException catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">38</span><span class="line-prefix">+</span><span>      state = state.copyWith(isLoadingApi: false);</span></div>
+            <div class="code-line line-add"><span class="line-num">39</span><span class="line-prefix">+</span><span>    } catch (_) {</span></div>
+            <div class="code-line line-add"><span class="line-num">40</span><span class="line-prefix">+</span><span>      state = state.copyWith(isLoadingApi: false);</span></div>
+            <div class="code-line line-add"><span class="line-num">41</span><span class="line-prefix">+</span><span>    }</span></div>
+            <div class="code-line line-add"><span class="line-num">42</span><span class="line-prefix">+</span><span>  }</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC3 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC3</div>
+        <div class="ac-text">データとプライバシー概要（3項目）・開発者情報・OSSライセンス概要が静的表示される</div>
+      </div>
+      <div class="ac-body">
+        <p>5セクション構成（バージョン・利用規約リンク・データとプライバシー・開発者情報・OSSライセンス）を実装。静的コンテンツは i18n キー（<code>appInfoPrivacyOverview*</code>・<code>appInfoDeveloper*</code>・<code>appInfoOss*</code>）で定義し、<code>_BulletText</code> ウィジェットで箇条書き表示。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/features/app_info/presentation/app_info_page.dart（抜粋：プライバシー概要セクション）</span>
+            <span class="diff-stat">+351 / -0（新規）</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num">111</span><span class="line-prefix">+</span><span>            _SectionCard(</span></div>
+            <div class="code-line line-add"><span class="line-num">112</span><span class="line-prefix">+</span><span>              key: const Key('appInfoPrivacyOverviewSection'),</span></div>
+            <div class="code-line line-add"><span class="line-num">113</span><span class="line-prefix">+</span><span>              title: l10n.appInfoPrivacyOverviewSectionTitle,</span></div>
+            <div class="code-line line-add"><span class="line-num">114</span><span class="line-prefix">+</span><span>              child: Column(</span></div>
+            <div class="code-line line-add"><span class="line-num">115</span><span class="line-prefix">+</span><span>                crossAxisAlignment: CrossAxisAlignment.start,</span></div>
+            <div class="code-line line-add"><span class="line-num">116</span><span class="line-prefix">+</span><span>                children: [</span></div>
+            <div class="code-line line-add"><span class="line-num">117</span><span class="line-prefix">+</span><span>                  _BulletText(l10n.appInfoPrivacyOverviewHouseholdVisibility),</span></div>
+            <div class="code-line line-add"><span class="line-num">118</span><span class="line-prefix">+</span><span>                  _BulletText(l10n.appInfoPrivacyOverviewAnalyticsUsage),</span></div>
+            <div class="code-line line-add"><span class="line-num">119</span><span class="line-prefix">+</span><span>                  _BulletText(l10n.appInfoPrivacyOverviewNoSelling),</span></div>
+            <div class="code-line line-add"><span class="line-num">120</span><span class="line-prefix">+</span><span>                ],</span></div>
+            <div class="code-line line-add"><span class="line-num">121</span><span class="line-prefix">+</span><span>              ),</span></div>
+            <div class="code-line line-add"><span class="line-num">122</span><span class="line-prefix">+</span><span>            ),</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>全セクションに <code>Key</code>（<code>appInfoVersionSection</code>・<code>appInfoLegalSection</code>・<code>appInfoPrivacyOverviewSection</code>・<code>appInfoDeveloperSection</code>・<code>appInfoOssSection</code>）を付与済み。ウィジェットテストで Key ベース検証が可能。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC4 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC4</div>
+        <div class="ac-text">「利用規約」タップで利用規約画面（#143）へ遷移する</div>
+      </div>
+      <div class="ac-body">
+        <p>利用規約リンクに <code>onTap: () =&gt; context.push(AppRoutes.settingsTerms)</code> を設定。<code>app_router.dart</code> では <code>_P('利用規約')</code> プレースホルダーを <code>TermsPage()</code> に置き換え済み。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/app_router.dart（抜粋）</span>
+            <span class="diff-stat">+3 / -3</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">231</span><span class="line-prefix"> </span><span>              GoRoute(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">232</span><span class="line-prefix"> </span><span>                path: AppRoutes._settingsAppInfoRelative,</span></div>
+            <div class="code-line line-del"><span class="line-num">233</span><span class="line-prefix">-</span><span>                builder: (_, _) =&gt; const _P('アプリ情報'),</span></div>
+            <div class="code-line line-add"><span class="line-num">233</span><span class="line-prefix">+</span><span>                builder: (_, _) =&gt; const AppInfoPage(),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">234</span><span class="line-prefix"> </span><span>              ),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">235</span><span class="line-prefix"> </span><span>              GoRoute(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">236</span><span class="line-prefix"> </span><span>                path: AppRoutes._settingsTermsRelative,</span></div>
+            <div class="code-line line-del"><span class="line-num">237</span><span class="line-prefix">-</span><span>                builder: (_, _) =&gt; const _P('利用規約'),</span></div>
+            <div class="code-line line-add"><span class="line-num">237</span><span class="line-prefix">+</span><span>                builder: (_, _) =&gt; const TermsPage(),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">238</span><span class="line-prefix"> </span><span>              ),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC5 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC5</div>
+        <div class="ac-text">「プライバシーポリシー」タップでプライバシーポリシー画面（#144）へ遷移する</div>
+      </div>
+      <div class="ac-body">
+        <p>プライバシーリンクに <code>onTap: () =&gt; context.push(AppRoutes.settingsPrivacy)</code> を設定。<code>app_router.dart</code> では <code>_P('プライバシーポリシー')</code> プレースホルダーを <code>PrivacyPolicyPage()</code> に置き換え済み。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>lib/app_router.dart（抜粋）</span>
+            <span class="diff-stat">+1 / -1</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-ctx"><span class="line-num">239</span><span class="line-prefix"> </span><span>              GoRoute(</span></div>
+            <div class="code-line line-ctx"><span class="line-num">240</span><span class="line-prefix"> </span><span>                path: AppRoutes._settingsPrivacyRelative,</span></div>
+            <div class="code-line line-del"><span class="line-num">241</span><span class="line-prefix">-</span><span>                builder: (_, _) =&gt; const _P('プライバシーポリシー'),</span></div>
+            <div class="code-line line-add"><span class="line-num">241</span><span class="line-prefix">+</span><span>                builder: (_, _) =&gt; const PrivacyPolicyPage(),</span></div>
+            <div class="code-line line-ctx"><span class="line-num">242</span><span class="line-prefix"> </span><span>              ),</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC6 -->
+    <div class="ac-card">
+      <div class="ac-header">
+        <div class="ac-check done">✓</div>
+        <div class="ac-num">AC6</div>
+        <div class="ac-text">カバレッジ ≥ 95%</div>
+      </div>
+      <div class="ac-body">
+        <p>Repository impl・Notifier・Page の3層すべてにテストを作成。<code>app_info</code> 全体でカバレッジ <strong>約 98.9%（349/353行）</strong> を達成した。</p>
+        <div class="file-change">
+          <div class="file-name">
+            <span>test/features/app_info/（テスト一覧）</span>
+            <span class="diff-stat">新規4ファイル</span>
+          </div>
+          <div class="code-block">
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>app_info_mocks.dart                           # @GenerateMocks定義</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>data/app_info_repository_impl_test.dart       # Repository impl テスト</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>presentation/app_info_notifier_test.dart      # Notifier テスト</span></div>
+            <div class="code-line line-add"><span class="line-num"> </span><span class="line-prefix">+</span><span>presentation/app_info_page_test.dart          # ウィジェットテスト</span></div>
+          </div>
+          <div class="annotation">
+            <span class="annotation-icon">&#128161;</span>
+            <span>ウィジェットテストでは日本語テキスト直接検証を行わず、全セクションを <code>find.byKey(const Key('appInfoVersionSection'))</code> 等の Key ベースで検証している（long_term.md 既知の繰り返し指摘パターンに対応）。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verify -->
+  <section>
+    <h2>動作確認ポイント（りょこさん確認用）</h2>
+    <ul class="verify-list">
+      <li class="verify-item">
+        <div class="verify-num">1</div>
+        <div class="verify-content">
+          <strong>設定 → アプリ情報をタップすると5セクションの画面が表示されること</strong>
+          <span>バージョン・利用規約リンク・データとプライバシー・開発者情報・OSSライセンスの順でカード表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">2</div>
+        <div class="verify-content">
+          <strong>バージョンセクションで「UI」にアプリのバージョン番号が表示されること</strong>
+          <span>pubspec.yaml の version に設定された値（例: 1.0.0）が表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">3</div>
+        <div class="verify-content">
+          <strong>画面表示直後は「API」欄に「取得中...」が表示され、その後バージョン番号に切り替わること</strong>
+          <span>バックエンドが起動していない場合は「取得失敗」と表示される</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">4</div>
+        <div class="verify-content">
+          <strong>「利用規約」をタップすると利用規約画面に遷移すること</strong>
+          <span>戻るボタンでアプリ情報画面に戻れること（context.push を使用）</span>
+        </div>
+      </li>
+      <li class="verify-item">
+        <div class="verify-num">5</div>
+        <div class="verify-content">
+          <strong>「プライバシーポリシー」をタップするとプライバシーポリシー画面に遷移すること</strong>
+          <span>戻るボタンでアプリ情報画面に戻れること</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Scope -->
+  <section>
+    <h2>改修スコープ確認</h2>
+    <table class="scope-table">
+      <tr>
+        <th>ファイル</th>
+        <th>変更</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td><code>pubspec.yaml</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>package_info_plus: ^8.0.0 を追加</td>
+      </tr>
+      <tr>
+        <td><code>lib/app_router.dart</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>3つのプレースホルダーを本実装（AppInfoPage・TermsPage・PrivacyPolicyPage）に置き換え</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/app_info_providers.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>appInfoRepositoryProvider・appInfoNotifierProvider を定義</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/data/app_info_repository.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>AppInfoRepository（interface）と AppInfoRepositoryImpl（impl）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/presentation/app_info_state.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>AppInfoState（isLoadingApi・apiVersion・appVersion）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/presentation/app_info_notifier.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>AppInfoNotifier（package_info_plus・Repository 経由 API 取得）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/presentation/app_info_page.dart</code></td>
+        <td><span class="tag-new">新規</span></td>
+        <td>AppInfoPage（5セクション構成・Key 付与済み）</td>
+      </tr>
+      <tr>
+        <td><code>lib/l10n/app_ja.arb / app_en.arb / app_es.arb</code></td>
+        <td><span class="tag-changed">変更あり</span></td>
+        <td>appInfo* 系キーを追加（日英西 3言語）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/presentation/terms_page.dart</code></td>
+        <td><span class="tag-unchanged">別Issue (#143)</span></td>
+        <td>利用規約画面（同ブランチで実装）</td>
+      </tr>
+      <tr>
+        <td><code>lib/features/app_info/presentation/privacy_policy_page.dart</code></td>
+        <td><span class="tag-unchanged">別Issue (#144)</span></td>
+        <td>プライバシーポリシー画面（同ブランチで実装）</td>
+      </tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>
