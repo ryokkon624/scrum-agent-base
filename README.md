@@ -99,8 +99,11 @@ scrum-agent-base/
 ├── README.md                    # このファイル
 ├── .claude/
 │   ├── settings.json            # Agent Teams有効化設定
+│   ├── hooks/
+│   │   └── pre-commit.sh        # コミット前フック
 │   ├── rules/
-│   │   └── git.md               # Gitコミットメッセージのルール
+│   │   ├── git.md               # Gitコミットメッセージのルール
+│   │   └── database.md          # DB変更・マイグレーションのルール
 │   ├── agents/
 │   │   ├── product-owner.md         # POのsubagent定義
 │   │   ├── scrum-master.md          # SMのsubagent定義
@@ -118,6 +121,10 @@ scrum-agent-base/
 │       ├── discord-operations/      # Discordの操作方法
 │       ├── github-issues/           # Github ProjectsのIssuesの操作方法
 │       └── sprint-review-prep/      # Sprint Review用HTMLファイル生成
+│           ├── SKILL.md
+│           └── templates/
+│               ├── feature-refactor.html  # feature/refactor用レビューテンプレート
+│               └── bug.html               # bug用レビューテンプレート
 ├── memory/
 │   ├── sm/
 │   │   ├── short_term.md        # SMの今スプリントの記憶
