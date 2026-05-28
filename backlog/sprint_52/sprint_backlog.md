@@ -69,7 +69,7 @@
 - Sprint 45 Sprint Reviewで発覚
 - 依存関係: #126（プロフィール画像を登録済みのuser_iconに画像が表示されない）。#126の修正で解決する可能性があるが、アカウント設定画面での再フェッチ処理は独立した問題である可能性もあるため、別Issueで管理する。
 - **bugラベル → 計画フェーズで根本原因調査・改修方針を整理し、IssueのBodyを更新すること**
-- **りょこさんコメント**: #126が解消すれば#127はおのずと解消される可能性もある
+- **ユーザーコメント**: #126が解消すれば#127はおのずと解消される可能性もある
 - ブランチ: `fix/127-mobile-account-settings-icon-not-refreshed`
 - コミット参照: `(ryokkon624/hw-hub-manage#127)`
 
@@ -93,7 +93,7 @@
 
 ### 備考
 
-- Sprint 45 Sprint Reviewでりょこさんより要望
+- Sprint 45 Sprint Reviewでユーザーより要望
 - 依存関係：なし
 - ブランチ: `feature/130-mobile-appearance-settings`
 - コミット参照: `(ryokkon624/hw-hub-manage#130)`

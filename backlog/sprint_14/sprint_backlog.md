@@ -76,7 +76,7 @@ So that 誤った操作期待をせずにアプリを使える
 ### 注意事項
 
 - 対象ファイル: `src/components/shopping/SwipeableShoppingItem.vue`
-- Sprint 13 Sprint Reviewでりょこさんから指摘（依存: #42）
+- Sprint 13 Sprint Reviewでユーザーから指摘（依存: #42）
 
 ---
 

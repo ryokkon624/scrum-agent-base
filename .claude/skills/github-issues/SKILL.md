@@ -211,5 +211,5 @@ curl -s -X POST \
 - **GitHub ProjectsのカスタムフィールドはREST APIから参照・更新不可**（GraphQL APIを使うこと）
 - Issue作成後は必ず手順3のStep 2〜3を実行し、Projectへの追加とReadyフィールド（Draft）の設定まで行う
 - Refinement完了後のReady更新（Draft→Ready）およびStory Points設定はPOが手順5-2・5-4で実施する
-- **りょこさんが引き続き手動で行う作業**: Planning前の優先順位並び替え
+- **ユーザーが引き続き手動で行う作業**: Planning前の優先順位並び替え
 - **⚠️ Projectsには複数リポジトリのIssueが混在している**: GraphQLでitem_idを特定するときは `number` だけで絞り込まず、必ず `url` でリポジトリが `hw-hub-manage` であることを確認すること（同番号の別リポジトリIssueに誤ってフィールド更新するミスが発生した実績あり）

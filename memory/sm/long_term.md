@@ -24,13 +24,13 @@
 - bug ラベル Issue は計画フェーズで根本原因調査・改修方針を整理し、GitHub Issue Body に記録する。bug Sprint でも Opus 4.7 で丁寧に調査する
 - 既存ブランチ継続時は DEV 起動メッセージにブランチ名を明示し「新規ブランチを作成しないこと」と指示する
 - 計画フェーズでweb実装を参照してAC仕様を確定する手順は有効
-- ACが曖昧・未定義な場合は実装前にりょこさんに確認するよう DEV への指示に含める
+- ACが曖昧・未定義な場合は実装前にユーザーに確認するよう DEV への指示に含める
 - Retro Issue起票前に `list_issues`（state: open）で既存Issue一覧を確認し、重複がないことを確認してから起票する（Sprint 34 で重複起票が発生）
 - Issue別個別コミット方針はコミット履歴の可読性が高く有効。bug Sprint でも継続採用
 - **mobile の EmptyState 文言はWeb版 i18n（en.json/ja.json の対応キー）を参照基準にする（Sprint 57確立）**: 計画フェーズで Web版 `home.household.empty` を確認し、モバイルの文言を合わせた
 - **同一ファイルへの複数Issue改修は計画フェーズで順序を明示する（Sprint 57）**: #161と#163が同一ファイルを変更。コミット順序の設計が必要なため、計画フェーズでDEVに改修順序を明示する
 - **バックログ記述と現状の乖離を計画フェーズで検出できる（Sprint 61）**: #176でバックログ「data/直下に散乱」と現状「既にmodels/配下に整理済み」の乖離をDEV調査で発見。No-op判断を早期確定し不要実装を回避。Planningの現状調査ステップが有効に機能した
-- **DBカラム追加位置はACまたは備考に明示する（Sprint 63）**: #178でt_inquiryに3カラムを末尾追加したところ、Sprint ReviewでりょこさんからBETWEEN配置の指摘が発生。複数カラムを新規追加する場合は計画フェーズで「どの位置に追加するか（AFTER xxx）」をACまたは備考に明記してDEVに伝える
+- **DBカラム追加位置はACまたは備考に明示する（Sprint 63）**: #178でt_inquiryに3カラムを末尾追加したところ、Sprint ReviewでユーザーからBETWEEN配置の指摘が発生。複数カラムを新規追加する場合は計画フェーズで「どの位置に追加するか（AFTER xxx）」をACまたは備考に明記してDEVに伝える
 - **4リポジトリ横断実装でも1ブランチ方針が有効（Sprint 63）**: DB→Backend→Frontend/Mobile の依存順で実装し、全リポジトリで `feature/178-inquiry-client-version` ブランチにまとめた。PR作成・レビューが整理できて効率的。計画フェーズで依存順序を明示することが重要
 - **ドキュメント系Issueで「全リポジトリ共通」の前提は計画フェーズで対象ファイル・リポジトリを明示する（Sprint 64）**: #180で「全リポジトリ共通」と記載があったにもかかわらず、DEVが対象リポジトリ（hw-hub-mobile）独自のREADME.mdを新規作成してしまった。計画フェーズで「どのリポジトリのどのファイルを更新するか」（例: hw-hub-backendのREADME.mdを基準に全7リポジトリへ反映）を具体的に確認・合意し、backlogに明記してからDEVに渡すこと
 - **PR作成前に `git remote -v` で実際のGitHubリポジトリ名を確認する（Sprint 65）**: hw-hub-knowledgeは以前 `hwhub-stg-knowledge` というリポジトリ名で、現在 `hw-hub-knowledge` にリネーム済み。APIのURLに使うリポジトリ名は `git remote -v` で確認してから使うこと。リダイレクト（301）が返った場合はリポジトリ名が変わっているサインなので確認を実施する
@@ -49,9 +49,9 @@
 
 ### Sprint Review / Retro
 
-- Sprint Review HTML は DEV に生成させてりょこさんに提出する（Sprint 30 〜 標準化）
-- Retro で判明した新規バグ・改善点は Issue 起票 → Projects 追加 → ReadyをDraftに設定まで SM が行う（Ready更新・SP設定はりょこさん）
-- **モバイルのUI変更はDEVのテスト通過・「実装完了」報告だけでAC達成とみなさない。りょこさんの実機確認を一次確認とする**（Sprint 37で#98がAC未達成のまま完了報告された実績）
+- Sprint Review HTML は DEV に生成させてユーザーに提出する（Sprint 30 〜 標準化）
+- Retro で判明した新規バグ・改善点は Issue 起票 → Projects 追加 → ReadyをDraftに設定まで SM が行う（Ready更新・SP設定はユーザー）
+- **モバイルのUI変更はDEVのテスト通過・「実装完了」報告だけでAC達成とみなさない。ユーザーの実機確認を一次確認とする**（Sprint 37で#98がAC未達成のまま完了報告された実績）
 - Shellレベルのウィジェット制御（route判定）は実装前に実機での表示状態を確認する。GoRouterのShellRouteの外にpushした画面ではbottomNavigationBarが消える構造の場合があり、route判定が不要になる可能性がある
 
 ---
@@ -80,7 +80,7 @@
 - **視覚的AC（幅・配置）の目視未確認**: シミュレーターまたはウィジェットテストで確認しないとSprint Reviewで指摘される（Sprint 31）
 - **ドキュメント系Issueで対象ファイル・リポジトリの認識齟齬**: IssueBodyに「全リポジトリ共通」と書かれていても、DEVが特定リポジトリ内で独自ファイルを作成してしまう（Sprint 64 #180）。計画フェーズで対象ファイルとリポジトリ一覧をbacklogに明記することで防止できる
 - **DEVのスコープクリープ**: ACに明記されていない動作を自己判断で含めることがある。計画フェーズでACが曖昧な箇所を事前確認する
-- **ShellレベルUIの実機未確認**: GoRouterのShellRoute外にpushした画面でのBottomNavBar/HouseholdIndicatorBar表示状態は実機でないと分からない。route判定実装前に「そもそも表示されているか」をりょこさんに確認する（Sprint 37 #98でAC未達成が発覚）
+- **ShellレベルUIの実機未確認**: GoRouterのShellRoute外にpushした画面でのBottomNavBar/HouseholdIndicatorBar表示状態は実機でないと分からない。route判定実装前に「そもそも表示されているか」をユーザーに確認する（Sprint 37 #98でAC未達成が発覚）
 - **logout()でのProvider invalidateによるエラー状態継続**: トークンクリア後に `ref.invalidate(householdNotifierProvider)` を呼ぶと、HouseholdNotifier.build()がトークンなしでAPIを叩いてエラー状態になる。その後loginしても再buildされずデータ取得不可が続く。解決策: `saveTokens()` でlogin成功後にinvalidateする（Sprint 58 #158）
 - **logout()のinvalidate前にstateを先行設定しないと無限ループ**: invalidate先にstateがまだAuthenticatedのままだとAuthInterceptorが401をトークンリフレッシュとして再処理し、logout()再呼び出しループが発生。「state=AuthUnauthenticated() → ref.invalidate()」の順序を厳守（Sprint 58 #172）
 - **複合画面でAPIの副作用とUI反映の連動確認漏れ**: 複数APIを組み合わせる複合画面（アカウント設定等）で、「アップロード後の再フェッチ」「ON/OFFの副作用がDBにどう反映されるか」「連携後のDB状態とUI表示の同期」がACに明記されないまま実装され、Sprint Reviewで3件のbugが発覚（Sprint 45: #127/#128/#129）。計画フェーズでACに「APIの副作用とUI反映の連動」を明示する
@@ -115,7 +115,7 @@
 | Sprint 35 | mobile-conventions | IndexedStack配下の invalidate ルール追記 | Sprint Review指摘（#107/#108） |
 | Sprint 36 | mobile-conventions | エラーハンドリングルールにNotifier層パターンを追加 | convention-reviewerの誤検知（catch→errorMessage格納をNG判定）を受け、層別パターンを明示 |
 | Sprint 36 | scrum-master-workflow | reviewer起動前の変更ファイル一覧事前取得ステップを追加 | convention-reviewerがWindows環境でgit実行できず再対応が必要になった実績 |
-| Sprint 37 | scrum-master-workflow | Sprint Review/RetroセクションにモバイルUI実機確認・Shellウィジェット制御の注意事項を追加（long_term.md） | #98でAC未達成がりょこさんの実機確認で初めて発覚した実績 |
+| Sprint 37 | scrum-master-workflow | Sprint Review/RetroセクションにモバイルUI実機確認・Shellウィジェット制御の注意事項を追加（long_term.md） | #98でAC未達成がユーザーの実機確認で初めて発覚した実績 |
 | Sprint 38 | mobile-conventions | リスト生成時のkey付与（必須）セクションを新規追加 | `items.map()`で生成するウィジェットに`ValueKey`が未設定で、performance-reviewerが指摘 |
 | Sprint 38 | scrum-master-workflow | reviewerの指摘検証ルール追記（long_term.md） | convention-reviewerが実装済みコードを誤指摘するケースが複数スプリントで継続発生 |
 | Sprint 40 | mobile-conventions | Dismissibleスワイプ方向・Wrap折り返し・UserAvatar共通ウィジェットの3パターンを追加 | Sprint 39 Sprint Reviewで発覚したバグ（#110/#111/#112/#115）の修正で確立したパターンを規約化（DEV実施） |

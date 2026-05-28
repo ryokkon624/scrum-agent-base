@@ -134,7 +134,7 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
 
 <div class="legend">
   <span style="font-size:0.8rem;font-weight:700;color:#475569">凡例：</span>
-  <div class="legend-item"><div class="dot dot-ryoko"></div>りょこさん</div>
+  <div class="legend-item"><div class="dot dot-ryoko"></div>ユーザー</div>
   <div class="legend-item"><div class="dot dot-sm"></div>SM</div>
   <div class="legend-item"><div class="dot dot-devopus"></div>DEV（Opus 4.7 / 計画）</div>
   <div class="legend-item"><div class="dot dot-devson"></div>DEV（Sonnet 4.6 / 実装）</div>
@@ -149,7 +149,7 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
 <div class="phase phase-planning">
   <div class="phase-header">
     <span style="font-size:1.1rem">①</span> Planning
-    <span style="font-weight:400;font-size:0.82rem;color:#065f46">りょこさんが「Planning開始して」と指示したとき</span>
+    <span style="font-weight:400;font-size:0.82rem;color:#065f46">ユーザーが「Planning開始して」と指示したとき</span>
   </div>
   <div class="phase-body">
     <table class="swim-table">
@@ -177,7 +177,7 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
         </td>
       </tr>
       <tr>
-        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>りょこさん</div></td>
+        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>ユーザー</div></td>
         <td>Planning 内容を確認する（承認は不要・暗黙的に次フェーズへ）</td>
         <td class="td-gray">—</td>
       </tr>
@@ -208,7 +208,7 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
             <li>sprint_backlog.md を読む</li>
             <li>bug ラベルの Issue はコードを調査して根本原因を特定</li>
             <li>実装方針を short_term.md に記録</li>
-            <li>りょこさんに実装方針を提示し、承認を得る</li>
+            <li>ユーザーに実装方針を提示し、承認を得る</li>
             <li>承認後：bug Issue の Body（原因・改修方針）を GitHub 上で更新</li>
             <li>#20-sprint 作業スレッドに承認済み実装方針を投稿</li>
             <li>SM に SendMessage → 停止</li>
@@ -223,7 +223,7 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
         </td>
       </tr>
       <tr>
-        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>りょこさん</div></td>
+        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>ユーザー</div></td>
         <td>実装方針を確認して承認する（または修正指示）</td>
         <td class="td-gray">—</td>
       </tr>
@@ -390,7 +390,7 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
 <div class="phase phase-sprev">
   <div class="phase-header">
     <span style="font-size:1.1rem">⑦</span> Sprint Review
-    <span style="font-weight:400;font-size:0.82rem;color:#713f12">SM が投稿後に停止 → りょこさんの確認待ち</span>
+    <span style="font-weight:400;font-size:0.82rem;color:#713f12">SM が投稿後に停止 → ユーザーの確認待ち</span>
   </div>
   <div class="phase-body">
     <table class="swim-table">
@@ -412,7 +412,7 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
         </td>
       </tr>
       <tr>
-        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>りょこさん</div></td>
+        <td class="col-ryoko"><div class="actor"><div class="dot dot-ryoko"></div>ユーザー</div></td>
         <td>
           <ul class="steps">
             <li>review-#N.html をブラウザで開いて動作確認</li>
@@ -430,7 +430,7 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
 <div class="phase phase-retro">
   <div class="phase-header">
     <span style="font-size:1.1rem">⑧</span> Retrospective
-    <span style="font-weight:400;font-size:0.82rem;color:#7f1d1d">りょこさんから「Retro して」と指示されたとき</span>
+    <span style="font-weight:400;font-size:0.82rem;color:#7f1d1d">ユーザーから「Retro して」と指示されたとき</span>
   </div>
   <div class="phase-body">
     <table class="swim-table">
@@ -443,9 +443,9 @@ table.diff-table td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-ali
         <td class="col-sm"><div class="actor"><div class="dot dot-sm"></div>SM</div></td>
         <td>
           <ul class="steps">
-            <li>#30-sprint-review スレッドでりょこさんの指摘を確認</li>
+            <li>#30-sprint-review スレッドでユーザーの指摘を確認</li>
             <li>#40-retrospective に新スレッドを作成して Retro を実施（Keep / Stop / Avoid / Challenge）</li>
-            <li>りょこさんの指摘を GitHub Issue として起票 → Projects 追加 → Draft 設定</li>
+            <li>ユーザーの指摘を GitHub Issue として起票 → Projects 追加 → Draft 設定</li>
             <li>Skills ファイルの更新要否を判断 → 更新 → #skills-changelog に投稿</li>
             <li>sm/short_term.md をリセット、sm/long_term.md に要約を追記</li>
           </ul>

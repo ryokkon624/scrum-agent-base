@@ -8,7 +8,7 @@
 
 ### 仕様外の判断・変更・妥походов変更・妥協点
 
-- `unpurchased_tab.dart` / `basket_tab.dart` で2秒指定されていた duration は AppSnackBar の3秒固定に統一した（りょこさん承認済み）
+- `unpurchased_tab.dart` / `basket_tab.dart` で2秒指定されていた duration は AppSnackBar の3秒固定に統一した（ユーザー承認済み）
 - `shopping_item_new_page.dart` の `ScaffoldMessenger` 呼び出しは#169実施前から既に `AppSnackBar` を使っていたため変更不要だった（grep で確認済み）
 - AppSnackBar はグローバルな `scaffoldMessengerKey` を使うため、ウィジェットテストで `AppSnackBar.showSuccess/showError` の呼び出し結果を検証するには `MaterialApp(scaffoldMessengerKey: AppSnackBar.messengerKey)` の設定が必要。`buildTestPage` に `withSnackBarKey: bool = false` パラメータを追加して対応した
 

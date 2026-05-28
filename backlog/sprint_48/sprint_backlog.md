@@ -127,7 +127,7 @@
 
 ## DEVへの注意事項
 
-- **specファイルを必ず参照**: `docs/mobile-spec/23_inquiry_list.md`, `24_inquiry_create.md`, `25_inquiry_detail.md`（存在しない場合はりょこさんへ確認）
+- **specファイルを必ず参照**: `docs/mobile-spec/23_inquiry_list.md`, `24_inquiry_create.md`, `25_inquiry_detail.md`（存在しない場合はユーザーへ確認）
 - **空状態ハンドリング（#139 AC4）**: `loading` / `error` / `data(0件)` / `data(1件以上)` の4ケースをすべて実装・テストする（Sprint 47 #145 の再発防止）
 - **APIの副作用とUI反映の連動確認**: 新規作成・返信・クローズ後の一覧Provider invalidate を必ず実施（Sprint Review頻出パターン）
 - **テストにKey属性を付与**: `find.text('...')` でなく `find.byKey(const Key('...'))` を標準とする（Sprint 45 指摘）
