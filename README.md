@@ -118,6 +118,8 @@ scrum-agent-base/
 │       ├── backend-conventions/     # Backendコーディング規約
 │       ├── frontend-conventions/    # Frontendコーディング規約
 │       ├── mobile-conventions/      # Mobileコーディング規約
+│       │   ├── SKILL.md
+│       │   └── patterns/            # 個別バグ由来の詳細実装パターン（必要時のみ参照）
 │       ├── discord-operations/      # Discordの操作方法
 │       ├── github-issues/           # Github ProjectsのIssuesの操作方法
 │       └── sprint-review-prep/      # Sprint Review用HTMLファイル生成
