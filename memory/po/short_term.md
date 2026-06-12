@@ -28,4 +28,4 @@
 
 ---
 
-*スプリント終了後、long_term.mdに要約して移す*
+*Retro時にSMから起動され、long_term.mdに要約して移す（product-owner-workflow「Retrospective（SMから起動）」参照）*
