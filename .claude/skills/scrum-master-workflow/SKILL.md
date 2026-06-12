@@ -463,9 +463,14 @@ Sprint Review ファイルをブラウザで開いて動作確認をお願いし
       - Skills更新履歴: 今スプリントで更新したSkillsがあれば追記
    ③ 以下のSkillsファイルについて、今スプリントの実装で気づいた追記・修正すべき内容があれば更新する：
       - mobile-conventions / frontend-conventions / backend-conventions など
+      - 再発防止ルールの追加は developer-workflow「再発防止ルールのライフサイクル」の
+        2回ルールに従う（初出は long_term.md 記録に留める）
       - 更新した場合は #skills-changelog に [DEV] プレフィックスで投稿する
-   ④ memory/dev/short_term.md をリセット（「Sprint XX 完了。次スプリント開始時にリセット済み」）
-   ⑤ 完了したらSendMessageでSMに報告してください。」
+   ④ チェックリストの棚卸し（卒業判定）を実施する：
+      - developer-workflow の卒業基準に従い、直近15スプリントで未発生かつ理由を説明できる
+        ルールを long_term.md「卒業済みルール」へ降格させる（最大3件・該当なしでもよい）
+   ⑤ memory/dev/short_term.md をリセット（「Sprint XX 完了。次スプリント開始時にリセット済み」）
+   ⑥ 完了したらSendMessageでSMに報告してください。」
    ```
 
 3. **POをteammateとして起動する（Sonnet 4.6）— DEVと並列で実施：**
@@ -494,6 +499,7 @@ Sprint Review ファイルをブラウザで開いて動作確認をお願いし
    - Draft→Ready更新・Story Points設定はユーザーが行う（SMは不要）
 
 7. Skillsファイルの更新が必要かどうかを判断してSMとして更新する（DEVとの重複を避けるため、SM観点の更新に絞る）
+   - 再発防止ルール（チェックリスト項目）をSMが追加する場合も developer-workflow「再発防止ルールのライフサイクル」の2回ルールに従う（初出は long_term.md 記録に留める）
 
    **【更新先の判断テーブル】**（公式ドキュメントに基づく）
 
@@ -505,7 +511,7 @@ Sprint Review ファイルをブラウザで開いて動作確認をお願いし
    | エージェントのID・ツール・モデル定義 | `agents/` | 独立コンテキストで動く専門ロール |
    | Claude判断に依存せず確実に自動実行したい処理 | Hooks | "必ず実行" → Hooks、"できれば実行" → CLAUDE.md |
    | 今スプリント限りの作業メモ | `short_term.md` | Retro完了後リセット |
-   | 繰り返しパターン・永続的な教訓 | `long_term.md` | Retroフェーズで更新 |
+   | 繰り返しパターン・永続的な教訓 | `long_term.md` | Retroフェーズで更新。再発防止ルールの初出はここ止まり（2回ルール） |
 
 8. 更新内容を `#skills-changelog` に `[SM]` プレフィックスで投稿する
 
